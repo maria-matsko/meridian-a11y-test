@@ -1,0 +1,818 @@
+[% WRAPPER '_assets/master.html.tt'
+    page_title = 'Dashboard'
+    page_id    = 'dashboard'
+%]
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   PAGE-SPECIFIC: Dashboard (Command Center)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Dashboard greeting */
+.dashboard-greeting { font-size: var(--text-xl); font-weight: var(--weight-bold); margin-bottom: var(--space-1); }
+.dashboard-greeting-sub { color: var(--text-secondary); font-size: var(--text-sm); }
+
+/* Health card */
+.health-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-5); margin-top: var(--space-6); }
+.health-title { font-size: var(--text-sm); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-wide); text-transform: uppercase; color: var(--text-tertiary); margin-bottom: var(--space-4); }
+.health-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-4); }
+.health-item { display: flex; align-items: center; gap: var(--space-3); }
+.health-item-icon { width: 36px; height: 36px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+.health-item-text { display: flex; flex-direction: column; }
+.health-item-label { font-size: var(--text-xs); color: var(--text-tertiary); }
+.health-item-value { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-primary); }
+
+/* Quick Actions grid */
+.quick-actions { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--space-3); margin-top: var(--space-6); }
+.quick-action { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-5) var(--space-4); background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); text-decoration: none; color: var(--text-primary); font-size: var(--text-sm); font-weight: var(--weight-medium); cursor: pointer; transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out); }
+.quick-action:hover { border-color: var(--border-default); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.quick-action i { font-size: 1.4rem; color: var(--text-brand); }
+
+/* Activity */
+.activity-section { margin-top: var(--space-6); }
+.activity-title { font-size: var(--text-sm); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-wide); text-transform: uppercase; color: var(--text-tertiary); margin-bottom: var(--space-4); }
+.activity-list { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; }
+.activity-item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-5); border-bottom: 1px solid var(--border-subtle); transition: background var(--duration-fast) var(--ease-out); }
+.activity-item:last-child { border-bottom: none; }
+.activity-item:hover { background: var(--bg-hover); }
+.activity-icon { width: 32px; height: 32px; border-radius: var(--radius-md); background: var(--bg-muted); display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--text-secondary); flex-shrink: 0; }
+.activity-text { flex: 1; }
+.activity-action { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--text-primary); }
+.activity-detail { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: 1px; }
+.activity-time { font-size: var(--text-xs); color: var(--text-tertiary); flex-shrink: 0; }
+
+/* Metric bar colors */
+.metric-bar-fill.good { background: var(--status-success); }
+.metric-bar-fill.moderate { background: var(--accent); }
+.metric-bar-fill.high { background: var(--status-warning); }
+.metric-bar-fill.critical { background: var(--status-error); }
+
+/* Demo toggle */
+.demo-toggle { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); background: var(--bg-muted); border: 1px solid var(--border-subtle); border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--text-secondary); cursor: pointer; text-decoration: none; transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out); }
+.demo-toggle:hover { background: var(--bg-hover); border-color: var(--border-default); color: var(--text-primary); }
+.demo-toggle i { font-size: 0.9rem; }
+</style>
+
+
+<a href="#main-content" class="sr-only" data-t>Skip to main content</a>
+
+<div class="layout-shell" id="layoutShell">
+  <meridian-header notification-badge></meridian-header>
+  <meridian-sidebar active="dashboard"></meridian-sidebar>
+
+  <main class="layout-main" id="main-content">
+    <div class="main-content">
+
+      <!-- Page Header -->
+      <div class="page-header animate-in stagger-1">
+        <div class="page-header-left">
+          <h1 class="page-title" id="greetingTitle" data-t>Dashboard</h1>
+          <p class="page-subtitle" id="greetingSub" data-t>Here's your account overview</p>
+        </div>
+        <div class="page-header-right">
+          <div class="view-toggle" id="viewToggle">
+            <button class="view-toggle-btn active" data-view="modern" data-t>Modern</button>
+            <button class="view-toggle-btn" data-view="classic" data-t>Classic</button>
+          </div>
+          <button type="button" class="demo-toggle" id="onboardingLink" onclick="restartDashboardOnboarding()">
+            <i class="ri-rocket-line" aria-hidden="true"></i> <span data-t>Run Setup Again</span>
+          </button>
+          <button type="button" class="demo-toggle" id="checklistRestoreBtn" onclick="restoreChecklist()" style="display: none;">
+            <i class="ri-list-check-2" aria-hidden="true"></i> <span data-t>Getting Started</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Post-wizard onboarding checklist -->
+<div class="onboarding-checklist" id="onboardingChecklist" style="display: none;">
+  <div class="onboarding-checklist-header">
+    <div class="setup-progress">
+      <div class="setup-ring" role="progressbar" aria-valuenow="1" aria-valuemin="0" aria-valuemax="4" aria-label="Onboarding progress">
+        <svg width="36" height="36" viewBox="0 0 36 36">
+          <circle class="setup-ring-track" cx="18" cy="18" r="15" fill="none" stroke="var(--bg-muted)" stroke-width="3.5"/>
+          <circle class="setup-ring-fill" id="checklistRingFill" cx="18" cy="18" r="15" fill="none" stroke="var(--accent)" stroke-width="3.5" stroke-dasharray="94.25" stroke-dashoffset="70.69" stroke-linecap="round"/>
+        </svg>
+        <span class="setup-ring-label" id="checklistRingLabel">1/4</span>
+      </div>
+    </div>
+    <h3 data-t>Getting Started</h3>
+    <button type="button" class="onboarding-checklist-dismiss" onclick="dismissChecklist()" data-t>Dismiss</button>
+  </div>
+  <div class="checklist" id="checklistItems">
+    <div class="checklist-item" id="cl-website">
+      <div class="checklist-num"><i class="ri-checkbox-blank-circle-line" aria-hidden="true"></i></div>
+      <div class="checklist-content">
+        <div class="checklist-title" data-t>Set up your website</div>
+        <div class="checklist-desc" data-t>Choose a builder and create your site</div>
+      </div>
+    </div>
+    <div class="checklist-item" id="cl-email">
+      <div class="checklist-num"><i class="ri-checkbox-blank-circle-line" aria-hidden="true"></i></div>
+      <div class="checklist-content">
+        <div class="checklist-title" data-t>Create an email account</div>
+        <div class="checklist-desc" data-t>Get a professional email address</div>
+      </div>
+      <a href="../email/" class="checklist-action"><i class="ri-arrow-right-s-line"></i></a>
+    </div>
+    <div class="checklist-item" id="cl-ssl">
+      <div class="checklist-num"><i class="ri-checkbox-blank-circle-line" aria-hidden="true"></i></div>
+      <div class="checklist-content">
+        <div class="checklist-title" data-t>SSL certificate</div>
+        <div class="checklist-desc" data-t>Secure your site with HTTPS</div>
+      </div>
+    </div>
+    <div class="checklist-item" id="cl-explored">
+      <div class="checklist-num"><i class="ri-checkbox-blank-circle-line" aria-hidden="true"></i></div>
+      <div class="checklist-content">
+        <div class="checklist-title" data-t>Explore your dashboard</div>
+        <div class="checklist-desc" data-t>Discover what you can manage</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <!-- Active Dashboard Content (command center — populated by JS) -->
+      <div id="activeContent"></div>
+
+      <!-- Classic Grid (power user mode) -->
+      <div id="classicSearch" style="display:none; margin-bottom: var(--space-4);">
+        <input type="search" class="form-input" id="classicToolSearch" placeholder="Search all tools..." aria-label="Filter tools" style="max-width:400px;">
+      </div>
+      <div id="classicGrid" style="display:none; margin-bottom: var(--space-8);"></div>
+
+    </div>
+  </main>
+
+</div>
+
+<script>
+// esc() is provided by shell.js which loads after page content —
+// define a local fallback so renderClassicGrid can run immediately
+if (typeof esc === 'undefined') {
+  var esc = function(s) { if (s == null) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+}
+
+// ══════════════════════════════════════════════════════════════
+// Onboarding server-side sync — the fast redirect now happens
+// in master.html.tt <head> (synchronous, before body paints).
+// This async check handles the edge case where localStorage was
+// cleared but the server knows onboarding was already completed.
+// ══════════════════════════════════════════════════════════════
+(async function syncOnboardingState() {
+  // Already have local flag — nothing to sync
+  if (localStorage.getItem(CpanelAPI.userKey('meridian-onboarding-complete'))) return;
+  // Not inside cPanel — skip server check
+  if (!CpanelAPI.isInsideCpanel()) return;
+
+  try {
+    var prefs = await CpanelAPI.getPersonalization(['meridian_onboarding_complete']);
+    var val = prefs?.meridian_onboarding_complete;
+    var completed = val === '1' || val?.value === '1';
+    if (completed) {
+      // Server says done — cache locally so the <head> redirect won't fire next load
+      localStorage.setItem(CpanelAPI.userKey('meridian-onboarding-complete'), 'true');
+    }
+  } catch (e) {
+    // Non-critical — next page load will check again
+  }
+})();
+
+// Page-specific API helpers (delegates to global CpanelAPI)
+const DashboardAPI = {
+  async getResourceUsage() {
+    return CpanelAPI.getResourceUsage();
+  },
+
+  async getLastBackupDate() {
+    var backups = await CpanelAPI.listBackups();
+    if (!backups.length) return null;
+    backups.sort();
+    return backups[backups.length - 1];
+  },
+
+  async getServerInfo() {
+    const r = await CpanelAPI.call('StatsBar', 'get_stats', {
+      display: 'cpanelversion|hostingpackage|phpversion|diskusage|bandwidthusage'
+    });
+    var info = {};
+    (r.data || []).forEach(function(item) {
+      if (item.id === 'cpanelversion') info.cpanelVersion = item.value;
+      if (item.id === 'hostingpackage') info.hostingPackage = item.value;
+      if (item.id === 'phpversion') info.phpVersion = item.value;
+      if (item.id === 'diskusage') {
+        info.diskUsage = item.value;
+        info.diskCount = item.count;
+        info.diskMax = item.max;
+        info.diskPercent = item.percent;
+      }
+      if (item.id === 'bandwidthusage') {
+        info.bandwidthUsage = item.value;
+        info.bandwidthCount = item.count;
+        info.bandwidthMax = item.max;
+        info.bandwidthPercent = item.percent;
+      }
+    });
+    return info;
+  },
+
+};
+
+
+// ══════════════════════════════════════════════════════════════
+// Command Center Rendering
+// ══════════════════════════════════════════════════════════════
+
+function getBarClass(pct) {
+  if (pct < 50) return 'good';
+  if (pct < 75) return 'moderate';
+  if (pct < 90) return 'high';
+  return 'critical';
+}
+
+function getGreeting() {
+  var h = new Date().getHours();
+  if (h < 12) return t('Good morning');
+  if (h < 17) return t('Good afternoon');
+  return t('Good evening');
+}
+
+function renderActive(data) {
+  var container = document.getElementById('activeContent');
+  if (!container) return;
+
+  // data shape: { userName, disk: {used, max, pct}, bandwidth: {used, max, pct}, health: [...], quickActions: [...], activity: [...] }
+  var html = '';
+
+  // Metrics grid
+  html += '<div class="metrics-grid">';
+  html += '<div class="metric-card">'
+    + '<div class="metric-label">' + t('Disk Usage') + '</div>'
+    + '<div class="metric-value">' + esc(data.disk.used) + ' <span style="font-size:var(--text-sm);font-weight:var(--weight-regular);color:var(--text-tertiary);">/ ' + esc(data.disk.max) + '</span></div>'
+    + '<div class="metric-detail">' + data.disk.pct + '% ' + t('used') + '</div>'
+    + '<div class="metric-bar"><div class="metric-bar-fill ' + getBarClass(data.disk.pct) + '" style="width:' + data.disk.pct + '%;"></div></div>'
+    + '</div>';
+  html += '<div class="metric-card">'
+    + '<div class="metric-label">' + t('Bandwidth') + '</div>'
+    + '<div class="metric-value">' + esc(data.bandwidth.used) + ' <span style="font-size:var(--text-sm);font-weight:var(--weight-regular);color:var(--text-tertiary);">/ ' + esc(data.bandwidth.max) + '</span></div>'
+    + '<div class="metric-detail">' + data.bandwidth.pct + '% ' + t('used') + '</div>'
+    + '<div class="metric-bar"><div class="metric-bar-fill ' + getBarClass(data.bandwidth.pct) + '" style="width:' + data.bandwidth.pct + '%;"></div></div>'
+    + '</div>';
+  html += '</div>';
+
+  // Health card
+  html += '<div class="health-card"><div class="health-title">' + t('Account Health') + '</div><div class="health-grid">';
+  for (var i = 0; i < data.health.length; i++) {
+    var h = data.health[i];
+    html += '<div class="health-item">'
+      + '<div class="health-item-icon" style="background:' + h.bg + ';color:' + h.color + ';"><i class="' + h.icon + '" aria-hidden="true"></i></div>'
+      + '<div class="health-item-text">'
+      + '<span class="health-item-label">' + esc(h.label) + '</span>'
+      + '<span class="health-item-value">' + esc(h.value) + '</span>'
+      + '</div></div>';
+  }
+  html += '</div></div>';
+
+  // Quick Actions
+  html += '<div class="quick-actions">';
+  for (var j = 0; j < data.quickActions.length; j++) {
+    var q = data.quickActions[j];
+    html += '<a class="quick-action" href="' + esc(q.href) + '">'
+      + '<i class="' + q.icon + '" aria-hidden="true"></i>'
+      + esc(q.label)
+      + '</a>';
+  }
+  html += '</div>';
+
+  // Activity
+  html += '<div class="activity-section"><div class="activity-title">' + t('Recent Activity') + '</div><div class="activity-list">';
+  for (var k = 0; k < data.activity.length; k++) {
+    var ev = data.activity[k];
+    html += '<div class="activity-item">'
+      + '<div class="activity-icon"><i class="' + ev.icon + '" aria-hidden="true"></i></div>'
+      + '<div class="activity-text">'
+      + '<div class="activity-action">' + esc(ev.action) + '</div>'
+      + '<div class="activity-detail">' + esc(ev.detail) + '</div>'
+      + '</div>'
+      + '<span class="activity-time">' + esc(ev.time) + '</span>'
+      + '</div>';
+  }
+  if (data.activity.length === 0) {
+    html += '<div class="activity-item" style="justify-content:center;color:var(--text-tertiary);font-size:var(--text-sm);">' + t('No recent activity') + '</div>';
+  }
+  html += '</div></div>';
+
+  container.innerHTML = html;
+}
+
+
+function buildDashboardData(diskData, bwData, userInfo, sslHosts, lastLoginIP, domainList, modsecDomains, twoFAData, lastBackup, serverInfo) {
+  // Disk
+  var disk = { used: '0 B', max: t('Unlimited'), pct: 0 };
+  if (diskData) {
+    disk.used = CpanelAPI.formatBytes(diskData.used);
+    disk.max = diskData.max ? CpanelAPI.formatBytes(diskData.max) : t('Unlimited');
+    disk.pct = diskData.max ? Math.min(100, Math.round((diskData.used / diskData.max) * 100)) : 0;
+  }
+
+  // Bandwidth
+  var bandwidth = { used: '0 B', max: t('Unlimited'), pct: 0 };
+  if (bwData) {
+    bandwidth.used = CpanelAPI.formatBytes(bwData.used);
+    bandwidth.max = bwData.max ? CpanelAPI.formatBytes(bwData.max) : t('Unlimited');
+    bandwidth.pct = bwData.max ? Math.min(100, Math.round((bwData.used / bwData.max) * 100)) : 0;
+  }
+
+  // User name
+  var userName = 'User';
+  if (userInfo && userInfo.user) {
+    userName = userInfo.user;
+  }
+
+  // SSL
+  var sslCount = 0;
+  var sslExpiring = 0;
+  var sslExpired = 0;
+  var now = Date.now();
+  var SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+  if (sslHosts && Array.isArray(sslHosts)) {
+    sslCount = sslHosts.length;
+    sslHosts.forEach(function(h) {
+      if (!h.certificate || !h.certificate.not_after) return;
+      var expMs = h.certificate.not_after * 1000;
+      if (expMs <= now) { sslExpired++; }
+      else if ((expMs - now) < SEVEN_DAYS) { sslExpiring++; }
+    });
+  }
+
+  var sslStatus = sslExpired > 0 ? 'error' : sslExpiring > 0 ? 'warning' : 'success';
+  var sslStatusMap = { success: { bg: 'var(--status-success-bg)', color: 'var(--status-success)' }, warning: { bg: 'var(--status-warning-bg)', color: 'var(--status-warning)' }, error: { bg: 'var(--status-error-bg)', color: 'var(--status-error)' } };
+  var sslColors = sslStatusMap[sslStatus];
+  var sslValue = sslExpired > 0 ? t('{n} Expired', {n: sslExpired}) : sslExpiring > 0 ? t('{n} Expiring', {n: sslExpiring}) : (sslCount > 0 ? t('{n} Valid', {n: sslCount}) : t('None'));
+
+  // WAF
+  var wafActive = false;
+  var wafValue = t('Inactive');
+  var wafBg = 'var(--status-warning-bg)';
+  var wafColor = 'var(--status-warning)';
+  if (modsecDomains && Array.isArray(modsecDomains) && modsecDomains.length > 0) {
+    var disabledCount = modsecDomains.filter(function(d) { return !d.enabled; }).length;
+    wafActive = disabledCount < modsecDomains.length;
+    if (disabledCount === 0) {
+      wafValue = t('Active');
+      wafBg = 'var(--status-success-bg)';
+      wafColor = 'var(--status-success)';
+    } else if (disabledCount < modsecDomains.length) {
+      wafValue = t('{n} Unprotected', {n: disabledCount});
+      wafBg = 'var(--status-warning-bg)';
+      wafColor = 'var(--status-warning)';
+    } else {
+      wafValue = t('Disabled');
+    }
+  }
+
+  // 2FA
+  var is2FA = twoFAData && twoFAData.is_enabled;
+  var twoFABg = is2FA ? 'var(--status-success-bg)' : 'var(--status-warning-bg)';
+  var twoFAColor = is2FA ? 'var(--status-success)' : 'var(--status-warning)';
+
+  // PHP
+  var phpVersion = (serverInfo && serverInfo.phpVersion) ? serverInfo.phpVersion : '';
+
+  // Last Backup
+  var backupValue = t('None');
+  if (lastBackup) {
+    var backupDate = new Date(lastBackup + 'T00:00:00');
+    var daysSince = Math.floor((Date.now() - backupDate.getTime()) / (1000 * 60 * 60 * 24));
+    backupValue = daysSince === 0 ? t('Today') : daysSince === 1 ? t('Yesterday') : t('{n} days ago', {n: daysSince});
+  }
+
+  // cPanel version
+  var cpanelVersion = (serverInfo && serverInfo.cpanelVersion) ? 'v' + serverInfo.cpanelVersion : '';
+
+  var health = [
+    { icon: 'ri-lock-line', bg: sslColors.bg, color: sslColors.color, label: t('SSL Certificates'), value: sslValue },
+    { icon: 'ri-shield-flash-line', bg: wafBg, color: wafColor, label: t('WAF'), value: wafValue },
+    { icon: 'ri-smartphone-line', bg: twoFABg, color: twoFAColor, label: t('2FA'), value: is2FA ? t('Enabled') : t('Disabled') },
+    { icon: 'ri-code-s-slash-line', bg: 'var(--status-info-bg)', color: 'var(--status-info)', label: t('PHP'), value: phpVersion },
+    { icon: 'ri-archive-line', bg: 'var(--accent-subtle)', color: 'var(--text-brand)', label: t('Last Backup'), value: backupValue },
+    { icon: 'ri-server-line', bg: 'var(--feature-bg)', color: 'var(--feature-color)', label: 'cPanel', value: cpanelVersion }
+  ];
+
+  var quickActions = [
+    { label: t('Create Email'), icon: 'ri-mail-add-line', href: 'email/' },
+    { label: t('Add Website'), icon: 'ri-global-line', href: 'websites/' },
+    { label: t('Upload Files'), icon: 'ri-upload-cloud-2-line', href: 'files/' },
+    { label: t('Create Backup'), icon: 'ri-archive-line', href: 'files/' },
+    { label: t('View Performance'), icon: 'ri-speed-line', href: 'performance/' }
+  ];
+
+  // Activity from real data
+  var activity = [];
+  if (sslHosts && sslHosts.length > 0) {
+    var sorted = sslHosts.slice().sort(function(a, b) {
+      return ((b.certificate && b.certificate.not_after) || 0) - ((a.certificate && a.certificate.not_after) || 0);
+    });
+    for (var si = 0; si < Math.min(2, sorted.length); si++) {
+      var sh = sorted[si];
+      if (sh.certificate && sh.certificate.not_after) {
+        var issuedTs = sh.certificate.not_before
+          ? sh.certificate.not_before * 1000
+          : (sh.certificate.not_after * 1000) - (90 * 24 * 60 * 60 * 1000);
+        if (now - issuedTs < SEVEN_DAYS) {
+          activity.push({
+            icon: 'ri-shield-check-line',
+            action: t('AutoSSL renewed certificate'),
+            detail: sh.servername || '',
+            time: formatTimeAgo(issuedTs)
+          });
+        }
+      }
+    }
+  }
+  if (lastLoginIP) {
+    activity.push({
+      icon: 'ri-login-box-line',
+      action: t('Login'),
+      detail: t('from IP {0}', lastLoginIP),
+      time: t('Current session')
+    });
+  }
+  if (domainList) {
+    var domainCount = 1 + (domainList.addon_domains ? domainList.addon_domains.length : 0)
+      + (domainList.sub_domains ? domainList.sub_domains.length : 0)
+      + (domainList.parked_domains ? domainList.parked_domains.length : 0);
+    activity.push({
+      icon: 'ri-global-line',
+      action: t('Domains on account'),
+      detail: domainCount + ' ' + t('domains'),
+      time: ''
+    });
+  }
+
+  return { userName: userName, disk: disk, bandwidth: bandwidth, health: health, quickActions: quickActions, activity: activity };
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// Live Data Loader
+// ══════════════════════════════════════════════════════════════
+
+async function loadLiveData() {
+  const results = await Promise.allSettled([
+    DashboardAPI.getResourceUsage(),     // 0
+    CpanelAPI.getUserInfo(),             // 1
+    CpanelAPI.getSSLHosts(),             // 2
+    CpanelAPI.getLastLoginIP(),          // 3
+    CpanelAPI.getNotificationCount(),    // 4
+    CpanelAPI.getDomainList(),           // 5 — used for accurate domain count
+    CpanelAPI.getModSecDomains(),        // 6 — WAF status for health
+    CpanelAPI.get2FAStatus(),            // 7 — 2FA status for health
+    DashboardAPI.getLastBackupDate(),    // 8 — last backup for health
+    DashboardAPI.getServerInfo(),        // 9 — cPanel version + PHP for health
+  ]);
+
+  const [resUsage, resUser, resSSL, resLogin, resNotif, resDomains, resModSec, res2FA, resBackup, resServerInfo] = results;
+
+  // Get ResourceUsage items (pass to shared helpers to avoid duplicate API calls)
+  const resourceUsageItems = resUsage.status === 'fulfilled' ? resUsage.value : [];
+
+  // Use shared CpanelAPI helpers for disk/bandwidth with cascading fallbacks
+  const [diskData, bwData] = await Promise.all([
+    CpanelAPI.getDiskUsage(resourceUsageItems).catch(() => null),
+    CpanelAPI.getBandwidthUsage(resourceUsageItems).catch(() => null)
+  ]);
+
+  // 1. User Info → greeting
+  var userInfo = resUser.status === 'fulfilled' ? resUser.value : null;
+  if (userInfo) {
+    // Update header avatar initials
+    const avatar = document.querySelector('.header-avatar');
+    if (avatar && userInfo.user) {
+      const initials = userInfo.user.substring(0, 2).toUpperCase();
+      avatar.textContent = initials;
+      avatar.setAttribute('aria-label', t('Account settings for {0}', userInfo.user));
+    }
+  }
+
+  // 2. Notifications → update header badge
+  if (resNotif.status === 'fulfilled') {
+    const count = resNotif.value;
+    const headerEl = document.querySelector('meridian-header');
+    if (headerEl && count > 0) {
+      headerEl.setAttribute('notification-badge', '');
+    } else if (headerEl && count === 0) {
+      headerEl.removeAttribute('notification-badge');
+    }
+  }
+
+  // 3. Build command center data and render
+  var dashData = buildDashboardData(
+    diskData,
+    bwData,
+    userInfo,
+    resSSL.status === 'fulfilled' ? resSSL.value : null,
+    resLogin.status === 'fulfilled' ? resLogin.value : null,
+    resDomains.status === 'fulfilled' ? resDomains.value : null,
+    resModSec.status === 'fulfilled' ? resModSec.value : null,
+    res2FA.status === 'fulfilled' ? res2FA.value : null,
+    resBackup.status === 'fulfilled' ? resBackup.value : null,
+    resServerInfo.status === 'fulfilled' ? resServerInfo.value : null
+  );
+
+  renderActive(dashData);
+
+  // Update greeting with real user name
+  var firstName = dashData.userName ? dashData.userName.split(' ')[0] : '';
+  if (firstName) {
+    var titleEl = document.getElementById('greetingTitle');
+    if (titleEl) titleEl.textContent = getGreeting() + ', ' + firstName;
+  }
+}
+
+function formatTimeAgo(timestamp) {
+  const diff = Date.now() - timestamp;
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  if (hours < 1) return t('Just now');
+  if (hours < 24) return t('{n} hour ago | {n} hours ago', {n: hours});
+  const days = Math.floor(hours / 24);
+  if (days === 1) return t('Yesterday');
+  return t('{n} days ago', {n: days});
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// Init
+// ══════════════════════════════════════════════════════════════
+
+async function init() {
+  try {
+    await loadLiveData();
+  } catch (err) {
+    console.error('Failed to load dashboard data:', err);
+    // Render with fallback data so the page isn't blank
+    renderActive({
+      userName: 'User',
+      disk: { used: '--', max: '--', pct: 0 },
+      bandwidth: { used: '--', max: '--', pct: 0 },
+      health: [
+        { icon: 'ri-lock-line', bg: 'var(--bg-muted)', color: 'var(--text-tertiary)', label: t('SSL Certificates'), value: '--' },
+        { icon: 'ri-shield-flash-line', bg: 'var(--bg-muted)', color: 'var(--text-tertiary)', label: t('WAF'), value: '--' },
+        { icon: 'ri-smartphone-line', bg: 'var(--bg-muted)', color: 'var(--text-tertiary)', label: t('2FA'), value: '--' },
+        { icon: 'ri-code-s-slash-line', bg: 'var(--bg-muted)', color: 'var(--text-tertiary)', label: t('PHP'), value: '--' },
+        { icon: 'ri-archive-line', bg: 'var(--bg-muted)', color: 'var(--text-tertiary)', label: t('Last Backup'), value: '--' },
+        { icon: 'ri-server-line', bg: 'var(--bg-muted)', color: 'var(--text-tertiary)', label: 'cPanel', value: '--' }
+      ],
+      quickActions: [
+        { label: t('Create Email'), icon: 'ri-mail-add-line', href: 'email/' },
+        { label: t('Add Website'), icon: 'ri-global-line', href: 'websites/' },
+        { label: t('Upload Files'), icon: 'ri-upload-cloud-2-line', href: 'files/' },
+        { label: t('Create Backup'), icon: 'ri-archive-line', href: 'files/' },
+        { label: t('View Performance'), icon: 'ri-speed-line', href: 'performance/' }
+      ],
+      activity: []
+    });
+    document.getElementById('greetingTitle').textContent = getGreeting();
+  }
+}
+
+init();
+
+
+// ══════════════════════════════════════════════════════════════
+// Dashboard View Toggle (Modern / Classic)
+// ══════════════════════════════════════════════════════════════
+
+function setDashboardView(view) {
+  var active = document.getElementById('activeContent');
+  var classicSearch = document.getElementById('classicSearch');
+  var classicGrid = document.getElementById('classicGrid');
+  var viewToggle = document.getElementById('viewToggle');
+
+  localStorage.setItem(CpanelAPI.userKey('meridian-dashboard-mode'), view);
+
+  if (view === 'classic') {
+    active.style.display = 'none';
+    classicSearch.style.display = '';
+    classicGrid.style.display = '';
+    if (!classicGrid.dataset.rendered) renderClassicGrid();
+  } else {
+    active.style.display = '';
+    classicSearch.style.display = 'none';
+    classicGrid.style.display = 'none';
+  }
+
+  viewToggle.querySelectorAll('.view-toggle-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.view === view);
+  });
+}
+
+document.getElementById('viewToggle').addEventListener('click', function(e) {
+  var btn = e.target.closest('.view-toggle-btn');
+  if (!btn) return;
+  setDashboardView(btn.dataset.view);
+});
+
+// Init view — default to modern unless user previously chose classic
+var savedView = localStorage.getItem(CpanelAPI.userKey('meridian-dashboard-mode')) || 'modern';
+// Treat 'getting-started' and any legacy values as 'modern'
+if (savedView !== 'classic') savedView = 'modern';
+setDashboardView(savedView);
+
+
+// ══════════════════════════════════════════════════════════════
+// Classic Grid (power user mode)
+// ══════════════════════════════════════════════════════════════
+
+function renderClassicGrid() {
+  var grid = document.getElementById('classicGrid');
+  if (!grid) return;
+  grid.dataset.rendered = 'true';
+  var _h = typeof meridianHref === 'function' ? meridianHref : function(p) { return p + '/'; };
+  var TOOLS = [
+    { category: 'Websites & Domains', items: [
+      { name: 'Manage Websites', desc: 'View and manage all your domains', icon: 'ri-global-line', href: _h('websites') },
+      { name: 'DNS Zone Editor', desc: 'Add and manage DNS records', icon: 'ri-dns-line', href: _h('websites') },
+      { name: 'Redirects', desc: 'Set up URL redirects', icon: 'ri-links-line', href: _h('websites') },
+      { name: 'Install WordPress', desc: 'One-click WordPress install', icon: 'ri-wordpress-line', href: _h('websites') }
+    ]},
+    { category: 'Email', items: [
+      { name: 'Email Accounts', desc: 'Create and manage email accounts', icon: 'ri-mail-line', href: _h('email') },
+      { name: 'Forwarders', desc: 'Forward email to another address', icon: 'ri-corner-up-right-line', href: _h('email') },
+      { name: 'Autoresponders', desc: 'Set up automatic replies', icon: 'ri-reply-line', href: _h('email') },
+      { name: 'Spam Filters', desc: 'Configure spam protection', icon: 'ri-spam-line', href: _h('email') },
+      { name: 'Webmail', desc: 'Access webmail client', icon: 'ri-mail-open-line', href: _h('email') }
+    ]},
+    { category: 'Files & Storage', items: [
+      { name: 'File Manager', desc: 'Browse, upload, edit files', icon: 'ri-folder-open-line', href: _h('files') },
+      { name: 'Disk Usage', desc: 'Storage breakdown by directory', icon: 'ri-pie-chart-2-line', href: _h('files') },
+      { name: 'FTP Accounts', desc: 'Create and manage FTP access', icon: 'ri-upload-cloud-2-line', href: _h('files') },
+      { name: 'Backup / Restore', desc: 'Create, download, restore backups', icon: 'ri-archive-line', href: _h('files') }
+    ]},
+    { category: 'Databases', items: [
+      { name: 'MySQL Databases', desc: 'Create and manage databases', icon: 'ri-database-2-line', href: _h('databases') },
+      { name: 'MySQL Users', desc: 'Manage database user accounts', icon: 'ri-user-line', href: _h('databases') },
+      { name: 'PostgreSQL', desc: 'PostgreSQL database management', icon: 'ri-database-line', href: _h('databases') },
+      { name: 'phpMyAdmin', desc: 'Direct database administration', icon: 'ri-external-link-line', href: _h('databases') },
+      { name: 'Remote MySQL', desc: 'Configure remote database access', icon: 'ri-link-line', href: _h('databases') }
+    ]},
+    { category: 'Security', items: [
+      { name: 'SSL/TLS Certificates', desc: 'Manage SSL certificates', icon: 'ri-lock-line', href: _h('security') },
+      { name: 'ModSecurity / WAF', desc: 'Web Application Firewall', icon: 'ri-shield-flash-line', href: _h('security') },
+      { name: 'IP Blocker', desc: 'Block IP addresses', icon: 'ri-forbid-line', href: _h('security') },
+      { name: 'SSH Access', desc: 'SSH key management', icon: 'ri-terminal-box-line', href: _h('security') },
+      { name: 'Two-Factor Auth', desc: 'Enable 2FA for your account', icon: 'ri-smartphone-line', href: _h('security') },
+      { name: 'API Tokens', desc: 'Manage API authentication tokens', icon: 'ri-key-line', href: _h('security') }
+    ]},
+    { category: 'Developer Tools', items: [
+      { name: 'Cron Jobs', desc: 'Schedule automated tasks', icon: 'ri-time-line', href: '#' },
+      { name: 'Git Version Control', desc: 'Manage Git repositories', icon: 'ri-git-branch-line', href: '#' },
+      { name: 'Error Logs', desc: 'View and filter error logs', icon: 'ri-bug-line', href: '#' },
+      { name: 'MIME Types', desc: 'Configure file type handling', icon: 'ri-file-settings-line', href: '#' },
+      { name: 'Apache Handlers', desc: 'Configure server handlers', icon: 'ri-settings-4-line', href: '#' }
+    ]},
+    { category: 'Performance & Monitoring', items: [
+      { name: 'Resource Usage', desc: 'Disk, bandwidth, resource limits', icon: 'ri-bar-chart-line', href: _h('performance') },
+      { name: 'Visitors / AWStats', desc: 'Website visitor analytics', icon: 'ri-line-chart-line', href: _h('performance') },
+      { name: 'Error Logs', desc: 'Apache and PHP error logs', icon: 'ri-bug-line', href: _h('performance') }
+    ]},
+    { category: 'Other', items: [
+      { name: 'Hotlink Protection', desc: 'Prevent direct linking to files', icon: 'ri-shield-cross-line', href: '#' },
+      { name: 'Raw Access Logs', desc: 'Download raw Apache logs', icon: 'ri-file-list-3-line', href: '#' }
+    ]}
+  ];
+
+  renderToolGrid('');
+
+  var searchInput = document.getElementById('classicToolSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      renderToolGrid(this.value);
+    });
+  }
+
+  function renderToolGrid(query) {
+    var q = (query || '').toLowerCase().trim();
+    var html = '';
+    var anyVisible = false;
+
+    for (var c = 0; c < TOOLS.length; c++) {
+      var cat = TOOLS[c];
+      var itemsHtml = '';
+      var visibleCount = 0;
+
+      for (var i = 0; i < cat.items.length; i++) {
+        var tool = cat.items[i];
+        if (q && tool.name.toLowerCase().indexOf(q) === -1 && tool.desc.toLowerCase().indexOf(q) === -1) continue;
+        visibleCount++;
+        itemsHtml += '<a class="tool-card" href="' + tool.href + '">'
+          + '<div class="tool-icon"><i class="' + tool.icon + '" aria-hidden="true"></i></div>'
+          + '<div class="tool-info">'
+          + '<div class="tool-name">' + esc(tool.name) + '</div>'
+          + '<div class="tool-desc">' + esc(tool.desc) + '</div>'
+          + '</div></a>';
+      }
+
+      if (visibleCount > 0) {
+        anyVisible = true;
+        html += '<div class="category-section">'
+          + '<div class="category-title">' + esc(cat.category) + '</div>'
+          + '<div class="tool-grid">' + itemsHtml + '</div>'
+          + '</div>';
+      }
+    }
+
+    if (!anyVisible) {
+      html = '<div style="text-align:center;padding:var(--space-10);color:var(--text-tertiary);font-size:var(--text-sm);">'
+        + '<i class="ri-search-line" style="font-size:2rem;display:block;margin-bottom:var(--space-3);opacity:0.5;" aria-hidden="true"></i>'
+        + 'No tools match your search</div>';
+    }
+
+    grid.innerHTML = html;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// Static HTML i18n — translate [data-t] elements via t()
+// ══════════════════════════════════════════════════════════════
+document.querySelectorAll('[data-t]').forEach(function(el) {
+  var text = el.textContent.trim();
+  if (text) el.textContent = t(text);
+});
+
+// ── Onboarding checklist ──
+function getChecklistState() {
+  try { return JSON.parse(localStorage.getItem(CpanelAPI.userKey('meridian-onboarding-milestones'))) || {}; } catch(e) { return {}; }
+}
+
+function saveChecklistState(state) {
+  localStorage.setItem(CpanelAPI.userKey('meridian-onboarding-milestones'), JSON.stringify(state));
+}
+
+function updateChecklistUI() {
+  var state = getChecklistState();
+  var milestones = ['website', 'email', 'ssl', 'explored'];
+  var completed = 0;
+  milestones.forEach(function(key) {
+    var el = document.getElementById('cl-' + key);
+    if (!el) return;
+    if (state[key]) {
+      completed++;
+      el.classList.add('checklist-item-completed');
+      el.querySelector('.checklist-num i').className = 'ri-checkbox-circle-fill';
+      el.querySelector('.checklist-num i').style.color = 'var(--status-success)';
+    }
+  });
+
+  var displayCompleted = Math.max(completed, 1);
+  var ring = document.getElementById('checklistRingFill');
+  var label = document.getElementById('checklistRingLabel');
+  var ringEl = ring ? ring.closest('.setup-ring') : null;
+  if (ring) ring.style.strokeDashoffset = (94.25 - (displayCompleted / 4) * 94.25).toFixed(2);
+  if (label) label.textContent = displayCompleted + '/4';
+  if (ringEl) { ringEl.setAttribute('aria-valuenow', displayCompleted); ringEl.setAttribute('aria-label', t('Onboarding progress')); }
+}
+
+function showChecklistIfNeeded() {
+  if (localStorage.getItem(CpanelAPI.userKey('meridian-onboarding-complete')) !== 'true') return;
+  if (localStorage.getItem(CpanelAPI.userKey('meridian-checklist-dismissed')) === 'true') return;
+  // Only show if milestone data exists (won't show for users who completed onboarding before this feature)
+  if (!localStorage.getItem(CpanelAPI.userKey('meridian-onboarding-milestones'))) return;
+  var el = document.getElementById('onboardingChecklist');
+  if (el) el.style.display = '';
+  var restoreBtn = document.getElementById('checklistRestoreBtn');
+  if (restoreBtn) restoreBtn.style.display = 'none';
+  updateChecklistUI();
+
+  var state = getChecklistState();
+  if (!state.explored) {
+    setTimeout(function() {
+      state.explored = true;
+      saveChecklistState(state);
+      updateChecklistUI();
+    }, 30000);
+  }
+}
+
+function dismissChecklist() {
+  localStorage.setItem(CpanelAPI.userKey('meridian-checklist-dismissed'), 'true');
+  var el = document.getElementById('onboardingChecklist');
+  if (el) el.style.display = 'none';
+  var restoreBtn = document.getElementById('checklistRestoreBtn');
+  if (restoreBtn) restoreBtn.style.display = '';
+}
+
+function restoreChecklist() {
+  localStorage.removeItem(CpanelAPI.userKey('meridian-checklist-dismissed'));
+  showChecklistIfNeeded();
+}
+
+async function restartDashboardOnboarding() {
+  localStorage.removeItem(CpanelAPI.userKey('meridian-onboarding-complete'));
+  if (typeof CpanelAPI !== 'undefined' && CpanelAPI.isInsideCpanel()) {
+    try { await CpanelAPI.setPersonalization({ meridian_onboarding_complete: '' }); } catch (e) {}
+  }
+  window.location.href = '../onboarding/';
+}
+
+showChecklistIfNeeded();
+</script>
+[% END %]

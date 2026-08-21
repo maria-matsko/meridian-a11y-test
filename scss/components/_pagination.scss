@@ -1,0 +1,58 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ─────────────────────────────────────────────────────────────
+// Pagination — table navigation controls with page buttons,
+// info text, and per-page select.
+// ─────────────────────────────────────────────────────────────
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+
+  &:empty { display: none; }
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.pagination-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  transition: background var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out);
+
+  &:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-primary); }
+  &:disabled { opacity: 0.35; cursor: default; }
+  &.active { background: var(--accent-muted); color: var(--text-brand); border-color: var(--accent-muted); }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .pagination { flex-direction: column; gap: var(--space-3); }
+}

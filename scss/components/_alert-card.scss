@@ -1,0 +1,23 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ─────────────────────────────────────────────────────────────
+// Alert Card — contextual alert banners with icon, text, and
+// optional action button. Variants: warn, error, info.
+// ─────────────────────────────────────────────────────────────
+
+.alert-card {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: 14px 18px; border-radius: var(--radius-lg);
+  margin-bottom: var(--space-2);
+}
+.alert-card.warn { background: var(--status-warning-bg); border: 1px solid rgba(251,191,36,0.15); }
+.alert-card.error { background: var(--status-error-bg); border: 1px solid rgba(251,113,133,0.15); }
+.alert-card.info { background: var(--accent-subtle); border: 1px solid rgba(249,115,22,0.1); }
+.alert-icon { font-size: 1.1rem; flex-shrink: 0; }
+.alert-text { flex: 1; }
+.alert-title { font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.alert-desc { font-size: var(--text-xs); color: var(--text-secondary); margin-top: 1px; }
+.alert-action { flex-shrink: 0; }

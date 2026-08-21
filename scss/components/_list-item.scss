@@ -1,0 +1,61 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ─────────────────────────────────────────────────────────────
+// List Item — bordered row with icon, text, and action buttons.
+// Used for forwarders, filters, SSH keys, etc.
+// ─────────────────────────────────────────────────────────────
+
+.list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+  transition: background var(--duration-fast) var(--ease-out);
+
+  &:hover { background: var(--bg-hover); }
+}
+
+.list-item-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.list-item-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+}
+
+.list-item-text {
+  font-size: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-item-sub {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.list-item-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}

@@ -1,0 +1,56 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ─────────────────────────────────────────────────────────────
+// Metrics — performance metric cards with labels, values,
+// detail text, and progress bars.
+// ─────────────────────────────────────────────────────────────
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+.metric-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+.metric-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-2);
+}
+.metric-value {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+}
+.metric-detail {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
+}
+.metric-bar {
+  height: 6px;
+  background: var(--bg-muted);
+  border-radius: var(--radius-full);
+  margin-top: var(--space-3);
+  overflow: hidden;
+}
+.metric-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  transition: width var(--duration-normal) var(--ease-out);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .metrics-grid { grid-template-columns: 1fr; }
+}

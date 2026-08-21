@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html data-theme="dark" dir="ltr" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meridian Sidebar — Stencil PoC</title>
+
+  <!-- Meridian tokens (compiled from scss/meridian.scss, or inline for PoC) -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
+  <style>
+    /* Meridian tokens — in production these come from meridian.css */
+    :root {
+      --font-display: 'Instrument Serif', Georgia, serif;
+      --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+      --text-xs: 0.75rem;
+      --text-sm: 0.8125rem;
+      --text-base: 0.9375rem;
+      --text-md: 1.0625rem;
+      --text-lg: 1.25rem;
+      --text-xl: 1.5rem;
+      --text-2xl: 2rem;
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --radius-md: 10px;
+      --radius-full: 9999px;
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-fast: 180ms;
+      --duration-normal: 280ms;
+      --duration-slow: 420ms;
+      --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+      --weight-regular: 400;
+      --weight-medium: 500;
+      --weight-semibold: 600;
+      --weight-bold: 700;
+      --tracking-widest: 0.08em;
+      --sidebar-width: 260px;
+      --sidebar-collapsed: 68px;
+      --header-height: 60px;
+      --z-sticky: 200;
+    }
+    [data-theme="dark"] {
+      --bg-root: #020617;
+      --bg-surface: #0f172a;
+      --bg-raised: #172033;
+      --bg-overlay: #1e293b;
+      --bg-hover: rgba(255,255,255,0.06);
+      --border-subtle: rgba(255,255,255,0.06);
+      --border-default: rgba(255,255,255,0.1);
+      --border-focus: #f97316;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-tertiary: #64748b;
+      --text-brand: #fb923c;
+      --accent: #f97316;
+      --accent-hover: #fb923c;
+      --accent-muted: rgba(249,115,22,0.15);
+      --accent-text: #ffffff;
+    }
+    [data-theme="light"] {
+      --bg-root: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-raised: #ffffff;
+      --bg-overlay: #f1f5f9;
+      --bg-hover: rgba(0,0,0,0.04);
+      --border-subtle: rgba(0,0,0,0.05);
+      --border-default: rgba(0,0,0,0.1);
+      --border-focus: #f97316;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-tertiary: #94a3b8;
+      --text-brand: #ea580c;
+      --accent: #ea580c;
+      --accent-hover: #f97316;
+      --accent-muted: rgba(234,88,12,0.12);
+      --accent-text: #ffffff;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-root);
+      color: var(--text-primary);
+      display: flex;
+      height: 100vh;
+      transition: background var(--duration-slow) var(--ease-smooth),
+                  color var(--duration-slow) var(--ease-smooth);
+    }
+    .demo-main {
+      flex: 1;
+      padding: var(--space-8);
+      overflow-y: auto;
+    }
+    .demo-main h1 {
+      font-family: var(--font-display);
+      font-size: var(--text-2xl);
+      margin-bottom: var(--space-4);
+    }
+    .demo-main p {
+      color: var(--text-secondary);
+      font-size: var(--text-base);
+      max-width: 60ch;
+      line-height: 1.6;
+      margin-bottom: var(--space-4);
+    }
+    .demo-controls {
+      display: flex;
+      gap: var(--space-3);
+      margin-bottom: var(--space-6);
+    }
+    .demo-controls button {
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      font-weight: var(--weight-semibold);
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-default);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: background var(--duration-fast) var(--ease-out);
+    }
+    .demo-controls button:hover { background: var(--bg-hover); }
+    .event-log {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      color: var(--text-secondary);
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .event-log p { margin-bottom: var(--space-1); max-width: none; }
+  </style>
+</head>
+<body>
+  <meridian-sidebar id="sidebar"></meridian-sidebar>
+
+  <div class="demo-main">
+    <h1>Meridian Sidebar PoC</h1>
+    <p>
+      This page demonstrates the <code>&lt;meridian-sidebar&gt;</code> Stencil web component
+      consuming Meridian design tokens through CSS custom properties. Tokens defined on
+      <code>:root</code> inherit into the shadow DOM, enabling consistent theming.
+    </p>
+
+    <div class="demo-controls">
+      <button onclick="toggleTheme()">Toggle Theme</button>
+      <button onclick="toggleCollapse()">Toggle Collapse</button>
+      <button onclick="toggleDir()">Toggle RTL</button>
+    </div>
+
+    <h2 style="font-size: var(--text-lg); margin-bottom: var(--space-3);">Event Log</h2>
+    <div class="event-log" id="log">
+      <p>Waiting for events...</p>
+    </div>
+  </div>
+
+  <script>
+    // ── Vanilla custom element that mirrors the Stencil component API ──
+    // This lets the demo work without a Stencil build. The production
+    // component (meridian-sidebar.tsx) is the real implementation.
+    class MeridianSidebarDemo extends HTMLElement {
+      static get observedAttributes() {
+        return ['sections', 'active-item', 'collapsed'];
+      }
+
+      constructor() {
+        super();
+        this._sections = [];
+        this._activeItem = null;
+        this._collapsed = false;
+        this.attachShadow({ mode: 'open' });
+      }
+
+      connectedCallback() { this._render(); }
+
+      attributeChangedCallback(name, _old, val) {
+        if (name === 'sections') {
+          try { this._sections = JSON.parse(val); } catch { this._sections = []; }
+        } else if (name === 'active-item') {
+          this._activeItem = val;
+        } else if (name === 'collapsed') {
+          this._collapsed = val !== null && val !== 'false';
+        }
+        this._render();
+      }
+
+      get sections() { return this._sections; }
+      set sections(v) {
+        if (typeof v === 'string') {
+          try { this._sections = JSON.parse(v); } catch { this._sections = []; }
+        } else {
+          this._sections = v;
+        }
+        this._render();
+      }
+
+      get activeItem() { return this._activeItem; }
+      set activeItem(v) { this._activeItem = v; this._render(); }
+
+      get collapsed() { return this._collapsed; }
+      set collapsed(v) {
+        this._collapsed = !!v;
+        this._render();
+        this.dispatchEvent(new CustomEvent('collapseChanged', { detail: this._collapsed }));
+      }
+
+      _handleItemClick(item) {
+        this._activeItem = item.id;
+        this._render();
+        this.dispatchEvent(new CustomEvent('navItemSelected', { detail: item }));
+      }
+
+      _toggleCollapse() {
+        this.collapsed = !this._collapsed;
+      }
+
+      _render() {
+        const c = this._collapsed;
+        const styles = `
+          <style>
+            :host { display: block; font-family: var(--font-body, 'Plus Jakarta Sans', system-ui, sans-serif); color: var(--text-primary, #f1f5f9); }
+            .sidebar { display: flex; flex-direction: column; width: var(--sidebar-width, 260px); height: 100%; background: var(--bg-surface, #0f172a); border-inline-end: 1px solid var(--border-subtle, rgba(255,255,255,0.06)); transition: width var(--duration-normal, 280ms) var(--ease-out, cubic-bezier(0.16,1,0.3,1)); overflow: hidden; }
+            .sidebar--collapsed { width: var(--sidebar-collapsed, 68px); }
+            .sidebar__header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-4, 1rem) var(--space-3, 0.75rem); border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.06)); min-height: var(--header-height, 60px); }
+            .sidebar__brand { font-family: var(--font-display, 'Instrument Serif', Georgia, serif); font-size: var(--text-xl, 1.5rem); font-weight: var(--weight-regular, 400); color: var(--text-brand, #fb923c); white-space: nowrap; overflow: hidden; }
+            .sidebar__collapse-btn { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: none; border-radius: var(--radius-md, 10px); background: transparent; color: var(--text-secondary, #94a3b8); cursor: pointer; transition: background var(--duration-fast, 180ms) var(--ease-out), color var(--duration-fast, 180ms) var(--ease-out); flex-shrink: 0; }
+            .sidebar__collapse-btn:hover { background: var(--bg-hover, rgba(255,255,255,0.06)); color: var(--text-primary, #f1f5f9); }
+            .sidebar__collapse-btn:focus-visible { outline: 2px solid var(--border-focus, #f97316); outline-offset: 2px; }
+            .sidebar__collapse-btn i { font-size: 1.25rem; }
+            .sidebar--collapsed .sidebar__collapse-btn { margin: 0 auto; }
+            .sidebar__content { flex: 1; overflow-y: auto; padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem); }
+            .sidebar__section + .sidebar__section { margin-top: var(--space-4, 1rem); }
+            .sidebar__section-title { font-size: var(--text-xs, 0.75rem); font-weight: var(--weight-semibold, 600); letter-spacing: var(--tracking-widest, 0.08em); text-transform: uppercase; color: var(--text-tertiary, #64748b); padding: var(--space-4, 1rem) var(--space-4, 1rem) var(--space-2, 0.5rem); white-space: nowrap; overflow: hidden; }
+            .sidebar__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-1, 0.25rem); }
+            .sidebar__item { display: flex; align-items: center; gap: var(--space-3, 0.75rem); width: 100%; padding: var(--space-3, 0.75rem) var(--space-4, 1rem); border: none; border-radius: var(--radius-md, 10px); background: transparent; color: var(--text-secondary, #94a3b8); font-family: inherit; font-size: var(--text-sm, 0.8125rem); font-weight: var(--weight-medium, 500); cursor: pointer; text-align: start; white-space: nowrap; transition: background var(--duration-fast, 180ms) var(--ease-out), color var(--duration-fast, 180ms) var(--ease-out); min-height: 44px; }
+            .sidebar__item:hover { background: var(--bg-hover, rgba(255,255,255,0.06)); color: var(--text-primary, #f1f5f9); }
+            .sidebar__item:focus-visible { outline: 2px solid var(--border-focus, #f97316); outline-offset: -2px; }
+            .sidebar__item--active { background: var(--accent-muted, rgba(249,115,22,0.15)); color: var(--text-brand, #fb923c); }
+            .sidebar__item i { font-size: 1.15rem; width: 20px; text-align: center; flex-shrink: 0; }
+            .sidebar--collapsed .sidebar__item { justify-content: center; padding: var(--space-3, 0.75rem); }
+            .sidebar--collapsed .sidebar__item i { font-size: 1.25rem; }
+            .sidebar__item-label { overflow: hidden; text-overflow: ellipsis; }
+            .sidebar__item-badge { margin-inline-start: auto; font-size: var(--text-xs, 0.75rem); font-weight: var(--weight-semibold, 600); padding: 2px var(--space-2, 0.5rem); border-radius: var(--radius-full, 9999px); background: var(--accent-muted, rgba(249,115,22,0.15)); color: var(--text-brand, #fb923c); line-height: 1.4; }
+            .sidebar__footer { padding: var(--space-3, 0.75rem); border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.06)); }
+          </style>
+        `;
+
+        const sectionsHTML = this._sections.map(section => `
+          <div class="sidebar__section">
+            ${!c ? `<div class="sidebar__section-title">${section.title}</div>` : ''}
+            <ul class="sidebar__list" role="list">
+              ${section.items.map(item => `
+                <li role="listitem">
+                  <button
+                    type="button"
+                    class="sidebar__item ${this._activeItem === item.id ? 'sidebar__item--active' : ''}"
+                    data-item-id="${item.id}"
+                    ${this._activeItem === item.id ? 'aria-current="page"' : ''}
+                    ${c ? `title="${item.label}"` : ''}
+                  >
+                    <i class="${item.icon}" aria-hidden="true"></i>
+                    ${!c ? `<span class="sidebar__item-label">${item.label}</span>` : ''}
+                    ${!c && item.badge ? `<span class="sidebar__item-badge">${item.badge}</span>` : ''}
+                  </button>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        `).join('');
+
+        this.shadowRoot.innerHTML = `
+          ${styles}
+          <nav class="sidebar ${c ? 'sidebar--collapsed' : ''}" aria-label="Main navigation">
+            <div class="sidebar__header">
+              ${!c ? '<span class="sidebar__brand">cPanel</span>' : ''}
+              <button type="button" class="sidebar__collapse-btn"
+                aria-label="${c ? 'Expand sidebar' : 'Collapse sidebar'}"
+                aria-expanded="${!c}">
+                <i class="${c ? 'ri-menu-unfold-line' : 'ri-menu-fold-line'}" aria-hidden="true"></i>
+              </button>
+            </div>
+            <div class="sidebar__content">${sectionsHTML}</div>
+            <div class="sidebar__footer"><slot name="footer"></slot></div>
+          </nav>
+        `;
+
+        // Bind click handlers after render
+        this.shadowRoot.querySelector('.sidebar__collapse-btn')
+          ?.addEventListener('click', () => this._toggleCollapse());
+
+        this.shadowRoot.querySelectorAll('.sidebar__item').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.dataset.itemId;
+            const item = this._sections.flatMap(s => s.items).find(i => i.id === id);
+            if (item) this._handleItemClick(item);
+          });
+        });
+      }
+    }
+
+    customElements.define('meridian-sidebar', MeridianSidebarDemo);
+
+    // ── Demo setup ──
+    const sidebar = document.getElementById('sidebar');
+    const log = document.getElementById('log');
+
+    sidebar.sections = [
+      {
+        title: 'Websites',
+        items: [
+          { id: 'domains', label: 'Manage Domains', icon: 'ri-global-line', badge: '3' },
+          { id: 'ssl', label: 'SSL/TLS', icon: 'ri-shield-check-line' },
+          { id: 'redirects', label: 'Redirects', icon: 'ri-links-line' },
+        ],
+      },
+      {
+        title: 'Email',
+        items: [
+          { id: 'accounts', label: 'Email Accounts', icon: 'ri-mail-line', badge: '12' },
+          { id: 'forwarders', label: 'Forwarders', icon: 'ri-mail-send-line' },
+          { id: 'filters', label: 'Email Filters', icon: 'ri-filter-3-line' },
+          { id: 'deliverability', label: 'Deliverability', icon: 'ri-mail-check-line' },
+        ],
+      },
+      {
+        title: 'Files',
+        items: [
+          { id: 'filemanager', label: 'File Manager', icon: 'ri-folder-line' },
+          { id: 'backups', label: 'Backups', icon: 'ri-archive-line' },
+          { id: 'ftp', label: 'FTP Accounts', icon: 'ri-upload-cloud-line' },
+        ],
+      },
+      {
+        title: 'Databases',
+        items: [
+          { id: 'mysql', label: 'MySQL Databases', icon: 'ri-database-2-line' },
+          { id: 'phpmyadmin', label: 'phpMyAdmin', icon: 'ri-table-line' },
+        ],
+      },
+    ];
+
+    sidebar.activeItem = 'domains';
+
+    // Listen for events
+    sidebar.addEventListener('navItemSelected', (e) => {
+      const item = e.detail;
+      const p = document.createElement('p');
+      p.textContent = `navItemSelected: ${item.label} (${item.id})`;
+      log.prepend(p);
+    });
+
+    sidebar.addEventListener('collapseChanged', (e) => {
+      const p = document.createElement('p');
+      p.textContent = `collapseChanged: ${e.detail ? 'collapsed' : 'expanded'}`;
+      log.prepend(p);
+    });
+
+    // Demo controls
+    function toggleTheme() {
+      const html = document.documentElement;
+      html.dataset.theme = html.dataset.theme === 'dark' ? 'light' : 'dark';
+    }
+
+    function toggleCollapse() {
+      sidebar.collapsed = !sidebar.collapsed;
+    }
+
+    function toggleDir() {
+      const html = document.documentElement;
+      html.dir = html.dir === 'rtl' ? 'ltr' : 'rtl';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "apiversion": 3,
+  "module": "Sitejet",
+  "func": "get_sso_link",
+  "result": {
+    "status": 1,
+    "data": {"url": "https://app.sitejet.io/sso?token=mock123"},
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

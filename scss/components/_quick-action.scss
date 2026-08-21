@@ -1,0 +1,48 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// Quick Action — compact inline action item.
+
+.quick-action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+  text-decoration: none;
+  color: inherit;
+  background: none;
+  border: none;
+  font-family: inherit;
+  width: 100%;
+  text-align: start;
+  min-height: 44px;
+
+  &:hover { background: var(--bg-hover); }
+
+  i { color: var(--text-tertiary); font-size: 1.1rem; }
+  span { font-size: var(--text-sm); font-weight: var(--weight-medium); }
+
+  .qa-arrow {
+    margin-inline-start: auto;
+    color: var(--text-tertiary);
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: opacity var(--duration-fast) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out);
+  }
+
+  &:hover .qa-arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+[dir="rtl"] .quick-action {
+  .qa-arrow { transform: scaleX(-1) translateX(-4px); }
+  &:hover .qa-arrow { transform: scaleX(-1) translateX(0); }
+}

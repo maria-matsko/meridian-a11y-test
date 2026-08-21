@@ -1,0 +1,26 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// Z-index scale — predictable stacking order.
+
+$z-base: 0;
+$z-dropdown: 100;
+$z-sticky: 200;
+$z-overlay: 300;
+$z-modal: 400;
+$z-popover: 500;
+$z-toast: 600;
+$z-max: 9999;
+
+@mixin z-index-tokens {
+  --z-base: #{$z-base};
+  --z-dropdown: #{$z-dropdown};
+  --z-sticky: #{$z-sticky};
+  --z-overlay: #{$z-overlay};
+  --z-modal: #{$z-modal};
+  --z-popover: #{$z-popover};
+  --z-toast: #{$z-toast};
+  --z-max: #{$z-max};
+}

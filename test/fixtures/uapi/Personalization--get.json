@@ -1,0 +1,13 @@
+{
+  "apiversion": 3,
+  "module": "Personalization",
+  "func": "get",
+  "result": {
+    "status": 1,
+    "data": {"personalization": {"meridian_theme": {"value": "light", "success": 1, "reason": "OK"}, "meridian-sidebar-mode": {"value": "expanded", "success": 1, "reason": "OK"}}},
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

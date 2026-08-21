@@ -1,0 +1,13 @@
+{
+  "apiversion": 3,
+  "module": "Email",
+  "func": "list_mail_domains",
+  "result": {
+    "status": 1,
+    "data": ["example.com", "shop.example.net"],
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

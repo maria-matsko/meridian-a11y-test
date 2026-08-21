@@ -1,0 +1,109 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ── Setup Progress ──
+// Compact inline progress indicator showing milestone completion via
+// a circular SVG ring, text summary, and dot indicators. Designed to
+// sit above primary content without consuming significant vertical
+// space — keeps the actionable content above the fold.
+//
+// Markup contract:
+//   .setup-progress
+//     .setup-ring                       ← SVG circle progress ring
+//       svg > circle.setup-ring-track
+//       svg > circle.setup-ring-fill
+//       .setup-ring-label               ← centered "2/4" text
+//     .setup-progress-text              ← "2 of 4 steps completed"
+//     .setup-progress-steps             ← dot row
+//       .setup-step-dot[.completed|.current]
+
+.setup-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  margin-bottom: var(--space-6);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+}
+
+// ── Circular progress ring ──
+.setup-ring {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  position: relative;
+
+  svg {
+    width: 36px;
+    height: 36px;
+    transform: rotate(-90deg);
+  }
+}
+
+.setup-ring-track {
+  fill: none;
+  stroke: var(--bg-muted);
+  stroke-width: 3.5;
+}
+
+.setup-ring-fill {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  // circumference = 2π × 15 ≈ 94.25
+  // JS sets stroke-dashoffset = 94.25 - (completed/total) × 94.25
+  transition: stroke-dashoffset var(--duration-slow) var(--ease-out);
+}
+
+.setup-ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  color: var(--text-secondary);
+}
+
+// ── Text summary ──
+.setup-progress-text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ── Step dots ──
+.setup-progress-steps {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.setup-step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--bg-muted);
+  transition: background var(--duration-normal) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
+
+  &.completed {
+    background: var(--status-success);
+    transform: scale(1.1);
+  }
+
+  &.current {
+    background: var(--accent);
+  }
+}

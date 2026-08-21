@@ -1,0 +1,44 @@
+[%
+  # Sitejet publish callback handler.
+  # After publishing, Sitejet redirects to:
+  #   /frontend/meridian/websites/publish?site_id=domain.com
+  # We redirect to the websites page with the domain in the URL.
+%]
+[% WRAPPER '_assets/master.html.tt'
+    page_title = 'Publishing…'
+    page_id    = 'websites'
+%]
+<script>
+(function() {
+  // Try multiple ways to get the site_id:
+  // 1. From URL query params (if browser has them)
+  // 2. From TT-injected form data (cpsrvd passes params to TT)
+  var siteId = '';
+
+  // Method 1: JavaScript URL params
+  try {
+    var params = new URLSearchParams(window.location.search);
+    siteId = params.get('site_id') || '';
+  } catch(e) {}
+
+  // Method 2: TT-injected value (cPanel passes form/query data to TT via RAW_FORM)
+  if (!siteId) {
+    siteId = '[% FORM.item("site_id") | uri %]' || '';
+  }
+
+  // Redirect to websites page with publish action — modal will open automatically
+  var token = window.CPANEL && window.CPANEL.token ? '/' + window.CPANEL.token : '';
+  var dest = token + '/frontend/meridian/websites/';
+  if (siteId) {
+    dest += '?action=publish&site_id=' + encodeURIComponent(siteId);
+  }
+  window.location.replace(dest);
+})();
+</script>
+<div style="display:flex;align-items:center;justify-content:center;min-height:40vh;">
+  <div style="text-align:center;">
+    <div class="spinner" style="margin:0 auto var(--space-4);"></div>
+    <p style="color:var(--text-secondary);">Redirecting…</p>
+  </div>
+</div>
+[% END %]

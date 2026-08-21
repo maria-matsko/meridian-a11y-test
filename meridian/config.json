@@ -1,0 +1,16 @@
+{
+    "icon": {
+        "format": "svg",
+        "feature": {
+            "height": 48,
+            "width": 48,
+            "supported_formats": ["svg"]
+        },
+        "group": {
+            "height": 32,
+            "width": 32,
+            "supported_formats": ["svg"]
+        },
+        "path": "_assets/icons/"
+    }
+}

@@ -1,0 +1,38 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// Health Summary — system status at a glance.
+
+.health-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-6);
+}
+
+.health-metric {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+
+  & + & {
+    border-top: 1px solid var(--border-subtle);
+  }
+}
+
+.health-metric-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.health-metric-value {
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+}

@@ -1,0 +1,9 @@
+---
+# Meridian Theme — English Locale
+# Minimal locale file for cPanel theme registration.
+# Meridian handles i18n client-side; this file satisfies
+# cPanel's theme discovery requirements.
+
+encoding: utf-8
+language: English
+direction: ltr

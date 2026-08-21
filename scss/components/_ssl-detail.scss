@@ -1,0 +1,16 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ─────────────────────────────────────────────────────────────
+// SSL Detail — certificate detail grid with label/value pairs.
+// ─────────────────────────────────────────────────────────────
+
+.ssl-detail {
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); padding: var(--space-5);
+}
+.ssl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.ssl-field-label { font-size: var(--text-xs); color: var(--text-tertiary); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-weight: var(--weight-semibold); margin-bottom: 4px; }
+.ssl-field-value { font-size: var(--text-sm); }

@@ -1,0 +1,50 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+.toggle {
+  width: 44px;
+  height: 24px;
+  background: var(--bg-overlay);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-default);
+  cursor: pointer;
+  position: relative;
+  transition: background var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out);
+  appearance: none;
+  -webkit-appearance: none;
+
+  &::after {
+    content: '';
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-full);
+    background: var(--text-secondary);
+    position: absolute;
+    top: 2px;
+    inset-inline-start: 2px;
+    transition: transform var(--duration-fast) var(--ease-spring),
+                background var(--duration-fast) var(--ease-spring);
+  }
+
+  &:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+
+    &::after {
+      transform: translateX(20px);
+      background: var(--accent-text);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+  }
+}
+
+[dir="rtl"] .toggle:checked::after {
+  transform: translateX(-20px);
+}

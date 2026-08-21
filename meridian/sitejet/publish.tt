@@ -1,0 +1,30 @@
+[%
+  # Sitejet publish callback — cpsrvd resolves sitejet/publish → sitejet/publish.tt
+  # Redirects to sitejet/index.html.tt which handles the actual publish flow.
+%]
+[% WRAPPER '_assets/master.html.tt'
+    page_title = 'Publishing…'
+    page_id    = 'websites'
+    asset_path = '../_assets'
+%]
+<script>
+(function() {
+  // Get site_id from URL params or TT form data
+  var siteId = '';
+  try {
+    siteId = new URLSearchParams(window.location.search).get('site_id') || '';
+  } catch(e) {}
+  if (!siteId) siteId = '[% FORM.item("site_id") | uri %]' || '';
+
+  // Redirect to the websites page — the publish modal will open automatically
+  var token = window.CPANEL && window.CPANEL.token ? '/' + window.CPANEL.token : '';
+  var dest = token + '/frontend/meridian/websites/?action=publish&site_id=' + encodeURIComponent(siteId);
+  window.location.replace(dest);
+})();
+</script>
+<div style="display:flex;align-items:center;justify-content:center;min-height:40vh;">
+  <div style="text-align:center;">
+    <p style="color:var(--text-secondary);">Redirecting…</p>
+  </div>
+</div>
+[% END %]

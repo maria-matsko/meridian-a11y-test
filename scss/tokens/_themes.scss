@@ -1,0 +1,143 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// Semantic theme tokens — map palette colors to contextual roles.
+// Dark is the default; light overrides via [data-theme="light"].
+
+@use 'palette' as *;
+
+// ── Dark Theme ──
+@mixin theme-dark {
+  // Backgrounds
+  --bg-root: var(--slate-950);
+  --bg-surface: var(--slate-900);
+  --bg-raised: var(--slate-850);
+  --bg-overlay: var(--slate-800);
+  --bg-muted: rgba(255, 255, 255, 0.04);
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-active: rgba(255, 255, 255, 0.09);
+
+  // Borders
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --border-focus: var(--orange-500);
+
+  // Text
+  --text-primary: #{$slate-100};
+  --text-secondary: #{$slate-400};
+  --text-tertiary: #8090a5;
+  --text-disabled: #{$slate-600};
+  --text-inverse: #{$slate-900};
+  --text-brand: var(--orange-400);
+
+  // Accent
+  --accent: var(--orange-500);
+  --accent-hover: var(--orange-400);
+  --accent-muted: rgba(#{red($orange-500)}, #{green($orange-500)}, #{blue($orange-500)}, 0.15);
+  --accent-subtle: rgba(#{red($orange-500)}, #{green($orange-500)}, #{blue($orange-500)}, 0.08);
+  --accent-text: #ffffff;
+
+  // Status
+  --status-success: var(--teal-400);
+  --status-success-bg: rgba(#{red($teal-400)}, #{green($teal-400)}, #{blue($teal-400)}, 0.12);
+  --status-success-border: rgba(#{red($teal-400)}, #{green($teal-400)}, #{blue($teal-400)}, 0.15);
+
+  --status-warning: var(--amber-400);
+  --status-warning-bg: rgba(#{red($amber-400)}, #{green($amber-400)}, #{blue($amber-400)}, 0.12);
+  --status-warning-border: rgba(#{red($amber-400)}, #{green($amber-400)}, #{blue($amber-400)}, 0.15);
+
+  --status-error: var(--rose-400);
+  --status-error-bg: rgba(#{red($rose-400)}, #{green($rose-400)}, #{blue($rose-400)}, 0.12);
+  --status-error-border: rgba(#{red($rose-400)}, #{green($rose-400)}, #{blue($rose-400)}, 0.15);
+
+  --status-info: var(--sky-400);
+  --status-info-bg: rgba(#{red($sky-400)}, #{green($sky-400)}, #{blue($sky-400)}, 0.12);
+  --status-info-border: rgba(#{red($sky-400)}, #{green($sky-400)}, #{blue($sky-400)}, 0.15);
+
+  // Feature
+  --feature-color: var(--violet-400);
+  --feature-bg: rgba(#{red($violet-500)}, #{green($violet-500)}, #{blue($violet-500)}, 0.12);
+
+  // Shadows
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 16px 50px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(#{red($orange-500)}, #{green($orange-500)}, #{blue($orange-500)}, 0.15);
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+
+  // Glass
+  --glass-bg: rgba(15, 23, 42, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(20px);
+}
+
+// ── Light Theme ──
+@mixin theme-light {
+  // Backgrounds
+  --bg-root: var(--slate-50);
+  --bg-surface: #ffffff;
+  --bg-raised: #ffffff;
+  --bg-overlay: var(--slate-100);
+  --bg-muted: rgba(0, 0, 0, 0.03);
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-active: rgba(0, 0, 0, 0.07);
+
+  // Borders
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --border-default: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.18);
+  --border-focus: var(--orange-500);
+
+  // Text
+  --text-primary: var(--slate-900);
+  --text-secondary: var(--slate-600);
+  --text-tertiary: var(--slate-400);
+  --text-disabled: var(--slate-300);
+  --text-inverse: #ffffff;
+  --text-brand: var(--orange-600);
+
+  // Accent
+  --accent: var(--orange-600);
+  --accent-hover: var(--orange-500);
+  --accent-muted: rgba(#{red($orange-600)}, #{green($orange-600)}, #{blue($orange-600)}, 0.12);
+  --accent-subtle: rgba(#{red($orange-600)}, #{green($orange-600)}, #{blue($orange-600)}, 0.06);
+  --accent-text: #ffffff;
+
+  // Status
+  --status-success: var(--teal-600);
+  --status-success-bg: rgba(#{red($teal-600)}, #{green($teal-600)}, #{blue($teal-600)}, 0.08);
+  --status-success-border: rgba(#{red($teal-600)}, #{green($teal-600)}, #{blue($teal-600)}, 0.15);
+
+  --status-warning: var(--amber-600);
+  --status-warning-bg: rgba(#{red($amber-600)}, #{green($amber-600)}, #{blue($amber-600)}, 0.08);
+  --status-warning-border: rgba(#{red($amber-600)}, #{green($amber-600)}, #{blue($amber-600)}, 0.15);
+
+  --status-error: var(--rose-600);
+  --status-error-bg: rgba(#{red($rose-600)}, #{green($rose-600)}, #{blue($rose-600)}, 0.08);
+  --status-error-border: rgba(#{red($rose-600)}, #{green($rose-600)}, #{blue($rose-600)}, 0.15);
+
+  --status-info: var(--sky-600);
+  --status-info-bg: rgba(#{red($sky-600)}, #{green($sky-600)}, #{blue($sky-600)}, 0.08);
+  --status-info-border: rgba(#{red($sky-600)}, #{green($sky-600)}, #{blue($sky-600)}, 0.15);
+
+  // Feature
+  --feature-color: var(--violet-500);
+  --feature-bg: rgba(#{red($violet-500)}, #{green($violet-500)}, #{blue($violet-500)}, 0.08);
+
+  // Shadows
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 16px 50px rgba(0, 0, 0, 0.14);
+  --shadow-glow: 0 0 20px rgba(#{red($orange-600)}, #{green($orange-600)}, #{blue($orange-600)}, 0.1);
+  --shadow-inset: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+
+  // Glass
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-blur: blur(20px);
+}

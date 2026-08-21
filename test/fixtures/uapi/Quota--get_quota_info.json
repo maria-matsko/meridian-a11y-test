@@ -1,0 +1,13 @@
+{
+  "apiversion": 3,
+  "module": "Quota",
+  "func": "get_quota_info",
+  "result": {
+    "status": 1,
+    "data": {"bytes_used": 4500000000, "bytes_limit": 10737418240, "inodes_used": 45230, "inodes_limit": 300000, "under_quota": 1},
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

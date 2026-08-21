@@ -1,0 +1,13 @@
+{
+  "apiversion": 3,
+  "module": "Variables",
+  "func": "get_user_information",
+  "result": {
+    "status": 1,
+    "data": {"user": "testuser", "contact_email": "admin@example.com", "theme": "meridian", "locale": "en"},
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

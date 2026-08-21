@@ -1,0 +1,13 @@
+{
+  "apiversion": 3,
+  "module": "Sitejet",
+  "func": "get_api_token",
+  "result": {
+    "status": 1,
+    "data": {"token": "sj_mock_token_abc123"},
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

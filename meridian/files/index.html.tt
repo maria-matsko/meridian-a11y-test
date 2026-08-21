@@ -1,0 +1,2251 @@
+[% WRAPPER '_assets/master.html.tt'
+    page_title = 'Files'
+    page_id    = 'files'
+%]
+<style>
+/* ===================================================================
+   FILES PAGE -- SPECIFIC STYLES
+   =================================================================== */
+
+/* Breadcrumb */
+.breadcrumb {
+  display: flex; align-items: center; gap: var(--space-1);
+  font-size: var(--text-sm); color: var(--text-tertiary);
+  margin-bottom: var(--space-4); flex-wrap: wrap;
+}
+.breadcrumb-item {
+  cursor: pointer; color: var(--text-secondary); padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+.breadcrumb-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.breadcrumb-item.current { color: var(--text-primary); font-weight: var(--weight-medium); cursor: default; }
+.breadcrumb-item.current:hover { background: none; }
+.breadcrumb-sep { color: var(--text-disabled); font-size: var(--text-xs); }
+
+/* File toolbar */
+.file-toolbar {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-bottom: none; flex-wrap: wrap;
+}
+.toolbar-btn {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  padding: var(--space-2) var(--space-3); border-radius: var(--radius-md);
+  border: none; background: transparent; color: var(--text-secondary);
+  font-family: var(--font-body); font-size: var(--text-xs); font-weight: var(--weight-medium);
+  cursor: pointer; white-space: nowrap;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+.toolbar-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.toolbar-btn i { font-size: var(--text-base); }
+.toolbar-sep {
+  width: 1px; height: 20px; background: var(--border-subtle); margin: 0 var(--space-1);
+}
+
+/* File table */
+.file-table {
+  width: 100%; border: 1px solid var(--border-subtle);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  overflow: hidden; background: var(--bg-surface);
+  border-top: none;
+}
+.file-table-head {
+  display: grid;
+  grid-template-columns: 36px 1fr 100px 160px 120px 60px;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  background: var(--bg-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-xs); font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary); text-transform: uppercase;
+}
+.file-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 100px 160px 120px 60px;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--duration-fast) var(--ease-out);
+  cursor: pointer;
+}
+.file-row:last-child { border-bottom: none; }
+.file-row:hover { background: var(--bg-hover); }
+.file-row.selected { background: var(--accent-subtle); }
+
+.file-icon {
+  width: 32px; height: 32px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--text-base); flex-shrink: 0;
+}
+.file-icon.folder { background: var(--accent-subtle); color: var(--text-brand); }
+.file-icon.php { background: var(--feature-bg); color: var(--feature-color); }
+.file-icon.html { background: var(--status-info-bg); color: var(--status-info); }
+.file-icon.image { background: var(--status-success-bg); color: var(--status-success); }
+.file-icon.archive { background: var(--status-warning-bg); color: var(--status-warning); }
+.file-icon.config { background: var(--status-error-bg); color: var(--status-error); }
+.file-icon.text { background: var(--bg-muted); color: var(--text-secondary); }
+.file-icon.css { background: var(--status-info-bg); color: var(--status-info); }
+.file-icon.js { background: var(--status-warning-bg); color: var(--status-warning); }
+
+.file-name {
+  display: flex; align-items: center; gap: var(--space-3); min-width: 0;
+}
+.file-name-text {
+  font-weight: var(--weight-semibold); font-size: var(--text-sm);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.file-cell {
+  font-size: var(--text-sm); color: var(--text-secondary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.file-cell.mono { font-family: var(--font-mono); font-size: var(--text-xs); }
+.file-actions { display: flex; justify-content: flex-end; }
+
+/* Context menu */
+.context-menu {
+  position: fixed; z-index: var(--z-popover);
+  background: var(--bg-surface); border: 1px solid var(--border-default);
+  border-radius: var(--radius-md); padding: var(--space-2);
+  box-shadow: var(--shadow-lg); min-width: 180px;
+  animation: fadeIn var(--duration-fast) var(--ease-out) both;
+  display: none;
+}
+.context-menu.show { display: block; }
+.context-menu-item {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);
+  font-size: var(--text-sm); color: var(--text-secondary);
+  cursor: pointer; border: none; background: none; width: 100%;
+  font-family: var(--font-body); text-align: start;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+.context-menu-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.context-menu-item.danger { color: var(--status-error); }
+.context-menu-item.danger:hover { background: var(--status-error-bg); }
+.context-menu-item i { font-size: var(--text-base); width: 18px; text-align: center; }
+.context-menu-sep { height: 1px; background: var(--border-subtle); margin: var(--space-1) 0; }
+
+/* FTP table */
+.ftp-table {
+  width: 100%; border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-surface);
+}
+.ftp-table-head {
+  display: grid;
+  grid-template-columns: 36px 1fr 1fr 1fr 160px 100px;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  background: var(--bg-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-xs); font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary); text-transform: uppercase;
+}
+.ftp-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 1fr 1fr 160px 100px;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.ftp-row:last-child { border-bottom: none; }
+.ftp-row:hover { background: var(--bg-hover); }
+
+/* Disk usage bars */
+.disk-category {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-3) 0;
+}
+.disk-category + .disk-category { border-top: 1px solid var(--border-subtle); }
+.disk-category-label {
+  font-size: var(--text-sm); font-weight: var(--weight-medium);
+  min-width: 160px; flex-shrink: 0;
+}
+.disk-category-bar {
+  flex: 1; height: 8px; border-radius: var(--radius-full);
+  background: var(--bg-muted); overflow: hidden;
+}
+.disk-category-fill {
+  height: 100%; border-radius: var(--radius-full);
+  transition: width var(--duration-normal) var(--ease-out);
+}
+.disk-category-size {
+  font-size: var(--text-sm); color: var(--text-secondary);
+  min-width: 80px; text-align: right; flex-shrink: 0;
+}
+
+/* Top directories */
+.top-dir {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-2) 0; font-size: var(--text-sm);
+}
+.top-dir-path {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--text-secondary); min-width: 280px; flex-shrink: 0;
+}
+.top-dir-bar {
+  flex: 1; height: 6px; border-radius: var(--radius-full);
+  background: var(--bg-muted); overflow: hidden;
+}
+.top-dir-fill {
+  height: 100%; border-radius: var(--radius-full);
+  background: var(--accent);
+  transition: width var(--duration-normal) var(--ease-out);
+}
+.top-dir-size {
+  font-size: var(--text-xs); color: var(--text-tertiary);
+  min-width: 70px; text-align: right; flex-shrink: 0;
+}
+
+/* Backup cards */
+.backup-section {
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); padding: var(--space-6);
+  margin-bottom: var(--space-4);
+}
+.backup-section-title {
+  font-size: var(--text-md); font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-4); letter-spacing: var(--tracking-tight);
+}
+.backup-table {
+  width: 100%; border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-surface);
+}
+.backup-table-head {
+  display: grid;
+  grid-template-columns: 1fr 100px 100px 120px 100px;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  background: var(--bg-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-xs); font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary); text-transform: uppercase;
+}
+.backup-row {
+  display: grid;
+  grid-template-columns: 1fr 100px 100px 120px 100px;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+}
+.backup-row:last-child { border-bottom: none; }
+.backup-row:hover { background: var(--bg-hover); }
+
+/* Partial backup items */
+.partial-backup-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.partial-backup-item:hover { background: var(--bg-hover); }
+.partial-backup-left { display: flex; align-items: center; gap: var(--space-3); }
+.partial-backup-icon {
+  width: 32px; height: 32px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--text-sm); flex-shrink: 0;
+  background: var(--bg-muted); color: var(--text-secondary);
+}
+
+/* Site info, filter bar — in meridian.css */
+
+
+/* ===================================================================
+   RESPONSIVE
+   =================================================================== */
+
+@media (max-width: 1024px) {
+  .file-table-head, .file-row {
+    grid-template-columns: 36px 1fr 100px 120px 60px;
+  }
+  .file-table-head > *:nth-child(4),
+  .file-row > *:nth-child(4) { display: none; }
+  .ftp-table-head, .ftp-row {
+    grid-template-columns: 36px 1fr 1fr 160px 100px;
+  }
+  .ftp-table-head > *:nth-child(4),
+  .ftp-row > *:nth-child(4) { display: none; }
+}
+
+@media (max-width: 768px) {
+  .file-toolbar { flex-wrap: wrap; }
+  .file-table-head, .file-row {
+    grid-template-columns: 36px 1fr 100px 60px;
+  }
+  .file-table-head > *:nth-child(5),
+  .file-row > *:nth-child(5) { display: none; }
+  .breadcrumb { font-size: var(--text-xs); }
+  .top-dir-path { min-width: 160px; }
+  .backup-table-head, .backup-row {
+    grid-template-columns: 1fr 100px 120px 100px;
+  }
+  .backup-table-head > *:nth-child(3),
+  .backup-row > *:nth-child(3) { display: none; }
+  .ftp-table-head, .ftp-row {
+    grid-template-columns: 36px 1fr 160px 100px;
+  }
+  .ftp-table-head > *:nth-child(3),
+  .ftp-row > *:nth-child(3) { display: none; }
+  .ftp-table-head > *:nth-child(4),
+  .ftp-row > *:nth-child(4) { display: none; }
+}
+@media (max-width: 480px) {
+  .file-table-head { display: none; }
+  .file-row { grid-template-columns: 28px 1fr auto; padding: var(--space-3) var(--space-3); }
+  .file-row > *:nth-child(3), .file-row > *:nth-child(4) { display: none; }
+  .file-toolbar .toolbar-btn span { display: none; }
+  .toolbar-btn { padding: var(--space-2); }
+  .toolbar-btn i { font-size: var(--text-base); }
+  .ftp-table-head, .backup-table-head { display: none; }
+  .ftp-row, .backup-row { grid-template-columns: 1fr auto; padding: var(--space-3) var(--space-4); }
+}
+</style>
+
+
+<a href="#main-content" class="sr-only">Skip to main content</a>
+
+<div class="layout-shell">
+
+  <!-- Header -->
+  <meridian-header></meridian-header>
+
+  <!-- Sidebar -->
+  <meridian-sidebar active="files"></meridian-sidebar>
+
+  <!-- Main Content -->
+  <main class="layout-main" id="main-content">
+    <div class="main-content">
+
+      <!-- All page content hidden until data is ready -->
+      <div id="pageContent" style="display:none;">
+
+        <!-- Page header -->
+        <div class="page-header animate-in stagger-1">
+          <div class="page-header-left">
+            <div>
+              <h1 class="page-title" data-t>Files</h1>
+              <div class="page-subtitle" data-t>Manage files, FTP accounts, disk usage, and backups</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="stats-row animate-in stagger-2" id="statsRow">
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon disk"><i class="ri-hard-drive-3-line" aria-hidden="true"></i></div>
+              <div class="stat-card-title" data-t>Disk Usage</div>
+            </div>
+            <div class="stat-card-value" id="statDisk">&ndash;</div>
+            <div class="storage-bar-wrap">
+              <div class="storage-bar"><div class="storage-bar-fill success" id="statDiskBar" style="width: 0%;"></div></div>
+              <div class="stat-card-label" id="statDiskLabel" data-t>Loading...</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon files"><i class="ri-file-3-line" aria-hidden="true"></i></div>
+              <div class="stat-card-title" data-t>Files</div>
+            </div>
+            <div class="stat-card-value" id="statFiles">&ndash;</div>
+            <div class="stat-card-label" data-t>In current directory</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon ftp"><i class="ri-upload-cloud-2-line" aria-hidden="true"></i></div>
+              <div class="stat-card-title" data-t>FTP Accounts</div>
+            </div>
+            <div class="stat-card-value" id="statFtp">&ndash;</div>
+            <div class="stat-card-label" id="statFtpLabel" data-t>Unlimited</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon backup"><i class="ri-shield-check-line" aria-hidden="true"></i></div>
+              <div class="stat-card-title" data-t>Last Backup</div>
+            </div>
+            <div class="stat-card-value" id="statBackup">&ndash;</div>
+            <div class="stat-card-label" id="statBackupLabel"></div>
+          </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="detail-tabs-bar animate-in stagger-3" id="mainTabs" role="tablist">
+          <button class="detail-tab active" data-tab="filemanager" type="button" role="tab" aria-selected="true">
+            <i class="ri-folder-open-line" aria-hidden="true"></i> File Manager
+          </button>
+          <button class="detail-tab" data-tab="ftp" type="button" role="tab" aria-selected="false">
+            <i class="ri-upload-cloud-2-line" aria-hidden="true"></i> FTP Accounts
+          </button>
+          <button class="detail-tab" data-tab="diskusage" type="button" role="tab" aria-selected="false">
+            <i class="ri-pie-chart-2-line" aria-hidden="true"></i> Disk Usage
+          </button>
+          <button class="detail-tab" data-tab="backups" type="button" role="tab" aria-selected="false">
+            <i class="ri-shield-check-line" aria-hidden="true"></i> Backups
+          </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="animate-in stagger-4" id="tabContent"></div>
+
+      </div><!-- /pageContent -->
+
+    </div>
+  </main>
+</div>
+
+<!-- Create FTP Account Modal -->
+<div class="modal-overlay" id="ftpModal" role="dialog" aria-modal="true" aria-labelledby="ftpModalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="t-heading t-heading-md" id="ftpModalTitle" data-t>Create FTP Account</h2>
+      <button type="button" class="modal-close" aria-label="Close" onclick="closeFtpModal()">
+        <i class="ri-close-line" aria-hidden="true"></i>
+      </button>
+    </div>
+    <form id="ftpForm" onsubmit="handleCreateFtp(event); return false;">
+      <div class="form-group">
+        <label class="form-label" data-t>Username</label>
+        <input type="text" id="ftpUsername" class="form-input" placeholder="deploy" required autocomplete="off">
+        <div class="form-hint" data-t>Will be created as username@yourdomain.com</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-t>Password</label>
+        <input type="password" id="ftpPassword" class="form-input" placeholder="Enter password" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-t>Directory</label>
+        <input type="text" id="ftpDirectory" class="form-input" value="" placeholder="/home/user/public_html">
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-t>Quota (MB)</label>
+        <div style="display:flex; align-items:center; gap: var(--space-3);">
+          <input type="number" id="ftpQuota" class="form-input" value="500" min="0" style="flex:1;" aria-label="Quota in MB">
+          <label style="display:flex; align-items:center; gap:var(--space-2); font-size:var(--text-sm); color:var(--text-secondary); cursor:pointer;">
+            <input type="checkbox" id="ftpUnlimited" onchange="document.getElementById('ftpQuota').disabled = this.checked;" style="accent-color:var(--accent);">
+            <span data-t>Unlimited</span>
+          </label>
+        </div>
+      </div>
+      <div style="display: flex; gap: var(--space-3); justify-content: flex-end; margin-top: var(--space-6);">
+        <button type="button" class="btn btn-secondary" onclick="closeFtpModal()" data-t>Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          <i class="ri-add-line" aria-hidden="true"></i> <span data-t>Create Account</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Full Backup Modal -->
+<div class="modal-overlay" id="backupModal" role="dialog" aria-modal="true" aria-labelledby="backupModalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="t-heading t-heading-md" id="backupModalTitle" data-t>Generate Full Backup</h2>
+      <button type="button" class="modal-close" aria-label="Close" onclick="closeBackupModal()">
+        <i class="ri-close-line" aria-hidden="true"></i>
+      </button>
+    </div>
+    <form onsubmit="handleFullBackup(event); return false;">
+      <div class="form-group">
+        <label class="form-label" data-t>Backup Destination</label>
+        <select id="backupDest" class="form-select" aria-label="Backup destination">
+          <option value="homedir" data-t>Home Directory</option>
+          <option value="ftp" data-t>Remote FTP Server</option>
+          <option value="scp" data-t>Remote SCP Server</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-t>Notification Email</label>
+        <input type="email" id="backupEmail" class="form-input" placeholder="admin@example.com" value="">
+        <div class="form-hint" data-t>You will be emailed when the backup is complete</div>
+      </div>
+      <div style="display: flex; gap: var(--space-3); justify-content: flex-end; margin-top: var(--space-6);">
+        <button type="button" class="btn btn-secondary" onclick="closeBackupModal()" data-t>Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          <i class="ri-shield-check-line" aria-hidden="true"></i> <span data-t>Generate Backup</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit FTP Account Modal -->
+<div class="modal-overlay" id="ftpEditOverlay" role="dialog" aria-modal="true" aria-labelledby="ftpEditTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="t-heading t-heading-md" id="ftpEditTitle" data-t>Edit FTP Account</h2>
+      <button type="button" class="modal-close" aria-label="Close" onclick="closeFtpEditModal()">
+        <i class="ri-close-line" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ftpEditUser">
+      <div class="form-group">
+        <label class="form-label" for="ftpEditPassword" data-t>New Password</label>
+        <div style="display:flex; gap:var(--space-2);">
+          <input type="password" id="ftpEditPassword" class="form-input" placeholder="" autocomplete="new-password" data-placeholder-t="Leave blank to keep current">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('ftpEditPassword').value = generatePassword(); document.getElementById('ftpEditPassword').type = 'text';" data-t>Generate</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="ftpEditQuota" data-t>Quota (MB)</label>
+        <input type="number" id="ftpEditQuota" class="form-input" min="0" placeholder="0 = Unlimited">
+        <div class="form-hint" data-t>Enter 0 for unlimited quota</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="ftpEditHomedir" data-t>Home Directory</label>
+        <input type="text" id="ftpEditHomedir" class="form-input" placeholder="/home/user/public_html">
+      </div>
+    </div>
+    <div style="display: flex; gap: var(--space-3); justify-content: flex-end; margin-top: var(--space-6);">
+      <button type="button" class="btn btn-secondary" onclick="closeFtpEditModal()" data-t>Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="saveFtpEdit()" data-t>Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Files Modal -->
+<div class="modal-overlay" id="uploadOverlay" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
+  <div class="modal" style="max-width: 560px;">
+    <div class="modal-header">
+      <h2 class="t-heading t-heading-md" id="uploadTitle" data-t>Upload Files</h2>
+      <button type="button" class="modal-close" aria-label="Close" onclick="closeUploadModal()">
+        <i class="ri-close-line" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="uploadDropZone" style="border: 2px dashed var(--border-default); border-radius: var(--radius-lg); padding: var(--space-8) var(--space-4); text-align: center; cursor: pointer; transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);">
+        <i class="ri-upload-cloud-2-line" style="font-size: 40px; color: var(--text-tertiary); display: block; margin-bottom: var(--space-3);" aria-hidden="true"></i>
+        <div class="t-body-md" style="font-weight: var(--weight-medium); margin-bottom: var(--space-1);" data-t>Drop files here or click to browse</div>
+        <div class="t-body-sm t-muted"><span data-t>Files will be uploaded to</span> <code id="uploadDirDisplay"></code></div>
+        <input type="file" id="uploadFileInput" multiple style="display: none;">
+      </div>
+      <div id="uploadFileList" style="margin-top: var(--space-4); display: none;">
+      </div>
+      <label style="display:flex; align-items:center; gap:var(--space-2); margin-top:var(--space-3);">
+        <input type="checkbox" id="uploadOverwrite" style="accent-color:var(--accent);">
+        <span class="t-body-sm" data-t>Overwrite existing files</span>
+      </label>
+    </div>
+    <div style="display: flex; gap: var(--space-3); justify-content: flex-end; margin-top: var(--space-6);">
+      <button type="button" class="btn btn-secondary" onclick="closeUploadModal()" data-t>Cancel</button>
+      <button type="button" class="btn btn-primary" id="uploadSubmitBtn" onclick="startUpload()" disabled data-t>Upload</button>
+    </div>
+  </div>
+</div>
+
+<!-- Context Menu -->
+<div class="context-menu" id="contextMenu">
+  <button class="context-menu-item" onclick="ctxAction('open')"><i class="ri-external-link-line" aria-hidden="true"></i> <span data-t>Open</span></button>
+  <button class="context-menu-item" onclick="ctxAction('edit')"><i class="ri-edit-line" aria-hidden="true"></i> <span data-t>Edit</span></button>
+  <button class="context-menu-item" onclick="ctxAction('rename')"><i class="ri-pencil-line" aria-hidden="true"></i> <span data-t>Rename</span></button>
+  <div class="context-menu-sep"></div>
+  <button class="context-menu-item" onclick="ctxAction('copy')"><i class="ri-file-copy-line" aria-hidden="true"></i> <span data-t>Copy</span></button>
+  <button class="context-menu-item" onclick="ctxAction('move')"><i class="ri-drag-move-line" aria-hidden="true"></i> <span data-t>Move</span></button>
+  <button class="context-menu-item" onclick="ctxAction('compress')"><i class="ri-file-zip-line" aria-hidden="true"></i> <span data-t>Compress</span></button>
+  <button class="context-menu-item" onclick="ctxAction('download')"><i class="ri-download-line" aria-hidden="true"></i> <span data-t>Download</span></button>
+  <div class="context-menu-sep"></div>
+  <button class="context-menu-item" onclick="ctxAction('permissions')"><i class="ri-lock-line" aria-hidden="true"></i> <span data-t>Permissions</span></button>
+  <div class="context-menu-sep"></div>
+  <button class="context-menu-item danger" onclick="ctxAction('delete')"><i class="ri-delete-bin-line" aria-hidden="true"></i> <span data-t>Delete</span></button>
+</div>
+
+<script>
+// Page-specific API helpers (delegates to global CpanelAPI)
+const FilesAPI = {
+  async getUserInfo() {
+    const result = await CpanelAPI.call('Variables', 'get_user_information');
+    const data = result.data || {};
+    this._homeDir = data.home || null;
+    this._userName = data.user || null;
+    return data;
+  },
+
+  async listFiles(dir) {
+    const result = await CpanelAPI.call2('Fileman', 'listfiles', {
+      dir,
+      filetype: '',        // all file types
+      needmime: '1',
+      'api2_sort': '1',
+      'api2_sort_column': 'name',
+      'api2_sort_reverse': '0',
+      showdotfiles: '1'
+    });
+    return (result.data || []).map(f => ({
+      name: f.file || f.name,
+      type: (f.type === 'dir' || f.mimetype === 'directory' || f.fullpath?.endsWith('/'))
+        ? 'folder' : inferFileType(f.file || f.name || ''),
+      size: f.humansize || f.size || '-',
+      modified: f.mtime ? formatTimestamp(f.mtime) : (f.nicedate || '-'),
+      perms: f.nicemode || f.rawmode || '-',
+      rawSize: parseInt(f.size, 10) || 0,
+      fullpath: f.fullpath || `${dir}/${f.file || f.name}`
+    }));
+  },
+
+  async fileOp(op, sourceFile, destFile) {
+    return CpanelAPI.call2('Fileman', 'fileop', {
+      op,
+      sourcefiles: sourceFile,
+      destfiles: destFile || ''
+    });
+  },
+
+  async mkFile(dir, name) {
+    return CpanelAPI.call('Fileman', 'save_file_content', {
+      dir, file: name, content: '', fallback_charset: 'utf-8'
+    });
+  },
+
+  async mkDir(dir, name) {
+    return CpanelAPI.call2('Fileman', 'mkdir', { path: dir, name });
+  },
+
+  async deleteFile(dir, file) {
+    return CpanelAPI.call2('Fileman', 'fileop', {
+      op: 'unlink',
+      sourcefiles: `${dir}/${file}`,
+      destfiles: ''
+    });
+  },
+
+  async renameFile(dir, oldName, newName) {
+    return CpanelAPI.call2('Fileman', 'fileop', {
+      op: 'rename',
+      sourcefiles: `${dir}/${oldName}`,
+      destfiles: `${dir}/${newName}`
+    });
+  },
+
+  async chmodFile(dir, file, perms) {
+    return CpanelAPI.call2('Fileman', 'fileop', {
+      op: 'chmod',
+      sourcefiles: `${dir}/${file}`,
+      destfiles: perms
+    });
+  },
+
+  async compressFiles(dir, files, destFile) {
+    // files is a comma-separated list of filenames
+    return CpanelAPI.call2('Fileman', 'fileop', {
+      op: 'compress',
+      sourcefiles: files.map(f => `${dir}/${f}`).join(','),
+      destfiles: `${dir}/${destFile}`
+    });
+  },
+
+  async extractFile(dir, file) {
+    return CpanelAPI.call2('Fileman', 'fileop', {
+      op: 'extract',
+      sourcefiles: `${dir}/${file}`,
+      destfiles: dir
+    });
+  },
+
+  async listFtp() {
+    // list_ftp_with_disk includes disk usage
+    return CpanelAPI.call('Ftp', 'list_ftp_with_disk', {
+      include_acct_types: 'main|sub'
+    });
+  },
+
+  async addFtp(user, pass, homedir, quota) {
+    return CpanelAPI.call('Ftp', 'add_ftp', { user, pass, homedir, quota });
+  },
+
+  async deleteFtp(user, destroy) {
+    return CpanelAPI.call('Ftp', 'delete_ftp', { user, destroy: destroy ? 1 : 0 });
+  },
+
+  async setFtpQuota(user, quota) {
+    return CpanelAPI.call('Ftp', 'set_quota', { user, quota });
+  },
+
+  async changeFtpPassword(user, pass) {
+    return CpanelAPI.call('Ftp', 'passwd', { user, pass });
+  },
+
+  async fetchDiskUsage() {
+    return CpanelAPI.call2('DiskUsage', 'fetchdiskusagewithextras');
+  },
+
+  async fetchSubdirUsage(path) {
+    return CpanelAPI.call2('DiskUsage', 'fetchdiskusage', { dir: path });
+  },
+
+  async getResourceUsage() {
+    return CpanelAPI.call('ResourceUsage', 'get_usages');
+  },
+
+  async listBackups() {
+    return CpanelAPI.call('Backup', 'list_backups');
+  },
+
+  async fullBackupToHome(email) {
+    return CpanelAPI.call('Backup', 'fullbackup_to_homedir', { email });
+  },
+
+  async listFullBackups() {
+    // API2 endpoint gives status of full backups
+    return CpanelAPI.call2('Backups', 'listfullbackups');
+  },
+
+  async getQuotaInfo() {
+    return CpanelAPI.call('Quota', 'get_quota_info');
+  }
+};
+
+
+// ===================================================================
+// STATE
+// ===================================================================
+
+let currentPath = '';
+let currentFiles = [];
+let activeTab = 'filemanager';
+let isLive = true;
+let selectedFiles = new Set();
+let contextTarget = null;
+let homeDir = '';   // Set from API in live mode
+let ftpAccounts = [];
+let diskUsage = { total: { used: 0, max: null, unit: 'GB' }, breakdown: [], topDirs: [] };
+let backups = [];
+let limits = { disk: { used: 0, max: 0 }, ftp: { used: 0, max: null } };
+let userName = '';         // Set from API in live mode
+let ftpHost = '';                 // Detected FTP host
+let diskLimits = { used: 0, max: 0, unit: 'GB' }; // Set from API
+let ftpLimit = null;              // null = unlimited
+
+
+// ===================================================================
+// FILE TYPE HELPERS
+// ===================================================================
+
+function getFileIcon(file) {
+  if (file.type === 'folder') return { icon: 'ri-folder-3-fill', cls: 'folder' };
+  if (file.type === 'php') return { icon: 'ri-code-s-slash-line', cls: 'php' };
+  if (file.type === 'html') return { icon: 'ri-html5-line', cls: 'html' };
+  if (file.type === 'image') return { icon: 'ri-image-line', cls: 'image' };
+  if (file.type === 'archive') return { icon: 'ri-file-zip-line', cls: 'archive' };
+  if (file.type === 'config') return { icon: 'ri-settings-4-line', cls: 'config' };
+  if (file.type === 'css') return { icon: 'ri-css3-line', cls: 'css' };
+  if (file.type === 'js') return { icon: 'ri-javascript-line', cls: 'js' };
+  return { icon: 'ri-file-text-line', cls: 'text' };
+}
+
+function inferFileType(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  const map = {
+    php: 'php', html: 'html', htm: 'html',
+    css: 'css', js: 'js',
+    png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', svg: 'image', ico: 'image', webp: 'image',
+    zip: 'archive', gz: 'archive', tar: 'archive', bz2: 'archive', rar: 'archive',
+    htaccess: 'config', htpasswd: 'config', ini: 'config', conf: 'config',
+    txt: 'text', md: 'text', log: 'text',
+  };
+  return map[ext] || 'text';
+}
+
+
+// ===================================================================
+// TAB SWITCHING
+// ===================================================================
+
+function switchTab(tabName) {
+  activeTab = tabName;
+  document.querySelectorAll('#mainTabs .detail-tab').forEach(t => {
+    const isActive = t.dataset.tab === tabName;
+    t.classList.toggle('active', isActive);
+    t.setAttribute('aria-selected', isActive);
+  });
+  renderTabContent();
+}
+
+
+// ===================================================================
+// RENDER TAB CONTENT
+// ===================================================================
+
+function renderTabContent() {
+  const container = document.getElementById('tabContent');
+
+  switch (activeTab) {
+    case 'filemanager': renderFileManager(container); break;
+    case 'ftp': renderFtpAccounts(container); break;
+    case 'diskusage': renderDiskUsage(container); break;
+    case 'backups': renderBackups(container); break;
+  }
+}
+
+
+// ===================================================================
+// FILE MANAGER TAB
+// ===================================================================
+
+function renderFileManager(container) {
+  const breadcrumbHtml = renderBreadcrumb();
+
+  // Sort: folders first, then by name
+  const sorted = [...currentFiles].sort((a, b) => {
+    if (a.type === 'folder' && b.type !== 'folder') return -1;
+    if (a.type !== 'folder' && b.type === 'folder') return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  const fileRows = sorted.map(file => {
+    const fi = getFileIcon(file);
+    const isSelected = selectedFiles.has(file.name);
+    const safeName = file.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return `
+      <div class="file-row ${isSelected ? 'selected' : ''}"
+           onclick="toggleFileSelection(event, '${safeName}')"
+           ondblclick="handleFileDblClick('${safeName}', '${file.type}')"
+           oncontextmenu="showContextMenu(event, '${safeName}', '${file.type}')">
+        <div class="file-icon ${fi.cls}"><i class="${fi.icon}"></i></div>
+        <div class="file-name">
+          <span class="file-name-text">${file.name}</span>
+        </div>
+        <div class="file-cell">${file.size}</div>
+        <div class="file-cell">${file.modified}</div>
+        <div class="file-cell mono">${file.perms}</div>
+        <div class="file-actions">
+          <button class="btn btn-ghost btn-sm btn-icon" style="min-width:32px; min-height:32px; padding:var(--space-1);"
+                  onclick="event.stopPropagation(); showContextMenu(event, '${safeName}', '${file.type}')"
+                  aria-label="Actions for ${file.name}">
+            <i class="ri-more-2-fill" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    ${breadcrumbHtml}
+    <div class="file-toolbar">
+      <button class="toolbar-btn" onclick="handleNewFile()"><i class="ri-file-add-line" aria-hidden="true"></i> <span>${t('New File')}</span></button>
+      <button class="toolbar-btn" onclick="handleNewFolder()"><i class="ri-folder-add-line" aria-hidden="true"></i> <span>${t('New Folder')}</span></button>
+      <div class="toolbar-sep"></div>
+      <button class="toolbar-btn" onclick="handleUpload()"><i class="ri-upload-2-line" aria-hidden="true"></i> <span>${t('Upload')}</span></button>
+      <button class="toolbar-btn" onclick="handleToolbarDownload()"><i class="ri-download-line" aria-hidden="true"></i> <span>${t('Download')}</span></button>
+      <div class="toolbar-sep"></div>
+      <button class="toolbar-btn" onclick="handleToolbarDelete()"><i class="ri-delete-bin-line" aria-hidden="true"></i> <span>${t('Delete')}</span></button>
+      <button class="toolbar-btn" onclick="handleToolbarCopy()"><i class="ri-file-copy-line" aria-hidden="true"></i> <span>${t('Copy')}</span></button>
+      <button class="toolbar-btn" onclick="handleToolbarMove()"><i class="ri-drag-move-line" aria-hidden="true"></i> <span>${t('Move')}</span></button>
+      <div class="toolbar-sep"></div>
+      <button class="toolbar-btn" onclick="handleToolbarCompress()"><i class="ri-file-zip-line" aria-hidden="true"></i> <span>${t('Compress')}</span></button>
+      <button class="toolbar-btn" onclick="handleToolbarExtract()"><i class="ri-folder-zip-line" aria-hidden="true"></i> <span>${t('Extract')}</span></button>
+      <div class="toolbar-sep"></div>
+      <button class="toolbar-btn" onclick="handleToolbarPermissions()"><i class="ri-lock-line" aria-hidden="true"></i> <span>${t('Permissions')}</span></button>
+    </div>
+    <div class="file-table">
+      <div class="file-table-head">
+        <div></div>
+        <div>${t('Name')}</div>
+        <div>${t('Size')}</div>
+        <div>${t('Last Modified')}</div>
+        <div>${t('Permissions')}</div>
+        <div></div>
+      </div>
+      <div id="fileList">${fileRows || '<div style="padding:var(--space-8); text-align:center; color:var(--text-tertiary);">' + t('No files found') + '</div>'}</div>
+    </div>`;
+}
+
+function renderBreadcrumb() {
+  const parts = currentPath.split('/').filter(Boolean);
+  let pathSoFar = '';
+  const items = parts.map((part, i) => {
+    pathSoFar += '/' + part;
+    const path = pathSoFar;
+    const isCurrent = i === parts.length - 1;
+    return `<span class="breadcrumb-item ${isCurrent ? 'current' : ''}"
+                  ${!isCurrent ? `onclick="navigateTo('${path}')"` : ''}>${part}</span>`;
+  });
+
+  return `<div class="breadcrumb">
+    <span class="breadcrumb-item" onclick="navigateTo('/')"><i class="ri-home-4-line" aria-hidden="true" style="font-size:0.9rem;"></i></span>
+    ${items.map(item => `<i class="ri-arrow-right-s-line breadcrumb-sep" aria-hidden="true"></i>${item}`).join('')}
+  </div>`;
+}
+
+async function navigateTo(path) {
+  currentPath = path;
+  selectedFiles.clear();
+
+  if (isLive) {
+    try {
+      currentFiles = await FilesAPI.listFiles(path);
+    } catch (err) {
+      console.error('Failed to list files:', err);
+      showToast(t('Could not list directory: {0}', err.message), 'error');
+      currentFiles = [];
+    }
+  }
+
+  updateStats();
+  renderTabContent();
+}
+
+function toggleFileSelection(event, name) {
+  if (event.detail > 1) return; // Ignore double-clicks
+  if (event.ctrlKey || event.metaKey) {
+    // Toggle single file with Ctrl/Cmd
+    if (selectedFiles.has(name)) selectedFiles.delete(name);
+    else selectedFiles.add(name);
+  } else {
+    // Single click: select only this file
+    selectedFiles.clear();
+    selectedFiles.add(name);
+  }
+  renderTabContent();
+}
+
+function handleFileDblClick(name, type) {
+  if (type === 'folder') {
+    const newPath = currentPath === '/' ? `/${name}` : `${currentPath}/${name}`;
+    navigateTo(newPath);
+  } else {
+    showToast(t('Opening {0} in editor...', name));
+  }
+}
+
+async function handleNewFile() {
+  const name = prompt(t('Enter new file name:'));
+  if (!name) return;
+
+  if (isLive) {
+    try {
+      await FilesAPI.mkFile(currentPath, name);
+      showToast(t('File "{0}" created', name));
+      await navigateTo(currentPath); // Refresh from server
+      return;
+    } catch (err) {
+      showToast(t('Failed to create file: {0}', err.message), 'error');
+      return;
+    }
+  }
+
+  const type = inferFileType(name);
+  currentFiles.push({
+    name, type, size: '0 B',
+    modified: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    perms: '-rw-r--r--'
+  });
+  updateStats();
+  renderTabContent();
+  showToast(t('File "{0}" created', name));
+}
+
+async function handleNewFolder() {
+  const name = prompt(t('Enter new folder name:'));
+  if (!name) return;
+
+  if (isLive) {
+    try {
+      await FilesAPI.mkDir(currentPath, name);
+      showToast(t('Folder "{0}" created', name));
+      await navigateTo(currentPath); // Refresh from server
+      return;
+    } catch (err) {
+      showToast(t('Failed to create folder: {0}', err.message), 'error');
+      return;
+    }
+  }
+
+  currentFiles.push({
+    name, type: 'folder', size: '-',
+    modified: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    perms: 'drwxr-xr-x'
+  });
+  updateStats();
+  renderTabContent();
+  showToast(t('Folder "{0}" created', name));
+}
+
+
+// ===================================================================
+// CONTEXT MENU
+// ===================================================================
+
+function showContextMenu(event, fileName, fileType) {
+  event.preventDefault();
+  event.stopPropagation();
+  contextTarget = { name: fileName, type: fileType };
+
+  const menu = document.getElementById('contextMenu');
+  menu.classList.add('show');
+
+  // Position the menu
+  const x = event.clientX || event.pageX;
+  const y = event.clientY || event.pageY;
+  menu.style.left = Math.min(x, window.innerWidth - 200) + 'px';
+  menu.style.top = Math.min(y, window.innerHeight - 300) + 'px';
+}
+
+function hideContextMenu() {
+  document.getElementById('contextMenu').classList.remove('show');
+  contextTarget = null;
+}
+
+async function ctxAction(action) {
+  hideContextMenu();
+  if (!contextTarget) return;
+
+  const { name, type } = contextTarget;
+  switch (action) {
+    case 'open':
+      if (type === 'folder') handleFileDblClick(name, type);
+      else showToast(t('Opening {0}...', name));
+      break;
+    case 'edit':
+      if (isLive) {
+        // Jupiter's file editor: filemanager/editit.html.tt
+        // Uses UAPI Fileman::get_file_content to load, API2 Fileman to save
+        const token = CpanelAPI.getToken();
+        window.open(`/${token}/frontend/jupiter/filemanager/editit.html?dir=${encodeURIComponent(currentPath)}&file=${encodeURIComponent(name)}&file_charset=utf-8`, '_blank');
+      } else {
+        showToast(t('Opening {0} in editor...', name));
+      }
+      break;
+    case 'rename': {
+      const newName = prompt(t('Rename "{0}" to:', name), name);
+      if (newName && newName !== name) {
+        if (isLive) {
+          try {
+            await FilesAPI.renameFile(currentPath, name, newName);
+            showToast(t('Renamed to "{0}"', newName));
+            await navigateTo(currentPath);
+          } catch (err) { showToast(t('Rename failed: {0}', err.message), 'error'); }
+        } else {
+          const file = currentFiles.find(f => f.name === name);
+          if (file) { file.name = newName; renderTabContent(); showToast(t('Renamed to "{0}"', newName)); }
+        }
+      }
+      break;
+    }
+    case 'copy': {
+      const copyDest = prompt(t('Copy "{0}" to:', name), currentPath);
+      if (copyDest && copyDest.trim()) {
+        const srcPath = `${currentPath}/${name}`.replace(/\/+/g, '/');
+        const destPath = `${copyDest.trim()}/${name}`.replace(/\/+/g, '/');
+        if (isLive) {
+          try {
+            await FilesAPI.fileOp('copy', srcPath, destPath);
+            showToast(t('"{0}" copied', name));
+          } catch (err) { showToast(t('Copy failed: {0}', err.message), 'error'); }
+        } else {
+          showToast(t('"{0}" copied to {1}', name, copyDest));
+        }
+      }
+      break;
+    }
+    case 'move': {
+      const moveDest = prompt(t('Move "{0}" to:', name), currentPath);
+      if (moveDest && moveDest.trim() && moveDest.trim() !== currentPath) {
+        const srcPath = `${currentPath}/${name}`.replace(/\/+/g, '/');
+        const destPath = `${moveDest.trim()}/${name}`.replace(/\/+/g, '/');
+        if (isLive) {
+          try {
+            await FilesAPI.fileOp('move', srcPath, destPath);
+            showToast(t('"{0}" moved', name));
+            await navigateTo(currentPath);
+          } catch (err) { showToast(t('Move failed: {0}', err.message), 'error'); }
+        } else {
+          currentFiles = currentFiles.filter(f => f.name !== name);
+          renderTabContent();
+          showToast(t('"{0}" moved to {1}', name, moveDest));
+        }
+      }
+      break;
+    }
+    case 'compress':
+      if (isLive) {
+        try {
+          const archiveName = name.includes('.') ? name.replace(/\.[^.]+$/, '.tar.gz') : `${name}.tar.gz`;
+          await FilesAPI.compressFiles(currentPath, [name], archiveName);
+          showToast(t('"{0}" compressed', name));
+          await navigateTo(currentPath);
+        } catch (err) { showToast(t('Compress failed: {0}', err.message), 'error'); }
+      } else {
+        showToast(t('Compressing "{0}"...', name));
+      }
+      break;
+    case 'extract':
+      if (isLive) {
+        try {
+          await FilesAPI.extractFile(currentPath, name);
+          showToast(t('"{0}" extracted', name));
+          await navigateTo(currentPath);
+        } catch (err) { showToast(t('Extract failed: {0}', err.message), 'error'); }
+      } else {
+        showToast(t('Extracting "{0}"...', name));
+      }
+      break;
+    case 'download':
+      if (isLive) {
+        // cPanel file download — uses API2 Fileman::getfileactions under the hood
+        // URL format: /{token}/download?skipencode=1&file={full_path}&fileop=download
+        const token = CpanelAPI.getToken();
+        const fullPath = `${currentPath}/${name}`.replace(/\/+/g, '/');
+        window.open(`/${token}/download?skipencode=1&file=${encodeURIComponent(fullPath)}&fileop=download`, '_blank');
+      } else {
+        showToast(t('Downloading "{0}"...', name));
+      }
+      break;
+    case 'permissions': {
+      const perms = prompt(t('Enter permissions for "{0}" (e.g. 0644, 0755):', name), type === 'folder' ? '0755' : '0644');
+      if (perms) {
+        if (isLive) {
+          try {
+            await FilesAPI.chmodFile(currentPath, name, perms);
+            showToast(t('Permissions updated to {0}', perms));
+            await navigateTo(currentPath);
+          } catch (err) { showToast(t('Chmod failed: {0}', err.message), 'error'); }
+        } else {
+          showToast(t('Permissions set to {0}', perms));
+        }
+      }
+      break;
+    }
+    case 'delete':
+      if (confirm(t('Delete "{0}"? This cannot be undone.', name))) {
+        if (isLive) {
+          try {
+            await FilesAPI.deleteFile(currentPath, name);
+            showToast(t('"{0}" deleted', name));
+            await navigateTo(currentPath);
+          } catch (err) { showToast(t('Delete failed: {0}', err.message), 'error'); }
+        } else {
+          currentFiles = currentFiles.filter(f => f.name !== name);
+          updateStats();
+          renderTabContent();
+          showToast(t('"{0}" deleted', name));
+        }
+      }
+      break;
+  }
+}
+
+// Close context menu on click outside
+document.addEventListener('click', hideContextMenu);
+
+
+// ===================================================================
+// TOOLBAR ACTIONS
+// ===================================================================
+
+function handleUpload() {
+  openUploadModal();
+}
+
+function handleToolbarDownload() {
+  if (selectedFiles.size === 0) { showToast(t('Select a file to download'), 'error'); return; }
+  const name = [...selectedFiles][0];
+  if (isLive) {
+    const token = CpanelAPI.getToken();
+    const fullPath = `${currentPath}/${name}`.replace(/\/+/g, '/');
+    window.open(`/${token}/download?skipencode=1&file=${encodeURIComponent(fullPath)}&fileop=download`, '_blank');
+  } else {
+    showToast(t('Downloading "{0}"...', name));
+  }
+}
+
+async function handleToolbarCopy() {
+  if (selectedFiles.size === 0) { showToast(t('Select files to copy'), 'error'); return; }
+  const dest = prompt(t('Copy {0} file(s) to:', selectedFiles.size), currentPath);
+  if (!dest || !dest.trim()) return;
+  for (const name of selectedFiles) {
+    const srcPath = `${currentPath}/${name}`.replace(/\/+/g, '/');
+    const destPath = `${dest.trim()}/${name}`.replace(/\/+/g, '/');
+    if (isLive) {
+      try { await FilesAPI.fileOp('copy', srcPath, destPath); }
+      catch (err) { showToast(t('Copy "{0}" failed: {1}', name, err.message), 'error'); return; }
+    }
+  }
+  showToast(t('{0} file(s) copied', selectedFiles.size));
+}
+
+async function handleToolbarMove() {
+  if (selectedFiles.size === 0) { showToast(t('Select files to move'), 'error'); return; }
+  const dest = prompt(t('Move {0} file(s) to:', selectedFiles.size), currentPath);
+  if (!dest || !dest.trim() || dest.trim() === currentPath) return;
+  for (const name of selectedFiles) {
+    const srcPath = `${currentPath}/${name}`.replace(/\/+/g, '/');
+    const destPath = `${dest.trim()}/${name}`.replace(/\/+/g, '/');
+    if (isLive) {
+      try { await FilesAPI.fileOp('move', srcPath, destPath); }
+      catch (err) { showToast(t('Move "{0}" failed: {1}', name, err.message), 'error'); return; }
+    }
+  }
+  selectedFiles.clear();
+  if (isLive) await navigateTo(currentPath);
+  else { currentFiles = currentFiles.filter(f => !selectedFiles.has(f.name)); renderTabContent(); }
+  showToast(t('File(s) moved'));
+}
+
+async function handleToolbarDelete() {
+  if (selectedFiles.size === 0) { showToast(t('Select files to delete'), 'error'); return; }
+  const files = [...selectedFiles];
+  if (!confirm(t('Delete {0} item(s)? This cannot be undone.', files.length))) return;
+
+  if (isLive) {
+    try {
+      for (const name of files) {
+        await FilesAPI.deleteFile(currentPath, name);
+      }
+      showToast(t('{0} item(s) deleted', files.length));
+      selectedFiles.clear();
+      await navigateTo(currentPath);
+    } catch (err) { showToast(t('Delete failed: {0}', err.message), 'error'); }
+  } else {
+    currentFiles = currentFiles.filter(f => !selectedFiles.has(f.name));
+    selectedFiles.clear();
+    updateStats();
+    renderTabContent();
+    showToast(t('{0} item(s) deleted', files.length));
+  }
+}
+
+async function handleToolbarCompress() {
+  if (selectedFiles.size === 0) { showToast(t('Select files to compress'), 'error'); return; }
+  const files = [...selectedFiles];
+  const archiveName = prompt(t('Archive name:'), 'archive.tar.gz');
+  if (!archiveName) return;
+
+  if (isLive) {
+    try {
+      await FilesAPI.compressFiles(currentPath, files, archiveName);
+      showToast(t('Compressed {0} item(s) into {1}', files.length, archiveName));
+      selectedFiles.clear();
+      await navigateTo(currentPath);
+    } catch (err) { showToast(t('Compress failed: {0}', err.message), 'error'); }
+  } else {
+    showToast(t('Compressing {0} item(s) into {1}...', files.length, archiveName));
+  }
+}
+
+async function handleToolbarExtract() {
+  if (selectedFiles.size === 0) { showToast(t('Select an archive to extract'), 'error'); return; }
+  const name = [...selectedFiles][0];
+  if (isLive) {
+    try {
+      await FilesAPI.extractFile(currentPath, name);
+      showToast(t('"{0}" extracted', name));
+      selectedFiles.clear();
+      await navigateTo(currentPath);
+    } catch (err) { showToast(t('Extract failed: {0}', err.message), 'error'); }
+  } else {
+    showToast(t('Extracting "{0}"...', name));
+  }
+}
+
+async function handleToolbarPermissions() {
+  if (selectedFiles.size === 0) { showToast(t('Select a file to change permissions'), 'error'); return; }
+  const name = [...selectedFiles][0];
+  const file = currentFiles.find(f => f.name === name);
+  const defaultPerms = file?.type === 'folder' ? '0755' : '0644';
+  const perms = prompt(t('Permissions for "{0}" (e.g. 0644, 0755):', name), defaultPerms);
+  if (!perms) return;
+
+  if (isLive) {
+    try {
+      await FilesAPI.chmodFile(currentPath, name, perms);
+      showToast(t('Permissions updated to {0}', perms));
+      await navigateTo(currentPath);
+    } catch (err) { showToast(t('Chmod failed: {0}', err.message), 'error'); }
+  } else {
+    showToast(t('Permissions set to {0} for "{1}"', perms, name));
+  }
+}
+
+
+// ===================================================================
+// FTP EDIT MODAL
+// ===================================================================
+
+let _ftpEditTrap = null;
+
+function openFtpEditModal(user, quota, homedir) {
+  document.getElementById('ftpEditUser').value = user;
+  document.getElementById('ftpEditPassword').value = '';
+  document.getElementById('ftpEditPassword').type = 'password';
+  const quotaMB = (!quota || quota === 'unlimited' || quota === '0') ? 0 : parseInt(quota, 10);
+  document.getElementById('ftpEditQuota').value = quotaMB;
+  document.getElementById('ftpEditHomedir').value = homedir || '';
+  document.getElementById('ftpEditTitle').textContent = t('Edit FTP Account') + ': ' + user;
+
+  const overlay = document.getElementById('ftpEditOverlay');
+  overlay.classList.add('show');
+  if (typeof openModalWithTrap === 'function') {
+    _ftpEditTrap = openModalWithTrap(overlay, closeFtpEditModal);
+  }
+}
+
+function closeFtpEditModal() {
+  document.getElementById('ftpEditOverlay').classList.remove('show');
+  if (_ftpEditTrap && typeof _ftpEditTrap === 'function') _ftpEditTrap();
+  _ftpEditTrap = null;
+}
+
+async function saveFtpEdit() {
+  const user = document.getElementById('ftpEditUser').value;
+  const password = document.getElementById('ftpEditPassword').value;
+  const quota = parseInt(document.getElementById('ftpEditQuota').value, 10) || 0;
+  const homedir = document.getElementById('ftpEditHomedir').value.trim();
+
+  const promises = [];
+
+  if (isLive) {
+    if (password) {
+      promises.push(CpanelAPI.call('Ftp', 'passwd', { user, pass: password }));
+    }
+    promises.push(CpanelAPI.call('Ftp', 'set_quota', { user, quota }));
+    if (homedir) {
+      promises.push(CpanelAPI.call('Ftp', 'set_homedir', { user, homedir }));
+    }
+
+    try {
+      if (promises.length) await Promise.all(promises);
+      showToast(t('FTP account updated'));
+      closeFtpEditModal();
+      // Reload FTP list
+      const ftpResult = await FilesAPI.listFtp();
+      const rawFtp = ftpResult?.data || [];
+      ftpAccounts = rawFtp.map(f => ({
+        user: f.user || f.login,
+        dir: f.dir || f.homedir,
+        quota: (!f.diskquota || f.diskquota === '0' || f.diskquota === 'unlimited') ? 'unlimited' : formatBytes(parseInt(f.diskquota, 10) * 1024 * 1024),
+        used: f.diskused ? formatBytes(parseInt(f.diskused, 10) * 1024 * 1024) : '0 B',
+        isMain: (f.user || f.login) === userName || f.accttype === 'main',
+        loginUrl: ftpHost || `ftp://${f.serverlogin || f.user || ''}`,
+        _rawQuota: f.diskquota,
+        _rawUsed: f.diskused
+      }));
+      updateStats();
+      renderTabContent();
+    } catch (err) {
+      showToast(t('Failed: {0}', err.message), 'error');
+    }
+  } else {
+    // Mock mode: update local data
+    const acct = ftpAccounts.find(a => a.user === user);
+    if (acct) {
+      if (quota === 0) { acct.quota = 'unlimited'; acct._rawQuota = '0'; }
+      else { acct.quota = quota + ' MB'; acct._rawQuota = String(quota); }
+      if (homedir) acct.dir = homedir;
+    }
+    showToast(t('FTP account updated'));
+    closeFtpEditModal();
+    renderTabContent();
+  }
+}
+
+
+// ===================================================================
+// UPLOAD MODAL
+// ===================================================================
+
+let _uploadTrap = null;
+let uploadFiles = [];
+
+function openUploadModal() {
+  uploadFiles = [];
+  document.getElementById('uploadFileList').style.display = 'none';
+  document.getElementById('uploadFileList').innerHTML = '';
+  document.getElementById('uploadSubmitBtn').disabled = true;
+  document.getElementById('uploadDirDisplay').textContent = currentPath || '/';
+  document.getElementById('uploadOverwrite').checked = false;
+
+  const overlay = document.getElementById('uploadOverlay');
+  overlay.classList.add('show');
+  if (typeof openModalWithTrap === 'function') {
+    _uploadTrap = openModalWithTrap(overlay, closeUploadModal);
+  }
+}
+
+function closeUploadModal() {
+  document.getElementById('uploadOverlay').classList.remove('show');
+  if (_uploadTrap && typeof _uploadTrap === 'function') _uploadTrap();
+  _uploadTrap = null;
+}
+
+function addUploadFiles(files) {
+  const list = document.getElementById('uploadFileList');
+  list.style.display = 'block';
+  for (const file of files) {
+    uploadFiles.push(file);
+    const item = document.createElement('div');
+    item.className = 'list-item';
+    item.style.padding = 'var(--space-2) 0';
+    item.innerHTML = `
+      <div class="list-item-left" style="gap:var(--space-2);">
+        <i class="ri-file-line" aria-hidden="true" style="color:var(--text-tertiary);"></i>
+        <div>
+          <div class="t-body-sm">${esc(file.name)}</div>
+          <div class="t-body-xs t-muted">${formatBytes(file.size)}</div>
+        </div>
+      </div>
+      <div class="list-item-right">
+        <span class="t-body-xs t-muted upload-status" data-file="${esc(file.name)}">${t('Ready')}</span>
+      </div>
+    `;
+    list.appendChild(item);
+  }
+  document.getElementById('uploadSubmitBtn').disabled = uploadFiles.length === 0;
+}
+
+async function startUpload() {
+  const btn = document.getElementById('uploadSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = t('Uploading...');
+  const overwrite = document.getElementById('uploadOverwrite').checked ? 1 : 0;
+
+  if (isLive) {
+    const formData = new FormData();
+    formData.append('dir', currentPath || '/');
+    formData.append('overwrite', overwrite);
+    uploadFiles.forEach(file => {
+      formData.append('file-' + file.name, file);
+    });
+
+    try {
+      const token = CpanelAPI.getToken();
+      const resp = await fetch('/' + token + '/execute/Fileman/upload_files', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin'
+      });
+      const result = await resp.json();
+      if (result.data && result.data.uploads) {
+        result.data.uploads.forEach(u => {
+          const statusEl = document.querySelector('[data-file="' + CSS.escape(u.file) + '"]');
+          if (statusEl) {
+            statusEl.textContent = u.status ? t('Done') : u.reason;
+            statusEl.style.color = u.status ? 'var(--status-success)' : 'var(--status-error)';
+          }
+        });
+        showToast(t('{0} file(s) uploaded', result.data.succeeded));
+      }
+    } catch (err) {
+      showToast(t('Upload failed: {0}', err.message), 'error');
+    }
+  } else {
+    // Mock mode: simulate upload
+    document.querySelectorAll('.upload-status').forEach(el => {
+      el.textContent = t('Done');
+      el.style.color = 'var(--status-success)';
+    });
+    showToast(t('{0} file(s) uploaded', uploadFiles.length));
+  }
+
+  btn.textContent = t('Upload');
+  btn.disabled = false;
+  setTimeout(() => {
+    closeUploadModal();
+    if (isLive) navigateTo(currentPath);
+    else renderTabContent();
+  }, 1000);
+}
+
+
+// ===================================================================
+// FTP ACCOUNTS TAB
+// ===================================================================
+
+function renderFtpAccounts(container) {
+  const accounts = ftpAccounts;
+
+  const mainAccount = accounts.find(a => a.isMain);
+  const otherAccounts = accounts.filter(a => !a.isMain);
+
+  const mainHtml = mainAccount ? `
+    <div class="site-info" style="margin-bottom: var(--space-4);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: var(--space-3);">
+        <div class="site-info-title" style="margin-bottom:0;">${t('Main FTP Account')}</div>
+        <span class="badge badge-accent">${t('Primary')}</span>
+      </div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-4);">
+        <div>
+          <div style="font-size:var(--text-xs); color:var(--text-tertiary); margin-bottom:var(--space-1);">${t('Username')}</div>
+          <div style="font-size:var(--text-sm); font-weight:var(--weight-medium); font-family:var(--font-mono);">${mainAccount.user}</div>
+        </div>
+        <div>
+          <div style="font-size:var(--text-xs); color:var(--text-tertiary); margin-bottom:var(--space-1);">${t('Directory')}</div>
+          <div style="font-size:var(--text-sm); font-weight:var(--weight-medium); font-family:var(--font-mono);">${mainAccount.dir}</div>
+        </div>
+        <div>
+          <div style="font-size:var(--text-xs); color:var(--text-tertiary); margin-bottom:var(--space-1);">${t('Login URL')}</div>
+          <div style="font-size:var(--text-sm); font-weight:var(--weight-medium); font-family:var(--font-mono);">${mainAccount.loginUrl}</div>
+        </div>
+        <div>
+          <div style="font-size:var(--text-xs); color:var(--text-tertiary); margin-bottom:var(--space-1);">${t('Quota')}</div>
+          <div style="font-size:var(--text-sm); font-weight:var(--weight-medium);">${mainAccount.quota} (${mainAccount.used} ${t('used')})</div>
+        </div>
+      </div>
+    </div>` : '';
+
+  const ftpRows = otherAccounts.map(acct => {
+    const quotaPercent = acct.quota === 'unlimited' ? 0 :
+      Math.round((parseFloat(acct.used) / parseFloat(acct.quota)) * 100);
+    const barClass = quotaPercent > 90 ? 'danger' : quotaPercent > 70 ? 'warning' : 'success';
+
+    return `
+      <div class="ftp-row">
+        <div class="file-icon ftp" style="background:var(--status-info-bg); color:var(--status-info);"><i class="ri-upload-cloud-2-line" aria-hidden="true"></i></div>
+        <div class="file-cell" style="font-weight:var(--weight-semibold); color:var(--text-primary); font-family:var(--font-mono); font-size:var(--text-xs);">${acct.user}</div>
+        <div class="file-cell" style="font-family:var(--font-mono); font-size:var(--text-xs);">${acct.loginUrl}</div>
+        <div class="file-cell" style="font-family:var(--font-mono); font-size:var(--text-xs);">${acct.dir}</div>
+        <div class="file-cell">
+          <div class="storage-bar-wrap">
+            <div style="font-size:var(--text-xs); margin-bottom:2px;">${acct.used} / ${acct.quota}</div>
+            <div class="storage-bar"><div class="storage-bar-fill ${barClass}" style="width:${quotaPercent}%;"></div></div>
+          </div>
+        </div>
+        <div class="file-actions" style="gap:var(--space-1);">
+          <button class="btn btn-ghost btn-sm btn-icon" style="min-width:32px; min-height:32px; padding:var(--space-1);"
+                  onclick="openFtpEditModal('${esc(acct.user)}', '${acct._rawQuota || acct.quota}', '${esc(acct.dir)}')" aria-label="Edit ${esc(acct.user)}">
+            <i class="ri-edit-line" aria-hidden="true"></i>
+          </button>
+          <button class="btn btn-ghost btn-sm btn-icon" style="min-width:32px; min-height:32px; padding:var(--space-1); color:var(--status-error);"
+                  onclick="deleteFtpAccount('${acct.user}')" aria-label="Delete ${acct.user}">
+            <i class="ri-delete-bin-line" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--space-4);">
+      <div style="font-size:var(--text-sm); color:var(--text-tertiary);">${accounts.length} ${accounts.length !== 1 ? t('FTP accounts') : t('FTP account')}</div>
+      <button class="btn btn-primary" onclick="openFtpModal()">
+        <i class="ri-add-line" aria-hidden="true"></i> ${t('Create FTP Account')}
+      </button>
+    </div>
+    ${mainHtml}
+    <div class="ftp-table">
+      <div class="ftp-table-head">
+        <div></div>
+        <div>${t('Account')}</div>
+        <div>${t('Login URL')}</div>
+        <div>${t('Directory')}</div>
+        <div>${t('Quota')}</div>
+        <div></div>
+      </div>
+      ${ftpRows}
+    </div>`;
+}
+
+function openFtpModal() {
+  document.getElementById('ftpModal').classList.add('show');
+  document.getElementById('ftpUsername').value = '';
+  document.getElementById('ftpPassword').value = '';
+  document.getElementById('ftpDirectory').value = `${homeDir}/public_html`;
+  document.getElementById('ftpQuota').value = '500';
+  document.getElementById('ftpQuota').disabled = false;
+  document.getElementById('ftpUnlimited').checked = false;
+  setTimeout(() => document.getElementById('ftpUsername').focus(), 100);
+}
+
+function closeFtpModal() {
+  document.getElementById('ftpModal').classList.remove('show');
+}
+
+async function handleCreateFtp(event) {
+  event.preventDefault();
+  const user = document.getElementById('ftpUsername').value.trim();
+  const password = document.getElementById('ftpPassword').value;
+  const dir = document.getElementById('ftpDirectory').value.trim();
+  const unlimited = document.getElementById('ftpUnlimited').checked;
+  const quotaVal = unlimited ? 0 : parseInt(document.getElementById('ftpQuota').value, 10);
+
+  if (!user || !password) {
+    showToast(t('Please fill in all required fields'), 'error');
+    return false;
+  }
+
+  if (isLive) {
+    try {
+      await FilesAPI.addFtp(user, password, dir, quotaVal);
+      showToast(t('FTP account "{0}" created', user));
+      closeFtpModal();
+      // Refresh FTP list from server
+      const ftpResult = await FilesAPI.listFtp();
+      const rawFtp = ftpResult?.data || [];
+      ftpAccounts = rawFtp.map(f => ({
+        user: f.user || f.login,
+        dir: f.dir || f.homedir,
+        quota: (!f.diskquota || f.diskquota === '0' || f.diskquota === 'unlimited') ? 'unlimited' : formatBytes(parseInt(f.diskquota, 10) * 1024 * 1024),
+        used: f.diskused ? formatBytes(parseInt(f.diskused, 10) * 1024 * 1024) : '0 B',
+        isMain: (f.user || f.login) === userName || f.accttype === 'main',
+        loginUrl: ftpHost || `ftp://${f.serverlogin || f.user || ''}`
+      }));
+      updateStats();
+      renderTabContent();
+      return false;
+    } catch (err) {
+      showToast(t('Failed to create FTP account: {0}', err.message), 'error');
+      return false;
+    }
+  }
+
+  const fullUser = `${userName}_${user}`;
+  const quota = unlimited ? 'unlimited' : document.getElementById('ftpQuota').value + ' MB';
+  ftpAccounts.push({
+    user: fullUser, dir, quota, used: '0 B', isMain: false, loginUrl: 'ftp://ftp.example.com'
+  });
+
+  closeFtpModal();
+  updateStats();
+  renderTabContent();
+  showToast(t('FTP account "{0}" created', fullUser));
+  return false;
+}
+
+async function deleteFtpAccount(user) {
+  if (!confirm(t('Delete FTP account "{0}"? This cannot be undone.', user))) return;
+
+  if (isLive) {
+    try {
+      await FilesAPI.deleteFtp(user, false);
+      showToast(t('FTP account "{0}" deleted', user));
+      // Refresh from server
+      const ftpResult = await FilesAPI.listFtp();
+      const rawFtp = ftpResult?.data || [];
+      ftpAccounts = rawFtp.map(f => ({
+        user: f.user || f.login,
+        dir: f.dir || f.homedir,
+        quota: (!f.diskquota || f.diskquota === '0' || f.diskquota === 'unlimited') ? 'unlimited' : formatBytes(parseInt(f.diskquota, 10) * 1024 * 1024),
+        used: f.diskused ? formatBytes(parseInt(f.diskused, 10) * 1024 * 1024) : '0 B',
+        isMain: (f.user || f.login) === userName || f.accttype === 'main',
+        loginUrl: ftpHost || `ftp://${f.serverlogin || f.user || ''}`
+      }));
+      updateStats();
+      renderTabContent();
+      return;
+    } catch (err) {
+      showToast(t('Failed to delete FTP account: {0}', err.message), 'error');
+      return;
+    }
+  }
+
+  const idx = ftpAccounts.findIndex(a => a.user === user);
+  if (idx > -1) {
+    ftpAccounts.splice(idx, 1);
+    updateStats();
+    renderTabContent();
+    showToast(t('FTP account "{0}" deleted', user));
+  }
+}
+
+
+// ===================================================================
+// DISK USAGE TAB
+// ===================================================================
+
+function renderDiskUsage(container) {
+  const du = diskUsage;
+  const usedPercent = du.total.max ? Math.round((du.total.used / du.total.max) * 100) : 0;
+  const barClass = usedPercent > 90 ? 'danger' : usedPercent > 70 ? 'warning' : 'success';
+
+  const colors = ['var(--accent)', 'var(--feature-color)', 'var(--status-info)', 'var(--text-tertiary)'];
+
+  const breakdownHtml = du.breakdown.map((cat, i) => `
+    <div class="disk-category">
+      <div class="disk-category-label">${cat.label}</div>
+      <div class="disk-category-bar">
+        <div class="disk-category-fill" style="width:${cat.percent}%; background:${colors[i % colors.length]};"></div>
+      </div>
+      <div class="disk-category-size">${cat.size}</div>
+    </div>`).join('');
+
+  // Stacked bar visualization
+  const stackedSegments = du.breakdown.map((cat, i) =>
+    `<div style="width:${cat.percent}%; height:100%; background:${colors[i % colors.length]}; transition: width var(--duration-normal) var(--ease-out);" title="${cat.label}: ${cat.size}"></div>`
+  ).join('');
+
+  const maxDirSize = parseFloat(du.topDirs[0].size);
+  const topDirsHtml = du.topDirs.map(dir => {
+    const sizeVal = parseFloat(dir.size);
+    const pct = Math.round((sizeVal / maxDirSize) * 100);
+    return `
+      <div class="top-dir">
+        <div class="top-dir-path">${dir.path}</div>
+        <div class="top-dir-bar"><div class="top-dir-fill" style="width:${pct}%;"></div></div>
+        <div class="top-dir-size">${dir.size}</div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="site-info" style="margin-bottom: var(--space-4);">
+      <div class="site-info-title">${t('Overall Disk Usage')}</div>
+      <div style="display:flex; align-items:center; gap:var(--space-4); margin-bottom:var(--space-4);">
+        <div style="font-size:var(--text-2xl); font-weight:var(--weight-bold); letter-spacing:var(--tracking-tight);">${du.total.used} ${du.total.unit}</div>
+        <div style="font-size:var(--text-sm); color:var(--text-tertiary);">${du.total.max ? t('of {0} {1} ({2}%)', du.total.max, du.total.unit, usedPercent) : t('Unlimited')}</div>
+      </div>
+      <div class="storage-bar" style="height:12px; margin-bottom:var(--space-4); border-radius:var(--radius-md);">
+        <div class="storage-bar-fill ${barClass}" style="width:${usedPercent}%; border-radius:var(--radius-md);"></div>
+      </div>
+
+      <!-- Stacked bar -->
+      <div style="margin-bottom:var(--space-2); font-size:var(--text-xs); font-weight:var(--weight-semibold); color:var(--text-tertiary); text-transform:uppercase; letter-spacing:var(--tracking-widest);">${t('Usage by Category')}</div>
+      <div style="display:flex; height:8px; border-radius:var(--radius-full); overflow:hidden; margin-bottom:var(--space-4);">
+        ${stackedSegments}
+      </div>
+      <div style="display:flex; gap:var(--space-4); flex-wrap:wrap; margin-bottom:var(--space-4);">
+        ${du.breakdown.map((cat, i) => `
+          <div style="display:flex; align-items:center; gap:var(--space-2); font-size:var(--text-xs); color:var(--text-secondary);">
+            <div style="width:8px; height:8px; border-radius:var(--radius-full); background:${colors[i % colors.length]};"></div>
+            ${cat.label}
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="site-info" style="margin-bottom: var(--space-4);">
+      <div class="site-info-title">${t('Usage by Category')}</div>
+      ${breakdownHtml}
+    </div>
+
+    <div class="site-info">
+      <div class="site-info-title">${t('Top Directories by Size')}</div>
+      ${topDirsHtml}
+    </div>`;
+}
+
+
+// ===================================================================
+// BACKUPS TAB
+// ===================================================================
+
+function renderBackups(container) {
+  const backupRows = backups.map((bk, idx) => {
+    const statusBadge = bk.status === 'Complete'
+      ? '<span class="badge badge-success"><i class="ri-check-line" aria-hidden="true"></i> ' + t('Complete') + '</span>'
+      : '<span class="badge badge-warning"><i class="ri-loader-4-line" aria-hidden="true"></i> ' + t('In Progress') + '</span>';
+    const safeFile = (bk.file || '').replace(/'/g, "\\'");
+
+    return `
+      <div class="backup-row">
+        <div style="color:var(--text-primary); font-weight:var(--weight-medium);">${bk.date}</div>
+        <div style="color:var(--text-secondary);">${bk.size}</div>
+        <div style="color:var(--text-secondary);">${bk.type}</div>
+        <div>${statusBadge}</div>
+        <div style="display:flex; gap:var(--space-1); justify-content:flex-end;">
+          <button class="btn btn-ghost btn-sm btn-icon" style="min-width:32px; min-height:32px; padding:var(--space-1);"
+                  onclick="downloadBackup('${safeFile}')" aria-label="${t('Download backup')}" ${bk.status !== 'Complete' ? 'disabled' : ''}>
+            <i class="ri-download-line" aria-hidden="true"></i>
+          </button>
+          <button class="btn btn-ghost btn-sm btn-icon" style="min-width:32px; min-height:32px; padding:var(--space-1); color:var(--status-error);"
+                  onclick="deleteBackup(${idx}, '${safeFile}')" aria-label="${t('Delete backup')}">
+            <i class="ri-delete-bin-line" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="backup-section">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--space-4);">
+        <div>
+          <div class="backup-section-title" style="margin-bottom:var(--space-1);">${t('Full Backup')}</div>
+          <div style="font-size:var(--text-sm); color:var(--text-tertiary);">${t('Generate a complete backup of your account including home directory, databases, email, and DNS settings.')}</div>
+        </div>
+        <button class="btn btn-primary" onclick="openBackupModal()" style="flex-shrink:0; margin-left:var(--space-4);">
+          <i class="ri-shield-check-line" aria-hidden="true"></i> ${t('Generate Full Backup')}
+        </button>
+      </div>
+      <div style="display:flex; align-items:center; gap:var(--space-2); font-size:var(--text-xs); color:var(--text-tertiary); padding:var(--space-3); background:var(--bg-muted); border-radius:var(--radius-md);">
+        <i class="ri-information-line" aria-hidden="true" style="font-size:0.9rem;"></i>
+        ${t('Backups are generated daily at 2:00 AM server time. Full backups include all account data.')}
+      </div>
+    </div>
+
+    <div class="backup-section">
+      <div class="backup-section-title">${t('Partial Backups')}</div>
+      <div style="font-size:var(--text-sm); color:var(--text-tertiary); margin-bottom:var(--space-4);">${t('Download individual components of your account.')}</div>
+      <div class="partial-backup-item">
+        <div class="partial-backup-left">
+          <div class="partial-backup-icon"><i class="ri-home-4-line" aria-hidden="true"></i></div>
+          <div>
+            <div style="font-size:var(--text-sm); font-weight:var(--weight-medium);">${t('Home Directory')}</div>
+            <div style="font-size:var(--text-xs); color:var(--text-tertiary);">${t('All files in home directory')}</div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="downloadPartialBackup('homedir')">
+          <i class="ri-download-line" aria-hidden="true"></i> ${t('Download')}
+        </button>
+      </div>
+      <div class="partial-backup-item">
+        <div class="partial-backup-left">
+          <div class="partial-backup-icon"><i class="ri-database-2-line" aria-hidden="true"></i></div>
+          <div>
+            <div style="font-size:var(--text-sm); font-weight:var(--weight-medium);">${t('MySQL Databases')}</div>
+            <div style="font-size:var(--text-xs); color:var(--text-tertiary);">${t('All database dumps')}</div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="downloadPartialBackup('mysql')">
+          <i class="ri-download-line" aria-hidden="true"></i> ${t('Download')}
+        </button>
+      </div>
+      <div class="partial-backup-item">
+        <div class="partial-backup-left">
+          <div class="partial-backup-icon"><i class="ri-mail-line" aria-hidden="true"></i></div>
+          <div>
+            <div style="font-size:var(--text-sm); font-weight:var(--weight-medium);">${t('Email Forwarders')}</div>
+            <div style="font-size:var(--text-xs); color:var(--text-tertiary);">${t('Forwarder configuration')}</div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="downloadPartialBackup('forwarders')">
+          <i class="ri-download-line" aria-hidden="true"></i> ${t('Download')}
+        </button>
+      </div>
+      <div class="partial-backup-item">
+        <div class="partial-backup-left">
+          <div class="partial-backup-icon"><i class="ri-filter-3-line" aria-hidden="true"></i></div>
+          <div>
+            <div style="font-size:var(--text-sm); font-weight:var(--weight-medium);">${t('Email Filters')}</div>
+            <div style="font-size:var(--text-xs); color:var(--text-tertiary);">${t('Filter rules configuration')}</div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="downloadPartialBackup('filters')">
+          <i class="ri-download-line" aria-hidden="true"></i> ${t('Download')}
+        </button>
+      </div>
+    </div>
+
+    <div class="backup-section">
+      <div class="backup-section-title">${t('Available Backups')}</div>
+      <div class="backup-table">
+        <div class="backup-table-head">
+          <div>${t('Date')}</div>
+          <div>${t('Size')}</div>
+          <div>${t('Type')}</div>
+          <div>${t('Status')}</div>
+          <div></div>
+        </div>
+        ${backupRows || '<div style="padding:var(--space-8); text-align:center; color:var(--text-tertiary);">' + t('No backups found') + '</div>'}
+      </div>
+    </div>`;
+}
+
+function downloadBackup(filename) {
+  if (!filename) { showToast(t('No backup file available'), 'error'); return; }
+  if (isLive) {
+    const token = CpanelAPI.getToken();
+    window.open(`/${token}/download?skipencode=1&file=${encodeURIComponent('/home/' + filename)}&fileop=download`, '_blank');
+  } else {
+    showToast(t('Downloading backup...'));
+  }
+}
+
+async function deleteBackup(idx, filename) {
+  if (!confirm(t('Delete this backup? This cannot be undone.'))) return;
+  if (isLive && filename) {
+    try {
+      await CpanelAPI.call2('Fileman', 'fileop', {
+        op: 'unlink', sourcefiles: '/home/' + filename
+      });
+    } catch (err) {
+      showToast(t('Failed: {0}', err.message), 'error');
+      return;
+    }
+  }
+  backups.splice(idx, 1);
+  renderTabContent();
+  showToast(t('Backup deleted'));
+}
+
+function downloadPartialBackup(type) {
+  if (isLive) {
+    // cPanel partial backup download URLs
+    const token = CpanelAPI.getToken();
+    const urls = {
+      homedir: `/${token}/frontend/jupiter/backup/download_home_directory_backup.html`,
+      mysql: `/${token}/frontend/jupiter/backup/download_mysql_backup.html`,
+      forwarders: `/${token}/frontend/jupiter/backup/download_email_forwarders_backup.html`,
+      filters: `/${token}/frontend/jupiter/backup/download_email_filters_backup.html`
+    };
+    if (urls[type]) {
+      window.open(urls[type], '_blank');
+    }
+  } else {
+    const labels = { homedir: 'home directory', mysql: 'database', forwarders: 'forwarder', filters: 'filter' };
+    showToast(t('Downloading {0} backup...', labels[type] || type));
+  }
+}
+
+function openBackupModal() {
+  document.getElementById('backupModal').classList.add('show');
+}
+
+function closeBackupModal() {
+  document.getElementById('backupModal').classList.remove('show');
+}
+
+async function handleFullBackup(event) {
+  event.preventDefault();
+  const dest = document.getElementById('backupDest').value;
+  const email = document.getElementById('backupEmail').value;
+
+  if (isLive) {
+    try {
+      await FilesAPI.fullBackupToHome(email);
+      closeBackupModal();
+      showToast(t('Full backup initiated. You will be notified at {0} when complete.', email));
+      // Refresh backups list
+      try {
+        const backupsResult = await FilesAPI.listFullBackups();
+        const rawBackups = backupsResult?.data || [];
+        if (Array.isArray(rawBackups) && rawBackups.length > 0) {
+          backups = rawBackups.map(b => ({
+            date: b.localtime || b.date || b.file || '-',
+            size: b.humansize || b.filesize || '-',
+            type: 'Full',
+            status: b.status === 'complete' ? 'Complete' : b.status === 'inprogress' ? 'In Progress' : (b.status || 'Complete')
+          }));
+        }
+      } catch (e) { /* backup list refresh is non-critical */ }
+      renderTabContent();
+      return;
+    } catch (err) {
+      showToast(t('Failed to start backup: {0}', err.message), 'error');
+      return;
+    }
+  }
+
+  // Mock mode
+  backups.unshift({
+    date: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    size: '~1.24 GB',
+    type: 'Full',
+    status: 'In Progress'
+  });
+
+  closeBackupModal();
+  renderTabContent();
+  showToast(t('Full backup initiated. You will be notified at {0} when complete.', email));
+}
+
+
+// ===================================================================
+// STATS
+// ===================================================================
+
+function formatDiskValue(value, unit) {
+  // Auto-scale large values to the next unit
+  const units = ['MB', 'GB', 'TB'];
+  let v = parseFloat(value);
+  let idx = units.indexOf(unit);
+  if (idx === -1) idx = 1; // default to GB
+  while (v >= 1024 && idx < units.length - 1) {
+    v /= 1024;
+    idx++;
+  }
+  // Format with appropriate precision: >100 = 0 decimals, >10 = 1, else 2
+  const precision = v >= 100 ? 0 : v >= 10 ? 1 : 2;
+  return v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: precision }) + ' ' + units[idx];
+}
+
+function updateStats() {
+  const du = diskUsage;
+  const used = du.total.used || diskLimits.used;
+  const max = du.total.max || diskLimits.max;
+  const unit = du.total.unit || diskLimits.unit;
+  const usedPercent = max ? Math.round((used / max) * 100) : 0;
+  const barClass = usedPercent > 90 ? 'danger' : usedPercent > 70 ? 'warning' : 'success';
+
+  const diskEl = document.getElementById('statDisk');
+  const formatted = formatDiskValue(used, unit);
+  diskEl.textContent = formatted;
+  diskEl.title = `${used} ${unit}`;
+  document.getElementById('statDiskBar').className = `storage-bar-fill ${barClass}`;
+  document.getElementById('statDiskBar').style.width = max ? `${usedPercent}%` : '0%';
+  document.getElementById('statDiskLabel').textContent = max
+    ? t('of {0} used', formatDiskValue(max, unit))
+    : t('Unlimited storage');
+
+  document.getElementById('statFiles').textContent = currentFiles.length;
+  document.getElementById('statFtp').textContent = ftpAccounts.length;
+  document.getElementById('statFtpLabel').textContent = ftpLimit ? t('of {0} allowed', ftpLimit) : t('Unlimited');
+
+  if (backups.length > 0) {
+    const lastBackup = backups[0];
+    const d = new Date(lastBackup.date);
+    document.getElementById('statBackup').textContent = isNaN(d) ? lastBackup.date : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } else {
+    document.getElementById('statBackup').textContent = t('Never');
+  }
+}
+
+
+// ===================================================================
+// INITIALIZATION
+// ===================================================================
+
+async function init() {
+  await CpanelAPI.loadFeatures();
+  if (typeof applyFeatureGating === 'function') applyFeatureGating();
+
+  try {
+    await loadLiveData();
+  } catch (err) {
+    console.error('Failed to load files data:', err);
+  }
+
+  // Feature-gate file tabs
+  var mainTabs = document.getElementById('mainTabs');
+  if (mainTabs) {
+    var tabFeatureMap = {
+      'ftp': 'ftpaccts',
+      'backups': 'backup'
+    };
+    Object.keys(tabFeatureMap).forEach(function(tabId) {
+      if (!CpanelAPI.hasFeature(tabFeatureMap[tabId])) {
+        var tab = mainTabs.querySelector('[data-tab="' + tabId + '"]');
+        if (tab) tab.style.display = 'none';
+      }
+    });
+  }
+
+  updateStats();
+  renderTabContent();
+  bindEvents();
+
+  document.getElementById('pageContent').style.display = '';
+}
+
+
+async function loadLiveData() {
+  try {
+    // Step 1: Detect user info (home dir, username)
+    const userInfo = await FilesAPI.getUserInfo();
+    homeDir = userInfo.home || homeDir;
+    userName = userInfo.user || userName;
+    ftpHost = userInfo.domain ? `ftp://${userInfo.domain}` : '';
+
+    // Step 2: Fetch all data in parallel
+    const [filesResult, ftpResult, usageResult, backupsResult, diskResult] = await Promise.allSettled([
+      FilesAPI.listFiles(`${homeDir}/public_html`),
+      FilesAPI.listFtp(),
+      FilesAPI.getResourceUsage().catch(() => null),
+      FilesAPI.listFullBackups().catch(() => null),
+      FilesAPI.fetchDiskUsage().catch(() => null)
+    ]);
+
+    // ── File listing ──
+    if (filesResult.status === 'fulfilled' && filesResult.value) {
+      currentPath = `${homeDir}/public_html`;
+      currentFiles = filesResult.value;
+    }
+
+    // ── FTP accounts ──
+    if (ftpResult.status === 'fulfilled') {
+      const rawFtp = ftpResult.value?.data || [];
+      ftpAccounts = rawFtp.map(f => ({
+        user: f.user || f.login,
+        dir: f.dir || f.homedir,
+        quota: (!f.diskquota || f.diskquota === '0' || f.diskquota === 'unlimited') ? 'unlimited' : formatBytes(parseInt(f.diskquota, 10) * 1024 * 1024),
+        used: f.diskused ? formatBytes(parseInt(f.diskused, 10) * 1024 * 1024) : '0 B',
+        isMain: (f.user || f.login) === userName || f.accttype === 'main',
+        loginUrl: ftpHost || `ftp://${f.serverlogin || f.user || ''}`,
+        _rawQuota: f.diskquota,
+        _rawUsed: f.diskused
+      }));
+    }
+
+    // ── Resource usage (FTP limits from ResourceUsage) ──
+    const rawUsageItems = (usageResult.status === 'fulfilled' && usageResult.value?.data) || [];
+    const usageArr = Array.isArray(rawUsageItems) ? rawUsageItems : [];
+    const ftpU = usageArr.find(u => u.id === 'ftpaccounts' || u.id === 'ftp_accounts');
+    if (ftpU) {
+      ftpLimit = ftpU.maximum === null || ftpU.maximum === 'unlimited' ? null : parseInt(ftpU.maximum, 10);
+      limits.ftp.max = ftpLimit;
+    }
+
+    // ── Disk usage via shared CpanelAPI.getDiskUsage() (cascading fallback) ──
+    try {
+      const dd = await CpanelAPI.getDiskUsage(usageArr);
+      if (dd) {
+        const usedGB = +(dd.used / (1024 * 1024 * 1024)).toFixed(2);
+        const maxGB = dd.max ? +(dd.max / (1024 * 1024 * 1024)).toFixed(2) : null;
+        diskLimits = { used: usedGB, max: maxGB, unit: 'GB' };
+        diskUsage.total = diskLimits;
+      }
+    } catch {}
+
+    // ── Disk usage breakdown (API2) ──
+    if (diskResult.status === 'fulfilled' && diskResult.value?.data) {
+      const raw = diskResult.value.data;
+      // API2 returns an array — the disk data is nested inside
+      if (Array.isArray(raw) && raw.length > 0) {
+        parseDiskUsageResult(raw);
+      } else if (typeof raw === 'object') {
+        parseDiskUsageResult([raw]);
+      }
+    }
+
+    // ── Backups (API2 listfullbackups) ──
+    if (backupsResult.status === 'fulfilled' && backupsResult.value?.data) {
+      const rawBackups = backupsResult.value.data || [];
+      if (Array.isArray(rawBackups) && rawBackups.length > 0) {
+        backups = rawBackups.map(b => ({
+          date: b.localtime || b.date || b.file || '-',
+          size: b.humansize || b.filesize || '-',
+          type: 'Full',
+          status: b.status === 'complete' ? 'Complete' : b.status === 'inprogress' ? 'In Progress' : (b.status || 'Complete'),
+          file: b.file || ''
+        }));
+      }
+    }
+
+    isLive = true;
+
+  } catch (err) {
+    console.error('Failed to load live data:', err);
+  }
+}
+
+// Parse DiskUsage::fetchdiskusagewithextras response
+function parseDiskUsageResult(data) {
+  // The API2 result contains disk categories and subdirectory info
+  const breakdown = [];
+  const topDirs = [];
+
+  for (const item of data) {
+    // Top-level has different key patterns depending on the cPanel version
+    // Common pattern: each item has { name, bytes } or category fields
+    if (item.homedir || item.home) {
+      // Nested home directory data
+      const homeData = item.homedir || item.home;
+      if (homeData.contained_usage) {
+        breakdown.push({ label: t('Home Directory'), size: formatBytes(homeData.contained_usage), bytes: parseInt(homeData.contained_usage, 10) });
+      }
+      // Extract top directories from home contents
+      if (homeData.contents && Array.isArray(homeData.contents)) {
+        homeData.contents.forEach(d => {
+          if (d.contained_usage > 0) {
+            topDirs.push({ path: `/${d.name}`, size: formatBytes(d.contained_usage), bytes: parseInt(d.contained_usage, 10) });
+          }
+        });
+      }
+    }
+    if (item.mysql !== undefined) {
+      breakdown.push({ label: t('MySQL Databases'), size: formatBytes(item.mysql), bytes: parseInt(item.mysql, 10) || 0 });
+    }
+    if (item.pgsql !== undefined) {
+      breakdown.push({ label: t('PostgreSQL'), size: formatBytes(item.pgsql), bytes: parseInt(item.pgsql, 10) || 0 });
+    }
+    if (item.mailman !== undefined) {
+      breakdown.push({ label: t('Mailing Lists'), size: formatBytes(item.mailman), bytes: parseInt(item.mailman, 10) || 0 });
+    }
+    if (item.mailaccounts !== undefined) {
+      breakdown.push({ label: t('Email Accounts'), size: formatBytes(item.mailaccounts), bytes: parseInt(item.mailaccounts, 10) || 0 });
+    }
+    // Fallback: some cPanel versions return {name, bytes} or {category, usage}
+    if (item.name && item.bytes !== undefined && !item.homedir) {
+      breakdown.push({ label: item.name, size: formatBytes(item.bytes), bytes: parseInt(item.bytes, 10) || 0 });
+    }
+    if (item.category && item.usage !== undefined) {
+      breakdown.push({ label: item.category, size: formatBytes(item.usage), bytes: parseInt(item.usage, 10) || 0 });
+    }
+  }
+
+  // Calculate percentages
+  const totalBytes = breakdown.reduce((s, b) => s + (b.bytes || 0), 0);
+  if (totalBytes > 0) {
+    breakdown.forEach(b => { b.percent = Math.round((b.bytes / totalBytes) * 100); });
+    diskUsage.breakdown = breakdown;
+  }
+
+  // Sort top dirs by size
+  topDirs.sort((a, b) => (b.bytes || 0) - (a.bytes || 0));
+  if (topDirs.length > 0) {
+    diskUsage.topDirs = topDirs.slice(0, 10);
+  }
+}
+
+// formatBytes() — delegates to shared CpanelAPI.formatBytes()
+function formatBytes(bytes) {
+  return CpanelAPI.formatBytes(parseInt(bytes, 10) || 0);
+}
+
+function formatTimestamp(ts) {
+  // Handle unix timestamps or date strings
+  const d = typeof ts === 'number' ? new Date(ts * 1000) : new Date(ts);
+  if (isNaN(d)) return ts;
+  return d.toISOString().slice(0, 16).replace('T', ' ');
+}
+
+
+// ===================================================================
+// EVENT BINDING
+// ===================================================================
+
+function bindEvents() {
+  // Tab switching
+  document.querySelectorAll('#mainTabs .detail-tab').forEach(tab => {
+    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+  });
+
+  // Close modals on backdrop click
+  document.getElementById('ftpModal').addEventListener('click', function(e) {
+    if (e.target === this) closeFtpModal();
+  });
+  document.getElementById('backupModal').addEventListener('click', function(e) {
+    if (e.target === this) closeBackupModal();
+  });
+  document.getElementById('ftpEditOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeFtpEditModal();
+  });
+  document.getElementById('uploadOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeUploadModal();
+  });
+
+  // Close modals on Escape
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeFtpModal();
+      closeBackupModal();
+      closeFtpEditModal();
+      closeUploadModal();
+      hideContextMenu();
+    }
+  });
+
+  // Upload drag-and-drop and click-to-browse
+  const dropZone = document.getElementById('uploadDropZone');
+  const fileInput = document.getElementById('uploadFileInput');
+  if (dropZone && fileInput) {
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => addUploadFiles(e.target.files));
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = 'var(--accent)';
+      dropZone.style.background = 'var(--bg-muted)';
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.style.borderColor = 'var(--border-default)';
+      dropZone.style.background = '';
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = 'var(--border-default)';
+      dropZone.style.background = '';
+      addUploadFiles(e.dataTransfer.files);
+    });
+  }
+}
+
+
+// Init
+init();
+</script>
+[% END %]

@@ -1,0 +1,41 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-full);
+  line-height: 1.4;
+}
+
+.badge-neutral { background: var(--bg-muted);           color: var(--text-secondary); }
+.badge-success { background: var(--status-success-bg);  color: var(--status-success); }
+.badge-warning { background: var(--status-warning-bg);  color: var(--status-warning); }
+.badge-error   { background: var(--status-error-bg);    color: var(--status-error); }
+.badge-info    { background: var(--status-info-bg);     color: var(--status-info); }
+.badge-accent  { background: var(--accent-muted);       color: var(--text-brand); }
+
+// Icon sizing inside badges
+.badge i {
+  font-size: 0.65rem;
+}
+
+// Extra-small variant for inline/compact contexts
+.badge-xs {
+  font-size: 0.65rem;
+  padding: 1px var(--space-1);
+}
+
+.badge-dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+}

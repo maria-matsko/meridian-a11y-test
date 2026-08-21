@@ -1,0 +1,112 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ─────────────────────────────────────────────────────────────
+// WIZARD STEPPER — horizontal numbered step indicator
+// ─────────────────────────────────────────────────────────────
+
+.wizard-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+}
+
+.wizard-stepper-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.wizard-stepper-num {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  transition: background var(--duration-normal) var(--ease-out),
+              border-color var(--duration-normal) var(--ease-out),
+              color var(--duration-normal) var(--ease-out);
+}
+
+.wizard-stepper-label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  transition: color var(--duration-normal) var(--ease-out),
+              font-weight var(--duration-normal) var(--ease-out);
+}
+
+.wizard-stepper-line {
+  flex: 1;
+  height: 2px;
+  min-width: 16px;
+  margin: 0 var(--space-3);
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+  transition: background var(--duration-normal) var(--ease-out);
+}
+
+// ── Active step ──
+.wizard-stepper-step.active .wizard-stepper-num {
+  border-color: var(--accent);
+  background: var(--accent-muted);
+  color: var(--text-brand);
+}
+
+.wizard-stepper-step.active .wizard-stepper-label {
+  color: var(--text-primary);
+  font-weight: var(--weight-semibold);
+}
+
+// ── Completed step ──
+.wizard-stepper-step.completed .wizard-stepper-num {
+  border-color: var(--status-success);
+  background: var(--status-success);
+  color: var(--text-inverse);
+}
+
+.wizard-stepper-step.completed .wizard-stepper-label {
+  color: var(--text-secondary);
+}
+
+.wizard-stepper-line.completed {
+  background: var(--status-success);
+}
+
+// ── Disabled step ──
+.wizard-stepper-step.disabled .wizard-stepper-num {
+  opacity: 0.4;
+}
+
+.wizard-stepper-step.disabled .wizard-stepper-label {
+  opacity: 0.4;
+}
+
+// ── Responsive: hide labels below 640px ──
+@media (max-width: 640px) {
+  .wizard-stepper-label {
+    display: none;
+  }
+
+  .wizard-stepper-line {
+    min-width: 8px;
+    margin: 0 var(--space-2);
+  }
+
+  .wizard-stepper-num {
+    width: 28px;
+    height: 28px;
+  }
+}

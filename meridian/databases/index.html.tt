@@ -1,0 +1,980 @@
+[% WRAPPER '_assets/master.html.tt'
+    page_title = 'Databases'
+    page_id    = 'databases'
+%]
+<style>
+/* ===================================================================
+   DATABASES PAGE -- SPECIFIC STYLES
+   =================================================================== */
+
+/* Stats row */
+.stat-card-icon.mysql { background: var(--status-info-bg); color: var(--status-info); }
+.stat-card-icon.mysql-users { background: var(--feature-bg); color: var(--feature-color); }
+.stat-card-icon.pgsql { background: var(--status-success-bg); color: var(--status-success); }
+.stat-card-icon.db-size { background: var(--accent-subtle); color: var(--text-brand); }
+
+/* Tab navigation */
+/* .detail-tabs-bar is in meridian.css */
+
+/* Grid layouts for different tables */
+.grid-mysql-db { grid-template-columns: 1fr 90px 70px 1fr 120px 140px; }
+.grid-mysql-user { grid-template-columns: 1fr 1fr 120px 160px; }
+.grid-remote { grid-template-columns: 1fr 120px 100px; }
+.grid-pg-db { grid-template-columns: 1fr 1fr 120px; }
+.grid-pg-user { grid-template-columns: 1fr 1fr 120px; }
+
+/* Remote host items */
+.remote-host-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.remote-host-item:last-child { border-bottom: none; }
+.remote-host-item:hover { background: var(--bg-hover); }
+
+/* Filter bar, filter search — in meridian.css */
+
+/* Empty state */
+.empty-state {
+  text-align: center; padding: var(--space-12) var(--space-6);
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+}
+.empty-state i { font-size: var(--text-3xl); margin-bottom: var(--space-4); display: block; }
+
+
+/* ===================================================================
+   RESPONSIVE (page-specific)
+   =================================================================== */
+
+@media (max-width: 768px) {
+  /* MySQL databases: hide Tables + Collation columns */
+  .grid-mysql-db { grid-template-columns: 1fr 90px 1fr 100px; }
+  .grid-mysql-db > *:nth-child(3), .grid-mysql-db > *:nth-child(5) { display: none; }
+
+  /* MySQL users: hide Privileges column */
+  .grid-mysql-user { grid-template-columns: 1fr 1fr 120px; }
+  .grid-mysql-user > *:nth-child(3) { display: none; }
+
+  /* Remote hosts: stack vertically */
+  .remote-host-item { flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+}
+
+@media (max-width: 480px) {
+  /* MySQL databases: name + actions only */
+  .grid-mysql-db { grid-template-columns: 1fr auto; }
+  .grid-mysql-db > *:nth-child(2),
+  .grid-mysql-db > *:nth-child(4) { display: none; }
+
+  /* MySQL users: name + actions only */
+  .grid-mysql-user { grid-template-columns: 1fr auto; }
+  .grid-mysql-user > *:nth-child(2) { display: none; }
+
+  /* PostgreSQL databases: name + actions only */
+  .grid-pg-db { grid-template-columns: 1fr auto; }
+  .grid-pg-db > *:nth-child(2) { display: none; }
+
+  /* PostgreSQL users: name + actions only */
+  .grid-pg-user { grid-template-columns: 1fr auto; }
+  .grid-pg-user > *:nth-child(2) { display: none; }
+
+  /* Action buttons: compact on mobile */
+  .data-actions .btn-sm { padding: var(--space-2); min-width: 36px; min-height: 36px; }
+
+  /* Sub-tabs: scroll horizontally if needed */
+  .sub-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+  .sub-tab { white-space: nowrap; flex-shrink: 0; }
+}
+</style>
+
+
+<a href="#main-content" class="sr-only">Skip to main content</a>
+
+<div class="layout-shell">
+
+  <!-- Header -->
+  <meridian-header></meridian-header>
+
+  <!-- Sidebar -->
+  <meridian-sidebar active="databases"></meridian-sidebar>
+
+  <!-- Main Content -->
+  <main class="layout-main" id="main-content">
+    <div class="main-content">
+
+      <!-- All page content hidden until data is ready -->
+      <div id="pageContent" style="display:none;">
+
+        <!-- Page header -->
+        <div class="page-header animate-in stagger-1">
+          <div class="page-header-left">
+            <div>
+              <h1 class="page-title" data-t>Databases</h1>
+              <div class="page-subtitle" data-t>Manage MySQL and PostgreSQL databases, users, and privileges</div>
+            </div>
+          </div>
+          <div class="page-header-right">
+            <button class="btn btn-primary" onclick="openCreateWizard()">
+              <i class="ri-add-line" aria-hidden="true"></i>
+              <span data-t>Create Database</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="stats-row animate-in stagger-2" id="statsRow">
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon mysql"><i class="ri-database-2-line" aria-hidden="true"></i></div>
+              <div class="stat-card-title" data-t>MySQL Databases</div>
+            </div>
+            <div class="stat-card-value" id="statMysqlDb">&ndash;</div>
+            <div class="stat-card-label" id="statMysqlDbLabel">of unlimited</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon mysql-users"><i class="ri-user-line" aria-hidden="true"></i></div>
+              <div class="stat-card-title" data-t>MySQL Users</div>
+            </div>
+            <div class="stat-card-value" id="statMysqlUsers">&ndash;</div>
+            <div class="stat-card-label" data-t>Active users</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon pgsql"><i class="ri-database-line" aria-hidden="true"></i></div>
+              <div class="stat-card-title" data-t>PostgreSQL DBs</div>
+            </div>
+            <div class="stat-card-value" id="statPgDb">&ndash;</div>
+            <div class="stat-card-label" id="statPgDbLabel">of unlimited</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon db-size"><i class="ri-hard-drive-3-line" aria-hidden="true"></i></div>
+              <div class="stat-card-title" data-t>Total DB Size</div>
+            </div>
+            <div class="stat-card-value" id="statTotalSize">&ndash;</div>
+            <div class="stat-card-label" data-t>All databases</div>
+          </div>
+        </div>
+
+        <!-- Main tabs: MySQL | PostgreSQL -->
+        <div class="detail-tabs-bar animate-in stagger-3" id="mainTabs" role="tablist">
+          <button class="detail-tab active" data-tab="mysql" role="tab" aria-selected="true" onclick="switchMainTab('mysql')">
+            <i class="ri-database-2-line" aria-hidden="true"></i> <span data-t>MySQL</span>
+          </button>
+          <button class="detail-tab" data-tab="postgresql" role="tab" aria-selected="false" onclick="switchMainTab('postgresql')">
+            <i class="ri-database-line" aria-hidden="true"></i> <span data-t>PostgreSQL</span>
+          </button>
+        </div>
+
+        <!-- Tab content -->
+        <div class="animate-in stagger-4" id="tabContent"></div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../_assets/wizard-modal.js"></script>
+<script>
+// ===================================================================
+// MOCK DATA
+// ===================================================================
+
+const mockData = {
+  mysql: {
+    databases: [],
+    users: [],
+    remoteHosts: [],
+    serverInfo: { version: '', server: '' }
+  },
+  postgresql: {
+    databases: [],
+    users: []
+  },
+  limits: {
+    mysqlDb: { used: 0, max: null },
+    pgDb: { used: 0, max: null }
+  }
+};
+
+let dbPrefix = '';
+let pgPrefix = '';
+
+
+// ===================================================================
+// STATE
+// ===================================================================
+
+let activeMainTab = 'mysql';
+let activeSubTab = 'databases';
+let isLive = true;
+
+
+// ===================================================================
+// ===================================================================
+// TAB SWITCHING
+// ===================================================================
+
+function switchMainTab(tab) {
+  activeMainTab = tab;
+  activeSubTab = 'databases';
+  document.querySelectorAll('#mainTabs .detail-tab').forEach(t => {
+    const isActive = t.dataset.tab === tab;
+    t.classList.toggle('active', isActive);
+    t.setAttribute('aria-selected', isActive);
+  });
+  renderTabContent();
+}
+
+function switchSubTab(tab) {
+  activeSubTab = tab;
+  renderTabContent();
+}
+
+
+// ===================================================================
+// RENDER TAB CONTENT
+// ===================================================================
+
+function renderTabContent() {
+  const container = document.getElementById('tabContent');
+  if (activeMainTab === 'mysql') {
+    renderMysqlTab(container);
+  } else {
+    renderPostgresqlTab(container);
+  }
+}
+
+
+// ===================================================================
+// MYSQL TAB
+// ===================================================================
+
+function renderMysqlTab(container) {
+  const subTabs = ['databases', 'users', 'remote'].map(tab => {
+    const labels = { databases: t('Databases'), users: t('Users'), remote: t('Remote MySQL') };
+    const isActive = activeSubTab === tab;
+    return `<button class="sub-tab ${isActive ? 'active' : ''}" role="tab" aria-selected="${isActive}" onclick="switchSubTab('${tab}')">${labels[tab]}</button>`;
+  }).join('');
+
+  let content = '';
+  if (activeSubTab === 'databases') content = renderMysqlDatabases();
+  else if (activeSubTab === 'users') content = renderMysqlUsers();
+  else content = renderRemoteMySQL();
+
+  container.innerHTML = `<div class="sub-tabs" role="tablist">${subTabs}</div>${content}`;
+}
+
+function renderMysqlDatabases() {
+  const dbs = mockData.mysql.databases;
+  const rows = dbs.map(db => {
+    const userBadges = db.users.length > 0
+      ? db.users.map(u => `<span class="badge badge-info">${esc(u)}</span>`).join('')
+      : `<span class="badge badge-warning">${t('No users')}</span>`;
+    return `
+      <div class="data-row grid-mysql-db">
+        <div class="data-cell name mono">${esc(db.name)}</div>
+        <div class="data-cell">${esc(db.size)}</div>
+        <div class="data-cell">${esc(String(db.tables))}</div>
+        <div class="data-cell"><div class="data-cell-badges">${userBadges}</div></div>
+        <div class="data-cell">${esc(db.collation)}</div>
+        <div class="data-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openPhpMyAdmin('${esc(db.name)}')" aria-label="Open phpMyAdmin for ${esc(db.name)}"><i class="ri-external-link-line" aria-hidden="true"></i> phpMyAdmin</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteDatabase('mysql', '${esc(db.name)}')" aria-label="${t('Delete database')} ${esc(db.name)}"><i class="ri-delete-bin-line" aria-hidden="true"></i></button>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="data-table">
+      <div class="data-table-head grid-mysql-db">
+        <div>${t('Name')}</div><div>${t('Size')}</div><div>${t('Tables')}</div><div>${t('Users')}</div><div>${t('Collation')}</div><div></div>
+      </div>
+      ${rows}
+    </div>`;
+}
+
+function renderMysqlUsers() {
+  const users = mockData.mysql.users;
+  const rows = users.map(u => {
+    const dbBadges = u.databases.map(d => `<span class="badge badge-neutral">${esc(d)}</span>`).join('');
+    return `
+      <div class="data-row grid-mysql-user">
+        <div class="data-cell name mono">${esc(u.name)}</div>
+        <div class="data-cell"><div class="data-cell-badges">${dbBadges}</div></div>
+        <div class="data-cell">${esc(u.privileges)}</div>
+        <div class="data-actions">
+          <button class="btn btn-ghost btn-sm" onclick="editPrivileges('${esc(u.name)}')" aria-label="${t('Edit privileges for')} ${esc(u.name)}"><i class="ri-shield-keyhole-line" aria-hidden="true"></i> ${t('Privileges')}</button>
+          <button class="btn btn-ghost btn-sm" onclick="changeDbPassword('${esc(u.name)}')" aria-label="${t('Change password for')} ${esc(u.name)}"><i class="ri-lock-password-line" aria-hidden="true"></i></button>
+          <button class="btn btn-danger btn-sm" onclick="deleteDbUser('mysql', '${esc(u.name)}')" aria-label="${t('Delete user')} ${esc(u.name)}"><i class="ri-delete-bin-line" aria-hidden="true"></i></button>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="data-table">
+      <div class="data-table-head grid-mysql-user">
+        <div>${t('Username')}</div><div>${t('Databases')}</div><div>${t('Privileges')}</div><div></div>
+      </div>
+      ${rows}
+    </div>`;
+}
+
+function renderRemoteMySQL() {
+  const hosts = mockData.mysql.remoteHosts;
+  const rows = hosts.map(h => `
+    <div class="remote-host-item">
+      <div class="row row-gap-md">
+        <div class="data-cell mono name">${esc(h.host)}</div>
+        <div class="data-cell">${esc(h.comment || '')}</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="removeRemoteHost('${esc(h.host)}')" aria-label="${t('Remove host')} ${esc(h.host)}">
+        <i class="ri-delete-bin-line" aria-hidden="true"></i> ${t('Remove')}
+      </button>
+    </div>`).join('');
+
+  return `
+    <div class="card" style="margin-bottom: var(--space-4);">
+      <div class="row row-between" style="margin-bottom: var(--space-4);">
+        <div>
+          <div style="font-size:var(--text-md); font-weight:var(--weight-semibold); letter-spacing:var(--tracking-tight);">${t('Remote MySQL Hosts')}</div>
+          <div style="font-size:var(--text-sm); color:var(--text-tertiary); margin-top:var(--space-1);">${t('Allow external servers to connect to your MySQL databases')}</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="addRemoteHost()">
+          <i class="ri-add-line" aria-hidden="true"></i> ${t('Add Host')}
+        </button>
+      </div>
+      <div class="data-table">
+        ${rows.length ? rows : `<div class="empty-state"><i class="ri-server-line" aria-hidden="true"></i><div>${t('No remote hosts configured')}</div></div>`}
+      </div>
+    </div>`;
+}
+
+
+// ===================================================================
+// POSTGRESQL TAB
+// ===================================================================
+
+function renderPostgresqlTab(container) {
+  const subTabs = ['databases', 'users'].map(tab => {
+    const labels = { databases: t('Databases'), users: t('Users') };
+    const isActive = activeSubTab === tab;
+    return `<button class="sub-tab ${isActive ? 'active' : ''}" role="tab" aria-selected="${isActive}" onclick="switchSubTab('${tab}')">${labels[tab]}</button>`;
+  }).join('');
+
+  let content = '';
+  if (activeSubTab === 'databases') content = renderPgDatabases();
+  else content = renderPgUsers();
+
+  container.innerHTML = `<div class="sub-tabs" role="tablist">${subTabs}</div>${content}`;
+}
+
+function renderPgDatabases() {
+  const dbs = mockData.postgresql.databases;
+  const rows = dbs.map(db => {
+    const userBadges = db.users.map(u => `<span class="badge badge-success">${esc(u)}</span>`).join('');
+    return `
+      <div class="data-row grid-pg-db">
+        <div class="data-cell name mono">${esc(db.name)}</div>
+        <div class="data-cell"><div class="data-cell-badges">${userBadges}</div></div>
+        <div class="data-actions">
+          <button class="btn btn-danger btn-sm" onclick="deleteDatabase('postgresql', '${esc(db.name)}')" aria-label="${t('Delete database')} ${esc(db.name)}"><i class="ri-delete-bin-line" aria-hidden="true"></i> ${t('Delete')}</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="data-table">
+      <div class="data-table-head grid-pg-db">
+        <div>${t('Name')}</div><div>${t('Users')}</div><div></div>
+      </div>
+      ${rows.length ? rows : `<div class="empty-state"><i class="ri-database-line" aria-hidden="true"></i><div>${t('No PostgreSQL databases')}</div></div>`}
+    </div>`;
+}
+
+function renderPgUsers() {
+  const users = mockData.postgresql.users;
+  const rows = users.map(u => {
+    const dbBadges = u.databases.map(d => `<span class="badge badge-neutral">${esc(d)}</span>`).join('');
+    return `
+      <div class="data-row grid-pg-user">
+        <div class="data-cell name mono">${esc(u.name)}</div>
+        <div class="data-cell"><div class="data-cell-badges">${dbBadges}</div></div>
+        <div class="data-actions">
+          <button class="btn btn-danger btn-sm" onclick="deleteDbUser('postgresql', '${esc(u.name)}')" aria-label="${t('Delete user')} ${esc(u.name)}"><i class="ri-delete-bin-line" aria-hidden="true"></i> ${t('Delete')}</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="data-table">
+      <div class="data-table-head grid-pg-user">
+        <div>${t('Username')}</div><div>${t('Databases')}</div><div></div>
+      </div>
+      ${rows.length ? rows : `<div class="empty-state"><i class="ri-user-line" aria-hidden="true"></i><div>${t('No PostgreSQL users')}</div></div>`}
+    </div>`;
+}
+
+
+// ===================================================================
+// UPDATE STATS
+// ===================================================================
+
+function updateStats() {
+  const mysqlCount = mockData.mysql.databases.length;
+  const mysqlMax = mockData.limits.mysqlDb.max;
+  document.getElementById('statMysqlDb').textContent = mysqlCount;
+  document.getElementById('statMysqlDbLabel').textContent = mysqlMax ? t('{0} of {1}', mysqlCount, mysqlMax) : t('of unlimited');
+
+  document.getElementById('statMysqlUsers').textContent = mockData.mysql.users.length;
+
+  const pgCount = mockData.postgresql.databases.length;
+  const pgMax = mockData.limits.pgDb.max;
+  document.getElementById('statPgDb').textContent = pgCount;
+  document.getElementById('statPgDbLabel').textContent = pgMax ? t('{0} of {1}', pgCount, pgMax) : t('of unlimited');
+
+  // Total size
+  let totalMB = 0;
+  mockData.mysql.databases.forEach(db => {
+    const m = db.size.match(/([\d.]+)\s*(MB|GB|KB)/i);
+    if (m) {
+      const val = parseFloat(m[1]);
+      if (m[2].toUpperCase() === 'GB') totalMB += val * 1024;
+      else if (m[2].toUpperCase() === 'KB') totalMB += val / 1024;
+      else totalMB += val;
+    }
+  });
+  document.getElementById('statTotalSize').textContent = totalMB >= 1024
+    ? (totalMB / 1024).toFixed(1) + ' GB'
+    : totalMB.toFixed(1) + ' MB';
+}
+
+
+// ===================================================================
+// CREATE DATABASE WIZARD
+// ===================================================================
+
+let createWizardStep = 1;
+let createWizardState = { engine: 'mysql', dbName: '', userName: '', userPass: '', useExisting: false, existingUser: '', privileges: 'ALL PRIVILEGES' };
+
+function generateStrongPassword() {
+  var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  var arr = new Uint32Array(24);
+  crypto.getRandomValues(arr);
+  var pass = '';
+  for (var i = 0; i < 24; i++) pass += chars.charAt(arr[i] % chars.length);
+  return pass;
+}
+
+function renderCreateStep1() {
+  const hasPg = typeof CpanelAPI !== 'undefined' && CpanelAPI.hasFeature ? CpanelAPI.hasFeature('postgres') : true;
+  const engineCards = hasPg ? `
+    <div style="display:flex; gap:var(--space-3); margin-bottom:var(--space-4);">
+      <label style="flex:1; padding:var(--space-3) var(--space-4); border:2px solid ${createWizardState.engine === 'mysql' ? 'var(--accent)' : 'var(--border-default)'}; border-radius:var(--radius-lg); cursor:pointer; display:flex; align-items:center; gap:var(--space-3);">
+        <input type="radio" name="wizEngine" value="mysql" ${createWizardState.engine === 'mysql' ? 'checked' : ''} onchange="createWizardState.engine='mysql'" style="accent-color:var(--accent);">
+        <div><div style="font-weight:var(--weight-semibold);">${t('MySQL / MariaDB')}</div><div class="t-body-xs t-muted">${t('Most common choice')}</div></div>
+      </label>
+      <label style="flex:1; padding:var(--space-3) var(--space-4); border:2px solid ${createWizardState.engine === 'postgresql' ? 'var(--accent)' : 'var(--border-default)'}; border-radius:var(--radius-lg); cursor:pointer; display:flex; align-items:center; gap:var(--space-3);">
+        <input type="radio" name="wizEngine" value="postgresql" ${createWizardState.engine === 'postgresql' ? 'checked' : ''} onchange="createWizardState.engine='postgresql'" style="accent-color:var(--accent);">
+        <div><div style="font-weight:var(--weight-semibold);">${t('PostgreSQL')}</div><div class="t-body-xs t-muted">${t('Advanced features')}</div></div>
+      </label>
+    </div>` : '';
+
+  const prefix = createWizardState.engine === 'mysql' ? dbPrefix : (pgPrefix || dbPrefix);
+  return `
+    <div style="display:flex; align-items:center; gap:var(--space-2); margin-bottom:var(--space-5); font-size:var(--text-xs);">
+      <span style="width:22px; height:22px; border-radius:50%; background:var(--accent); color:white; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;">1</span>
+      <span style="font-weight:var(--weight-semibold); color:var(--text-brand);">${t('Database')}</span>
+      <span style="width:24px; height:1px; background:var(--border-default);"></span>
+      <span style="width:22px; height:22px; border-radius:50%; background:var(--bg-muted); color:var(--text-tertiary); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;">2</span>
+      <span style="color:var(--text-tertiary);">${t('User & Privileges')}</span>
+    </div>
+    ${engineCards}
+    <div class="form-group">
+      <label class="form-label">${t('Database Name')}</label>
+      <div style="display:flex; align-items:center;">
+        <span style="background:var(--bg-muted); padding:var(--space-2) var(--space-3); border-radius:var(--radius-md) 0 0 var(--radius-md); border:1px solid var(--border-default); border-right:none; font-family:var(--font-mono); font-size:var(--text-xs); color:var(--text-tertiary);">${prefix}</span>
+        <input type="text" class="form-input" id="wizDbName" placeholder="my_database" value="${createWizardState.dbName}" oninput="createWizardState.dbName=this.value; document.getElementById('wizFullName').textContent='${prefix}'+this.value" style="border-radius:0 var(--radius-md) var(--radius-md) 0;">
+      </div>
+      <div class="form-hint">${t('Full name')}: <code id="wizFullName">${prefix}${createWizardState.dbName || 'my_database'}</code></div>
+    </div>`;
+}
+
+function renderCreateStep2() {
+  const prefix = createWizardState.engine === 'mysql' ? dbPrefix : (pgPrefix || dbPrefix);
+  const existingUsers = createWizardState.engine === 'mysql' ? mockData.mysql.users : mockData.postgresql.users;
+  const userOpts = existingUsers.map(function(u) { return '<option value="' + u.name + '">' + u.name + '</option>'; }).join('');
+  const isMysql = createWizardState.engine === 'mysql';
+
+  return `
+    <div style="display:flex; align-items:center; gap:var(--space-2); margin-bottom:var(--space-5); font-size:var(--text-xs);">
+      <span style="width:22px; height:22px; border-radius:50%; background:var(--status-success); color:white; display:flex; align-items:center; justify-content:center; font-size:10px;">&#10003;</span>
+      <span style="font-weight:var(--weight-semibold); color:var(--status-success);">${t('Database')}</span>
+      <span style="width:24px; height:1px; background:var(--status-success);"></span>
+      <span style="width:22px; height:22px; border-radius:50%; background:var(--accent); color:white; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;">2</span>
+      <span style="font-weight:var(--weight-semibold); color:var(--text-brand);">${t('User & Privileges')}</span>
+    </div>
+    <div style="display:flex; gap:var(--space-2); margin-bottom:var(--space-4);">
+      <label style="padding:var(--space-2) var(--space-4); border:2px solid ${!createWizardState.useExisting ? 'var(--accent)' : 'var(--border-default)'}; border-radius:var(--radius-lg); cursor:pointer; font-size:var(--text-sm); font-weight:var(--weight-semibold); display:flex; align-items:center; gap:var(--space-2);">
+        <input type="radio" name="userMode" value="new" ${!createWizardState.useExisting ? 'checked' : ''} onchange="createWizardState.useExisting=false; renderCreateWizardBody()" style="accent-color:var(--accent);"> ${t('Create new user')}
+      </label>
+      <label style="padding:var(--space-2) var(--space-4); border:1px solid var(--border-default); border-radius:var(--radius-lg); cursor:pointer; font-size:var(--text-sm); color:var(--text-secondary); display:flex; align-items:center; gap:var(--space-2);">
+        <input type="radio" name="userMode" value="existing" ${createWizardState.useExisting ? 'checked' : ''} onchange="createWizardState.useExisting=true; renderCreateWizardBody()" style="accent-color:var(--accent);"> ${t('Use existing user')}
+      </label>
+    </div>
+    ${!createWizardState.useExisting ? `
+      <div class="form-group">
+        <label class="form-label">${t('Username')}</label>
+        <div style="display:flex; align-items:center;">
+          <span style="background:var(--bg-muted); padding:var(--space-2) var(--space-3); border-radius:var(--radius-md) 0 0 var(--radius-md); border:1px solid var(--border-default); border-right:none; font-family:var(--font-mono); font-size:var(--text-xs); color:var(--text-tertiary);">${prefix}</span>
+          <input type="text" class="form-input" id="wizUserName" placeholder="db_user" value="${createWizardState.userName}" oninput="createWizardState.userName=this.value" style="border-radius:0 var(--radius-md) var(--radius-md) 0;">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">${t('Password')}</label>
+        <div style="display:flex; gap:var(--space-2);">
+          <input type="password" class="form-input" id="wizUserPass" placeholder="${t('Strong password')}" value="${createWizardState.userPass}" oninput="createWizardState.userPass=this.value" style="flex:1;">
+          <button type="button" class="btn btn-secondary" onclick="var p=generateStrongPassword(); createWizardState.userPass=p; document.getElementById('wizUserPass').value=p;">${t('Generate')}</button>
+        </div>
+      </div>` : `
+      <div class="form-group">
+        <label class="form-label">${t('Select User')}</label>
+        <select class="form-select" id="wizExistingUser" onchange="createWizardState.existingUser=this.value">
+          <option value="">\u2014 ${t('Select')} \u2014</option>${userOpts}
+        </select>
+      </div>`}
+    ${isMysql ? `
+      <div style="margin-top:var(--space-4); padding:var(--space-3) var(--space-4); background:var(--status-success-bg); border:1px solid var(--status-success-border, var(--status-success-bg)); border-radius:var(--radius-md); display:flex; align-items:center; gap:var(--space-2);">
+        <input type="checkbox" id="wizAllPrivs" checked onchange="createWizardState.privileges=this.checked?'ALL PRIVILEGES':''" style="accent-color:var(--status-success);">
+        <label for="wizAllPrivs" style="font-weight:var(--weight-semibold); font-size:var(--text-sm);">${t('ALL PRIVILEGES')}</label>
+        <span style="font-size:var(--text-xs); color:var(--text-tertiary); margin-left:auto;">${t('Recommended for most use cases')}</span>
+      </div>` : ''}`;
+}
+
+function renderCreateWizardBody() {
+  var body = document.querySelector('.wizard-modal-body');
+  if (!body) return;
+  body.innerHTML = createWizardStep === 1 ? renderCreateStep1() : renderCreateStep2();
+}
+
+function openCreateWizard() {
+  createWizardStep = 1;
+  createWizardState = { engine: 'mysql', dbName: '', userName: '', userPass: '', useExisting: false, existingUser: '', privileges: 'ALL PRIVILEGES' };
+
+  modalWizard.openContent({
+    title: t('Create Database'),
+    size: 'md',
+    body: renderCreateStep1(),
+    footer: '<button class="btn btn-secondary" onclick="modalWizard.close()">' + t('Cancel') + '</button>' +
+            '<button class="btn btn-primary" id="wizNextBtn" onclick="wizardNext()">' + t('Next') + ' <i class="ri-arrow-right-line" aria-hidden="true"></i></button>',
+    onMount: function() {}
+  });
+}
+
+function wizardNext() {
+  if (createWizardStep === 1) {
+    if (!createWizardState.dbName.trim()) { showToast(t('Database name is required'), 'error'); return; }
+    createWizardStep = 2;
+    renderCreateWizardBody();
+    var footer = document.querySelector('.wizard-modal-footer');
+    if (footer) footer.innerHTML = '<button class="btn btn-ghost" onclick="wizardBack()"><i class="ri-arrow-left-line" aria-hidden="true"></i> ' + t('Back') + '</button>' +
+      '<button class="btn btn-primary" onclick="wizardCreate()"><i class="ri-database-2-line" aria-hidden="true"></i> ' + t('Create Database & User') + '</button>';
+  }
+}
+
+function wizardBack() {
+  createWizardStep = 1;
+  renderCreateWizardBody();
+  var footer = document.querySelector('.wizard-modal-footer');
+  if (footer) footer.innerHTML = '<button class="btn btn-secondary" onclick="modalWizard.close()">' + t('Cancel') + '</button>' +
+    '<button class="btn btn-primary" onclick="wizardNext()">' + t('Next') + ' <i class="ri-arrow-right-line" aria-hidden="true"></i></button>';
+}
+
+async function wizardCreate() {
+  var prefix = createWizardState.engine === 'mysql' ? dbPrefix : (pgPrefix || dbPrefix);
+  var fullDbName = prefix + createWizardState.dbName;
+  var fullUserName = createWizardState.useExisting ? createWizardState.existingUser : prefix + createWizardState.userName;
+
+  if (!createWizardState.useExisting && !createWizardState.userName.trim()) {
+    showToast(t('Username is required'), 'error'); return;
+  }
+  if (!createWizardState.useExisting && !createWizardState.userPass) {
+    showToast(t('Password is required'), 'error'); return;
+  }
+
+  var btn = document.querySelector('.wizard-modal-footer .btn-primary');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ri-loader-4-line" aria-hidden="true" style="animation:spin 1s linear infinite;"></i> ' + t('Creating...'); }
+  try {
+    if (isLive) {
+      if (createWizardState.engine === 'mysql') {
+        if (!createWizardState.useExisting) {
+          await CpanelAPI.setupMysqlDbAndUser(fullDbName, fullUserName, createWizardState.userPass);
+        } else {
+          await CpanelAPI.createMysqlDatabase(fullDbName);
+          await CpanelAPI.setMysqlPrivileges(fullUserName, fullDbName, createWizardState.privileges || 'ALL PRIVILEGES');
+        }
+      } else {
+        await CpanelAPI.createPgDatabase(fullDbName);
+        if (!createWizardState.useExisting) {
+          await CpanelAPI.createPgUser(fullUserName, createWizardState.userPass);
+        }
+        await CpanelAPI.grantPgPrivileges(fullUserName, fullDbName);
+      }
+    } else {
+      // Mock mode: add to local data
+      var dbs = createWizardState.engine === 'mysql' ? mockData.mysql.databases : mockData.postgresql.databases;
+      dbs.push({ name: fullDbName, size: '0 MB', tables: 0, users: [fullUserName], collation: 'utf8mb4_general_ci' });
+
+      if (!createWizardState.useExisting) {
+        var users = createWizardState.engine === 'mysql' ? mockData.mysql.users : mockData.postgresql.users;
+        users.push({ name: fullUserName, databases: [fullDbName], privileges: createWizardState.privileges || 'ALL PRIVILEGES' });
+      }
+    }
+
+    if (isLive) {
+      await loadData();
+    } else {
+      updateStats();
+      renderTabContent();
+    }
+    modalWizard.close();
+    showToast(t('Database {0} created', fullDbName));
+  } catch (err) {
+    showToast(t('Failed to create database: {0}', err.message), 'error');
+  } finally {
+    if (btn) { btn.disabled = false; }
+  }
+}
+
+
+// ===================================================================
+// ACTIONS
+// ===================================================================
+
+function openPhpMyAdmin(dbName) {
+  if (isLive) {
+    window.open(CpanelAPI.phpMyAdminUrl(dbName), '_blank');
+  } else {
+    showToast(t('phpMyAdmin not available in preview mode'));
+  }
+}
+
+async function deleteDatabase(engine, name) {
+  if (!confirm(t('Delete database {0}?', name))) return;
+  try {
+    if (isLive) {
+      if (engine === 'mysql') await CpanelAPI.deleteMysqlDatabase(name);
+      else await CpanelAPI.deletePgDatabase(name);
+    }
+    await loadData();
+    showToast(t('Database deleted'));
+  } catch (err) {
+    showToast(t('Failed to delete database: {0}', err.message), 'error');
+  }
+}
+
+async function deleteDbUser(engine, name) {
+  if (!confirm(t('Delete user {0}?', name))) return;
+  try {
+    if (isLive) {
+      if (engine === 'mysql') await CpanelAPI.deleteMysqlUser(name);
+      else await CpanelAPI.deletePgUser(name);
+    }
+    await loadData();
+    showToast(t('User deleted'));
+  } catch (err) {
+    showToast(t('Failed to delete user: {0}', err.message), 'error');
+  }
+}
+
+// ===================================================================
+// PRIVILEGES EDITOR
+// ===================================================================
+
+var MYSQL_PRIVILEGES = [
+  'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER', 'INDEX',
+  'REFERENCES', 'CREATE TEMPORARY TABLES', 'LOCK TABLES', 'CREATE VIEW',
+  'SHOW VIEW', 'CREATE ROUTINE', 'ALTER ROUTINE', 'EXECUTE', 'EVENT', 'TRIGGER'
+];
+
+var _privsUser = '', _privsDb = '';
+
+function editPrivileges(username, database) {
+  _privsUser = username;
+  _privsDb = database || '';
+
+  var dbPickerHtml = '';
+  if (!database) {
+    var dbs = mockData.mysql.databases;
+    var opts = dbs.map(function(d) { return '<option value="' + d.name + '">' + d.name + '</option>'; }).join('');
+    dbPickerHtml = '<div class="form-group"><label class="form-label">' + t('Database') + '</label><select class="form-select" id="privsDbSelect" onchange="_privsDb=this.value">' + opts + '</select></div>';
+    if (dbs.length) _privsDb = dbs[0].name;
+  }
+
+  var privsHtml = MYSQL_PRIVILEGES.map(function(p) {
+    return '<label style="display:flex; align-items:center; gap:var(--space-2); font-size:var(--text-sm); color:var(--text-secondary);"><input type="checkbox" class="priv-check" value="' + p + '" style="accent-color:var(--accent); width:16px; height:16px;"> ' + p + '</label>';
+  }).join('');
+
+  modalWizard.openContent({
+    title: t('Edit Privileges') + ' — ' + username,
+    size: 'md',
+    body: dbPickerHtml +
+      '<label style="display:flex; align-items:center; gap:var(--space-2); padding:var(--space-2) 0; border-bottom:1px solid var(--border-default); margin-bottom:var(--space-3); font-weight:var(--weight-semibold);">' +
+        '<input type="checkbox" id="privsAllCheck" onchange="toggleAllPrivs(this.checked)" style="accent-color:var(--accent); width:16px; height:16px;"> ' + t('ALL PRIVILEGES') + '</label>' +
+      '<div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-2);">' + privsHtml + '</div>',
+    footer: '<button class="btn btn-secondary" onclick="modalWizard.close()">' + t('Cancel') + '</button>' +
+            '<button class="btn btn-primary" onclick="savePrivileges()">' + t('Save') + '</button>',
+    onMount: async function(body) {
+      document.getElementById('privsAllCheck').checked = true;
+      toggleAllPrivs(true);
+      if (isLive && _privsDb) {
+        try {
+          var result = await CpanelAPI.getMysqlPrivileges(_privsUser, _privsDb);
+          // result contains privilege names — pre-check matching checkboxes
+          // If ALL PRIVILEGES, keep all checked; otherwise uncheck all then check specific ones
+          if (result && !result.includes('ALL PRIVILEGES')) {
+            document.getElementById('privsAllCheck').checked = false;
+            toggleAllPrivs(false);
+            document.querySelectorAll('.priv-check').forEach(function(cb) {
+              cb.checked = result.includes(cb.value);
+            });
+          }
+        } catch (e) { console.error('Failed to load privileges:', e); }
+      }
+    }
+  });
+}
+
+function toggleAllPrivs(checked) {
+  document.querySelectorAll('.priv-check').forEach(function(cb) { cb.checked = checked; });
+}
+
+async function savePrivileges() {
+  var checked = [];
+  document.querySelectorAll('.priv-check:checked').forEach(function(cb) { checked.push(cb.value); });
+  var privStr = document.getElementById('privsAllCheck').checked ? 'ALL PRIVILEGES' : checked.join(', ');
+
+  try {
+    if (isLive) {
+      await CpanelAPI.setMysqlPrivileges(_privsUser, _privsDb, privStr);
+    }
+    var user = mockData.mysql.users.find(function(u) { return u.name === _privsUser; });
+    if (user) user.privileges = privStr;
+    renderTabContent();
+    modalWizard.close();
+    showToast(t('Privileges saved for {0}', _privsUser));
+  } catch (e) {
+    showToast(t('Failed: {0}', e.message), 'error');
+  }
+}
+
+// ===================================================================
+// CHANGE DATABASE PASSWORD
+// ===================================================================
+
+function changeDbPassword(username) {
+  var _engine = activeMainTab;
+  modalWizard.openContent({
+    title: t('Change Password') + ' — ' + username,
+    size: 'sm',
+    body: '<div class="form-group">' +
+      '<label class="form-label">' + t('New Password') + '</label>' +
+      '<div style="display:flex; gap:var(--space-2);">' +
+        '<input type="password" class="form-input" id="newDbPass" placeholder="' + t('Strong password') + '" style="flex:1;">' +
+        '<button type="button" class="btn btn-secondary" onclick="var p=generateStrongPassword(); document.getElementById(\'newDbPass\').value=p;">' + t('Generate') + '</button>' +
+      '</div></div>',
+    footer: '<button class="btn btn-secondary" onclick="modalWizard.close()">' + t('Cancel') + '</button>' +
+            '<button class="btn btn-primary" onclick="submitDbPasswordChange(\'' + username + '\', \'' + _engine + '\')">' + t('Change Password') + '</button>',
+    onMount: function(body) {
+      setTimeout(function() { document.getElementById('newDbPass').focus(); }, 100);
+    }
+  });
+}
+
+async function submitDbPasswordChange(username, engine) {
+  var pass = document.getElementById('newDbPass').value;
+  if (!pass) { showToast(t('Password is required'), 'error'); return; }
+
+  try {
+    if (isLive) {
+      if (engine === 'postgresql') {
+        await CpanelAPI.setPgPassword(username, pass);
+      } else {
+        await CpanelAPI.setMysqlPassword(username, pass);
+      }
+    }
+    modalWizard.close();
+    showToast(t('Password changed for {0}', username));
+  } catch (e) {
+    showToast(t('Failed: {0}', e.message), 'error');
+  }
+}
+
+async function addRemoteHost() {
+  var host = prompt(t('Enter remote host IP or hostname'));
+  if (!host) return;
+  try {
+    if (isLive) await CpanelAPI.addMysqlRemoteHost(host.trim());
+    await loadData();
+    showToast(t('Remote host added'));
+  } catch (err) {
+    showToast(t('Failed to add remote host: {0}', err.message), 'error');
+  }
+}
+
+async function removeRemoteHost(host) {
+  if (!confirm(t('Remove remote host {0}?', host))) return;
+  try {
+    if (isLive) await CpanelAPI.deleteMysqlRemoteHost(host);
+    await loadData();
+    showToast(t('Remote host removed'));
+  } catch (err) {
+    showToast(t('Failed to remove remote host: {0}', err.message), 'error');
+  }
+}
+
+
+// ===================================================================
+// LIVE DATA LOADING
+// ===================================================================
+
+async function loadData() {
+  try {
+    // Step 1: Restrictions (prefix, name limits)
+    const [mysqlRestrictions, pgRestrictions] = await Promise.all([
+      CpanelAPI.getMysqlRestrictions(),
+      CpanelAPI.hasFeature('postgres') ? CpanelAPI.getPgRestrictions() : null
+    ]);
+    dbPrefix = mysqlRestrictions.prefix || '';
+    pgPrefix = pgRestrictions ? (pgRestrictions.prefix || '') : '';
+
+    // Step 2: Data
+    const promises = [
+      CpanelAPI.listMysqlDatabases(),
+      CpanelAPI.listMysqlUsers(),
+      CpanelAPI.call('ResourceUsage', 'get_usages')
+    ];
+    if (CpanelAPI.hasFeature('postgres')) {
+      promises.push(CpanelAPI.listPgDatabases());
+      promises.push(CpanelAPI.listPgUsers());
+    }
+    const results = await Promise.all(promises);
+
+    // Map API response fields to UI data shape
+    // Mysql::list_databases returns: { database: string, disk_usage: int (bytes), users: string[] }
+    // NOTE: Verify disk_usage field name against live API — may be "disk_usage" or "diskusage"
+    mockData.mysql.databases = (results[0] || []).map(function(db) {
+      var bytes = db.disk_usage || db.diskusage || 0;
+      var sizeMB = bytes / (1024 * 1024);
+      return {
+        name: db.database,
+        size: sizeMB >= 1024 ? (sizeMB / 1024).toFixed(1) + ' GB' : sizeMB.toFixed(1) + ' MB',
+        tables: db.num_tables || '—',
+        users: db.users || [],
+        collation: db.collation || '—'
+      };
+    });
+
+    // Mysql::list_users returns: array of user objects (verify exact shape)
+    mockData.mysql.users = (results[1] || []).map(function(u) {
+      return {
+        name: u.user || u.name || u,
+        databases: u.databases || [],
+        privileges: u.privileges || '—'
+      };
+    });
+
+    // ResourceUsage limits
+    var usages = results[2] || [];
+    var mysqlLimit = usages.find(function(r) { return r.id === 'mysql_databases'; });
+    var pgLimit = usages.find(function(r) { return r.id === 'postgresql_databases'; });
+    if (mysqlLimit) {
+      mockData.limits.mysqlDb.used = parseInt(mysqlLimit.usage, 10) || 0;
+      mockData.limits.mysqlDb.max = mysqlLimit.maximum === null ? null : parseInt(mysqlLimit.maximum, 10);
+    }
+    if (pgLimit) {
+      mockData.limits.pgDb.used = parseInt(pgLimit.usage, 10) || 0;
+      mockData.limits.pgDb.max = pgLimit.maximum === null ? null : parseInt(pgLimit.maximum, 10);
+    }
+
+    // PostgreSQL (if enabled)
+    if (CpanelAPI.hasFeature('postgres') && results[3]) {
+      mockData.postgresql.databases = (results[3] || []).map(function(db) {
+        return { name: db.database || db.name, users: db.users || [] };
+      });
+      mockData.postgresql.users = (results[4] || []).map(function(u) {
+        return { name: u.user || u.name || u, databases: u.databases || [] };
+      });
+    }
+
+    // Step 3: Feature gate PostgreSQL tab
+    if (!CpanelAPI.hasFeature('postgres')) {
+      var pgTab = document.querySelector('[data-tab="postgresql"]');
+      if (pgTab) pgTab.style.display = 'none';
+      var pgStat = document.getElementById('statPgDb');
+      if (pgStat) { var card = pgStat.closest('.stat-card'); if (card) card.style.display = 'none'; }
+    }
+
+    updateStats();
+    renderTabContent();
+    document.getElementById('pageContent').style.display = '';
+  } catch (err) {
+    console.error('Failed to load database data:', err);
+    showToast(t('Failed to load databases'), 'error');
+    // Still show page with empty state
+    document.getElementById('pageContent').style.display = '';
+    renderTabContent();
+  }
+}
+
+
+// ===================================================================
+// INIT
+// ===================================================================
+
+async function init() {
+  await CpanelAPI.loadFeatures();
+  if (typeof applyFeatureGating === 'function') applyFeatureGating();
+
+  // Gate MySQL / PostgreSQL tabs based on features
+  var mysqlEnabled = CpanelAPI.hasFeature('mysql');
+  var pgEnabled = CpanelAPI.hasFeature('postgres');
+
+  if (!mysqlEnabled && !pgEnabled) {
+    var main = document.querySelector('.main-content') || document.querySelector('main');
+    if (main) {
+      main.innerHTML = '<div style="text-align:center;padding:var(--space-10);"><div style="font-size:var(--text-lg);font-weight:var(--weight-semibold);color:var(--text-secondary);margin-bottom:var(--space-3);">' + t('Databases not enabled') + '</div><div style="color:var(--text-tertiary);">' + t('Database features are not enabled on your account. Contact your hosting provider for access.') + '</div></div>';
+    }
+    return;
+  }
+
+  // Hide tabs for disabled engines
+  var mainTabs = document.getElementById('mainTabs');
+  if (mainTabs) {
+    if (!mysqlEnabled) {
+      var mysqlTab = mainTabs.querySelector('[data-tab="mysql"]');
+      if (mysqlTab) mysqlTab.style.display = 'none';
+      activeMainTab = 'postgresql';
+    }
+    if (!pgEnabled) {
+      var pgTab = mainTabs.querySelector('[data-tab="postgresql"]');
+      if (pgTab) pgTab.style.display = 'none';
+    }
+  }
+
+  // Initialize
+  if (isLive) {
+    loadData();
+  } else {
+    // Fallback: populate with mock data for preview
+    updateStats();
+    renderTabContent();
+    document.getElementById('pageContent').style.display = '';
+  }
+}
+
+// Init
+init();
+</script>
+[% END %]

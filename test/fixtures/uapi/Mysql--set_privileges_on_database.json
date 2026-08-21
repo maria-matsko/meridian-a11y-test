@@ -1,0 +1,13 @@
+{
+  "apiversion": 3,
+  "module": "Mysql",
+  "func": "set_privileges_on_database",
+  "result": {
+    "status": 1,
+    "data": null,
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

@@ -1,0 +1,167 @@
+// Modal Wizard — Shared modal shell for step-based wizards and custom content.
+// Used for "Add Website", "Create Email", "Create Database", and other journeys.
+//
+// Sizes: --sm (480px), --md (640px), default (720px), --lg (860px)
+//
+// Markup (journey mode):
+//   .wizard-modal-overlay[.show]
+//     .wizard-modal[.wizard-modal--sm|--md|--lg]
+//       .wizard-modal-header > ol.wizard-modal-stepper + .wizard-modal-close
+//       .wizard-modal-body
+//       .wizard-modal-footer
+//
+// Markup (content mode):
+//   .wizard-modal-overlay[.show]
+//     .wizard-modal.wizard-modal--md
+//       .wizard-modal-header > h2.wizard-modal-title + .wizard-modal-close
+//       .wizard-modal-body
+//       .wizard-modal-footer
+
+.wizard-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: var(--z-modal);
+  display: flex;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--duration-normal) var(--ease-out), visibility var(--duration-normal);
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+
+  &.show {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+.wizard-modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-xl);
+  animation: wizardFadeUp var(--duration-normal) var(--ease-out) both;
+
+  // Size variants
+  &--sm { max-width: 480px; }
+  &--md { max-width: 640px; }
+  &--lg { max-width: 860px; }
+
+  @media (max-width: 768px) {
+    max-width: calc(100% - 32px);
+    margin: 0 16px;
+  }
+}
+
+.wizard-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.wizard-modal-title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.wizard-modal-stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li { display: flex; align-items: center; }
+}
+
+.wizard-modal-step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--border-default);
+  transition: background var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
+
+  &.active {
+    background: var(--accent);
+    transform: scale(1.3);
+  }
+
+  &.completed {
+    background: var(--status-success);
+  }
+}
+
+.wizard-modal-close {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  transition: background var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out);
+
+  &:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+}
+
+.wizard-modal-body {
+  padding: var(--space-6) var(--space-8);
+  overflow-y: auto;
+  flex: 1;
+
+  // Reuse onboarding step styles inside modal
+  h2 {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-bold);
+    margin-bottom: var(--space-2);
+  }
+
+  .onboarding-subtitle {
+    margin-bottom: var(--space-6);
+  }
+
+  .onboarding-choices {
+    max-width: 100%;
+  }
+}
+
+.wizard-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+// Animation
+@keyframes wizardFadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}

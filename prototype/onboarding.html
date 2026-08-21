@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cPanel — Get Started</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="stylesheet" href="meridian.css">
+  <style>
+    .onboarding { opacity: 0; }
+    .onboarding.fonts-ready { opacity: 1; transition: opacity 0.2s ease-out; }
+
+    /* DNS Status Card */
+    .dns-status-card {
+      text-align: left;
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      margin-bottom: var(--space-5);
+      width: 100%;
+      max-width: 520px;
+    }
+    .dns-status-card.connected {
+      background: var(--status-success-bg);
+      border: 1px solid var(--status-success);
+    }
+    .dns-status-card.not-connected {
+      background: var(--status-warning-bg);
+      border: 1px solid var(--status-warning);
+    }
+    .dns-status-header { display: flex; align-items: center; gap: var(--space-3); }
+    .dns-dot { width: 10px; height: 10px; border-radius: var(--radius-full); flex-shrink: 0; }
+    .dns-dot.green { background: var(--status-success); }
+    .dns-dot.yellow { background: var(--status-warning); }
+    .dns-status-title { font-weight: var(--weight-bold); font-size: var(--text-sm); }
+    .dns-status-title.connected { color: var(--status-success); }
+    .dns-status-title.not-connected { color: var(--status-warning); }
+    .dns-status-subtitle { font-size: var(--text-xs); color: var(--text-secondary); margin-top: var(--space-1); }
+
+    /* Success icon DNS variants */
+    .onboarding-success-icon.dns-not-connected {
+      background: var(--status-warning-bg);
+      color: var(--status-warning);
+    }
+
+    /* Nameserver box */
+    .ns-box {
+      margin-top: var(--space-4);
+      padding: var(--space-4);
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+    .ns-label {
+      font-size: var(--text-xs);
+      font-weight: var(--weight-semibold);
+      color: var(--text-secondary);
+      margin-bottom: var(--space-3);
+    }
+    .ns-value {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-2) var(--space-3);
+      background: var(--bg-muted);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      color: var(--text-primary);
+      margin-bottom: var(--space-1);
+    }
+    .ns-value:last-of-type { margin-bottom: 0; }
+    .ns-copy {
+      font-size: var(--text-xs);
+      color: var(--text-brand);
+      cursor: pointer;
+      font-weight: var(--weight-semibold);
+      font-family: var(--font-body);
+      border: none;
+      background: none;
+      padding: var(--space-1) var(--space-2);
+      border-radius: var(--radius-sm);
+      transition: background var(--duration-fast) var(--ease-out);
+    }
+    .ns-copy:hover { background: var(--bg-hover); }
+    .ns-copy.copied { color: var(--status-success); }
+
+    /* Expandable help */
+    .ns-help { margin-top: var(--space-3); }
+    .ns-help summary {
+      font-size: var(--text-xs);
+      font-weight: var(--weight-semibold);
+      color: var(--text-secondary);
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+    }
+    .ns-help summary::-webkit-details-marker { display: none; }
+    .ns-help summary i { font-size: 1rem; transition: transform var(--duration-fast); }
+    .ns-help[open] summary i { transform: rotate(90deg); }
+    .ns-help-content {
+      margin-top: var(--space-3);
+      font-size: var(--text-xs);
+      color: var(--text-secondary);
+      line-height: var(--leading-relaxed);
+      text-align: left;
+    }
+    .propagation-note {
+      margin-top: var(--space-3);
+      padding: var(--space-2) var(--space-3);
+      background: var(--status-info-bg);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-xs);
+      color: var(--status-info);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    /* Demo toggle bar */
+    .dns-demo-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: var(--bg-inverse, #1e293b);
+      color: var(--text-on-inverse, white);
+      padding: var(--space-3) var(--space-5);
+      display: none;
+      align-items: center;
+      gap: var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: var(--weight-semibold);
+    }
+    .dns-demo-bar.visible { display: flex; }
+    .dns-demo-bar .dns-demo-label { opacity: 0.7; }
+    .dns-demo-bar .dns-demo-group {
+      display: flex;
+      gap: 0;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .dns-demo-btn {
+      padding: var(--space-1) var(--space-3);
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: rgba(255,255,255,0.5);
+      font-size: var(--text-xs);
+      font-weight: var(--weight-semibold);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+    .dns-demo-btn.active { background: var(--accent); color: white; }
+    .dns-demo-btn:hover:not(.active) { background: rgba(255,255,255,0.2); color: white; }
+  </style>
+  <script>
+    (function() {
+      var show = function() { var el = document.getElementById('onboarding'); if (el) el.classList.add('fonts-ready'); };
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(show);
+      setTimeout(show, 1000);
+    })();
+  </script>
+</head>
+<body>
+
+<div class="onboarding" id="onboarding">
+
+  <!-- ── Persistent top bar ── -->
+  <div class="onboarding-topbar">
+    <button type="button" class="onboarding-back" id="onboardingBack" style="visibility: hidden;">
+      <i class="ri-arrow-left-line" aria-hidden="true"></i> Back
+    </button>
+    <button type="button" class="onboarding-theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Switch to light mode">
+      <i class="ri-sun-line" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <!-- Steps render here -->
+  <div class="onboarding-step-container" id="stepContainer"></div>
+
+  <!-- Footer (back + continue) — co-located at bottom -->
+  <div class="onboarding-footer" id="onboardingFooter" style="display: none;">
+    <button type="button" class="btn btn-ghost" id="fsBack" style="visibility: hidden;">
+      <i class="ri-arrow-left-line" aria-hidden="true"></i> Back
+    </button>
+    <button type="button" class="btn btn-primary btn-lg" id="fsContinue" disabled>
+      Continue <i class="ri-arrow-right-line" aria-hidden="true"></i>
+    </button>
+  </div>
+
+
+  <!-- DNS Demo Toggle (visible on success screen) -->
+  <div class="dns-demo-bar" id="dnsDemoBar">
+    <span class="dns-demo-label">Simulate DNS:</span>
+    <div class="dns-demo-group">
+      <button type="button" class="dns-demo-btn active" data-dns="connected">Connected</button>
+      <button type="button" class="dns-demo-btn" data-dns="not-resolving">Not Resolving</button>
+      <button type="button" class="dns-demo-btn" data-dns="wrong-ip">Wrong IP</button>
+    </div>
+  </div>
+</div>
+
+<script src="components/wizard-steps.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   ONBOARDING — Full-screen wizard shell
+   Uses the shared step engine from wizard-steps.js.
+   ═══════════════════════════════════════════════════════════════ */
+
+// ── Theme toggle ──
+(function() {
+  const saved = localStorage.getItem('meridian-theme');
+  if (saved === 'light' || saved === 'dark') {
+    document.documentElement.dataset.theme = saved;
+  } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+    document.documentElement.dataset.theme = 'light';
+  }
+  updateThemeToggle();
+})();
+
+function toggleTheme() {
+  const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem('meridian-theme', next);
+  updateThemeToggle();
+}
+
+function updateThemeToggle() {
+  const btn = document.getElementById('themeToggle');
+  if (!btn) return;
+  const isLight = document.documentElement.dataset.theme === 'light';
+  btn.querySelector('i').className = isLight ? 'ri-moon-line' : 'ri-sun-line';
+  btn.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+}
+
+// ── Init ──
+resetWizardState();
+wizardState.journey = 'onboarding';
+// Build journey dynamically — skips domain steps if primary domain is real
+const journey = buildOnboardingJourney();
+JOURNEYS.onboarding = journey; // Update so navigation engine uses the same list
+let currentIdx = 0;
+
+let prevIdx = -1;
+let prevIllustId = null;
+
+function renderCurrentStep() {
+  const stepId = journey[currentIdx];
+  const step = WIZARD_STEPS[stepId];
+  if (!step) return;
+
+  const container = document.getElementById('stepContainer');
+  const footer = document.getElementById('onboardingFooter');
+  const continueBtn = document.getElementById('fsContinue');
+  const backBtn = document.getElementById('fsBack');
+
+  const goingForward = currentIdx >= prevIdx || prevIdx === -1;
+  const direction = goingForward ? 'forward' : 'backward';
+
+  function doRender() {
+    // Apply layout classes (keep onboarding-step-container as base)
+    var hasIllust = !!STEP_ILLUSTRATION[stepId];
+    container.className = 'onboarding-step-container' +
+      (hasIllust ? ' has-illustration entering-' + direction : '');
+    container.innerHTML = step.render(wizardState);
+    // Show DNS demo bar only on success step
+    var demoBar = document.getElementById('dnsDemoBar');
+    if (demoBar) demoBar.classList.toggle('visible', stepId === 'success');
+
+    // Update progress bar
+    updateProgressBar('onboarding', stepId);
+
+    // Clear entering class after animation
+    var contentEl = container.querySelector('.onboarding-content');
+    if (contentEl) {
+      contentEl.addEventListener('animationend', function handler(e) {
+        if (e.target !== contentEl) return;
+        container.classList.remove('entering-forward', 'entering-backward');
+        contentEl.removeEventListener('animationend', handler);
+      });
+    }
+
+    // Illustration crossfade
+    var illustEl = container.querySelector('.onboarding-illust');
+    if (illustEl) {
+      var newId = illustEl.dataset.illust;
+      if (prevIllustId && prevIllustId !== newId) {
+        illustEl.classList.add('illust-entering');
+        illustEl.addEventListener('animationend', function() {
+          illustEl.classList.remove('illust-entering');
+        }, { once: true });
+      }
+      prevIllustId = newId;
+    }
+
+    // Footer
+    if (step.showFooter) {
+      footer.style.display = 'flex';
+      const prevStep = getPrevStep('onboarding', stepId);
+      backBtn.style.visibility = prevStep ? 'visible' : 'hidden';
+      const icon = step.continueIcon ? '<i class="' + step.continueIcon + '" aria-hidden="true"></i> ' : '';
+      const arrow = step.continueIcon ? '' : ' <i class="ri-arrow-right-line" aria-hidden="true"></i>';
+      continueBtn.innerHTML = icon + (step.continueLabel || 'Continue') + arrow;
+      continueBtn.disabled = true;
+
+      backBtn.onclick = function() {
+        const prev = getPrevStep('onboarding', stepId);
+        if (prev) { currentIdx = journey.indexOf(prev); renderCurrentStep(); }
+      };
+      continueBtn.onclick = function() {
+        const next = getNextStep('onboarding', stepId, wizardState);
+        if (next) { currentIdx = journey.indexOf(next); renderCurrentStep(); }
+      };
+    } else {
+      footer.style.display = 'none';
+    }
+
+    // Keep top-bar back button hidden — footer has back
+    const topBack = document.getElementById('onboardingBack');
+    if (topBack) topBack.style.visibility = 'hidden';
+
+    // Mount interactivity
+    const callbacks = {
+      advance: function() {
+        const next = getNextStep('onboarding', stepId, wizardState);
+        if (next) { currentIdx = journey.indexOf(next); renderCurrentStep(); }
+      },
+      back: function() {
+        const prev = getPrevStep('onboarding', stepId);
+        if (prev) { currentIdx = journey.indexOf(prev); renderCurrentStep(); }
+      },
+      enableContinue: function(enabled) { continueBtn.disabled = !enabled; },
+      goToStep: function(targetId) {
+        const idx = journey.indexOf(targetId);
+        if (idx >= 0) { currentIdx = idx; renderCurrentStep(); }
+      },
+      closeModal: function() { window.location.href = 'index.html'; },
+    };
+    if (step.onMount) step.onMount(container, callbacks);
+
+    // Focus heading for a11y (no visible outline — tabindex=-1 is programmatic only)
+    const heading = container.querySelector('h1, h2');
+    if (heading) { heading.setAttribute('tabindex', '-1'); heading.style.outline = 'none'; heading.focus({ preventScroll: true }); }
+  }
+
+  // Exit animation then render (with guard to prevent double-call)
+  var existingContent = container.querySelector('.onboarding-content');
+  var rendered = false;
+  function safeRender() {
+    if (rendered) return;
+    rendered = true;
+    doRender();
+  }
+
+  if (prevIdx >= 0 && existingContent && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    container.classList.add('exiting-' + direction);
+    container.addEventListener('animationend', function exitHandler(e) {
+      if (e.target !== existingContent) return;
+      container.removeEventListener('animationend', exitHandler);
+      safeRender();
+    });
+    setTimeout(safeRender, 400);
+  } else {
+    safeRender();
+  }
+
+  prevIdx = currentIdx;
+}
+
+// ── DNS Demo Toggle ──
+document.getElementById('dnsDemoBar').addEventListener('click', function(e) {
+  var btn = e.target.closest('.dns-demo-btn');
+  if (!btn) return;
+  document.querySelectorAll('.dns-demo-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  wizardState.dnsStatus = btn.dataset.dns;
+  // Re-render if we're on the success step
+  var stepId = journey[currentIdx];
+  if (stepId === 'success') renderCurrentStep();
+});
+
+renderCurrentStep();
+</script>
+
+</body>
+</html>

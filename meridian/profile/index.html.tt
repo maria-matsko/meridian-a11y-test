@@ -1,0 +1,1186 @@
+[% WRAPPER '_assets/master.html.tt'
+    page_title = 'Profile'
+    page_id    = 'profile'
+%]
+<style>
+/* ===================================================================
+   PROFILE PAGE — SPECIFIC STYLES
+   =================================================================== */
+
+/* Profile header */
+.profile-header {
+  display: flex; align-items: center; gap: var(--space-6);
+  padding: var(--space-6);
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
+}
+.profile-avatar {
+  width: 72px; height: 72px; border-radius: var(--radius-full);
+  background: var(--accent-muted); color: var(--text-brand);
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--text-2xl); font-weight: var(--weight-bold);
+  flex-shrink: 0; letter-spacing: var(--tracking-tight);
+}
+.profile-info { flex: 1; min-width: 0; }
+.profile-name { font-size: var(--text-xl); font-weight: var(--weight-bold); margin-bottom: var(--space-1); }
+.profile-meta { display: flex; flex-wrap: wrap; gap: var(--space-4); font-size: var(--text-sm); color: var(--text-secondary); }
+.profile-meta-item { display: flex; align-items: center; gap: var(--space-2); }
+.profile-meta-item i { color: var(--text-tertiary); font-size: var(--text-base); }
+
+/* Section cards */
+.settings-card {
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); margin-bottom: var(--space-5);
+  overflow: hidden;
+}
+.settings-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.settings-card-title {
+  display: flex; align-items: center; gap: var(--space-3);
+  font-weight: var(--weight-semibold); font-size: var(--text-sm);
+}
+.settings-card-title i { color: var(--text-tertiary); font-size: var(--text-md); }
+.settings-card-body { padding: var(--space-5); }
+
+/* Form fields — .form-label, .form-input base, .form-hint inherited from meridian.css */
+.form-row { margin-bottom: var(--space-5); }
+.form-row:last-child { margin-bottom: 0; }
+.settings-card .form-input {
+  background: var(--bg-inset); font-size: var(--text-sm); min-height: auto;
+}
+
+/* 2FA verification code input */
+#tfaVerifyCode {
+  text-align: center;
+  font-size: var(--text-lg) !important;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
+  letter-spacing: 0.3em;
+  padding: var(--space-3) var(--space-4) !important;
+  background: var(--bg-inset) !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: var(--radius-md) !important;
+  color: var(--text-primary) !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+#tfaVerifyCode:focus {
+  outline: none !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-muted) !important;
+}
+#tfaVerifyCode::placeholder { color: var(--text-tertiary) !important; font-family: var(--font-sans, 'Plus Jakarta Sans', sans-serif) !important; font-size: var(--text-sm) !important; letter-spacing: normal; }
+.form-input-group {
+  display: flex; align-items: center; gap: 0;
+  background: var(--bg-inset); border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+.form-input-group:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-muted); }
+.form-input-group .form-input { border: none; background: none; }
+.form-input-group .form-input:focus { box-shadow: none; }
+.form-input-group .btn { flex-shrink: 0; margin-right: var(--space-2); }
+
+/* Checkbox & toggle */
+.form-check {
+  display: flex; align-items: flex-start; gap: var(--space-3);
+  padding: var(--space-3) 0;
+  cursor: pointer;
+}
+.form-check + .form-check { border-top: 1px solid var(--border-subtle); }
+.form-check input[type="checkbox"] {
+  width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;
+  accent-color: var(--accent); cursor: pointer;
+}
+.form-check-label { font-size: var(--text-sm); color: var(--text-primary); cursor: pointer; }
+.form-check-desc { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: var(--space-1); }
+.form-check.disabled { opacity: 0.5; pointer-events: none; }
+
+/* Notification category */
+.notif-category {
+  padding: var(--space-4) 0;
+}
+.notif-category + .notif-category { border-top: 1px solid var(--border-subtle); }
+.notif-category-title {
+  font-size: var(--text-xs); font-weight: var(--weight-semibold);
+  text-transform: uppercase; letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary); margin-bottom: var(--space-3);
+}
+
+/* Password strength */
+.pw-strength { display: flex; gap: var(--space-1); margin-top: var(--space-2); }
+.pw-strength-bar { height: 3px; flex: 1; border-radius: var(--radius-full); background: var(--bg-muted); }
+.pw-strength-bar.filled { background: var(--status-error); }
+.pw-strength-bar.filled.medium { background: var(--status-warning); }
+.pw-strength-bar.filled.strong { background: var(--status-success); }
+.pw-strength-label { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: var(--space-1); }
+
+/* Language select — override meridian.css .form-select with inset bg */
+.settings-card .form-select {
+  background-color: var(--bg-inset);
+}
+
+/* Option cards (Appearance section) */
+.option-cards {
+  display: flex; gap: var(--space-3);
+}
+.option-card {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: var(--space-2);
+  padding: var(--space-4) var(--space-3);
+  background: var(--bg-inset); border: 1px solid var(--border-default);
+  border-radius: var(--radius-md); cursor: pointer;
+  font-family: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+.option-card i { font-size: var(--text-lg); }
+.option-card:hover { border-color: var(--border-default); background: var(--bg-hover); color: var(--text-primary); }
+.option-card.active {
+  border-color: var(--accent); background: var(--accent-subtle);
+  color: var(--text-brand); box-shadow: 0 0 0 3px var(--accent-muted);
+}
+.option-card.active i { color: var(--accent); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .profile-header { flex-direction: column; text-align: center; }
+  .profile-meta { justify-content: center; }
+  .settings-grid { grid-template-columns: 1fr !important; }
+}
+</style>
+
+
+<a href="#main-content" class="sr-only">Skip to main content</a>
+
+<div class="layout-shell">
+
+  <!-- Header -->
+  <meridian-header></meridian-header>
+
+  <!-- Sidebar -->
+  <meridian-sidebar active="profile"></meridian-sidebar>
+
+  <!-- Main Content -->
+  <main class="layout-main" id="main-content">
+    <div class="main-content">
+
+      <div id="pageContent" style="display:none;">
+
+        <!-- Profile header card -->
+        <div class="profile-header animate-in stagger-1" id="profileHeader">
+          <div class="profile-avatar" id="profileAvatar"></div>
+          <div class="profile-info">
+            <div class="profile-name" id="profileName"></div>
+            <div class="profile-meta">
+              <div class="profile-meta-item"><i class="ri-mail-line" aria-hidden="true"></i> <span id="profileEmail"></span></div>
+              <div class="profile-meta-item"><i class="ri-global-line" aria-hidden="true"></i> <span id="profileDomain"></span></div>
+              <div class="profile-meta-item"><i class="ri-translate-2" aria-hidden="true"></i> <span id="profileLocale">English</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two-column settings grid -->
+        <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); align-items: start;">
+
+          <!-- Left column -->
+          <div>
+            <!-- Contact Information -->
+            <div class="settings-card animate-in stagger-2">
+              <div class="settings-card-header">
+                <div class="settings-card-title"><i class="ri-mail-line" aria-hidden="true"></i> <span data-t>Contact Information</span></div>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-row">
+                  <label class="form-label" for="contactEmail" data-t>Primary Contact Email</label>
+                  <input type="email" class="form-input" id="contactEmail" placeholder="you@example.com">
+                  <div class="form-hint" data-t>Used for account notifications and password resets</div>
+                </div>
+                <div class="form-row">
+                  <label class="form-label" for="contactEmail2" data-t>Secondary Contact Email</label>
+                  <input type="email" class="form-input" id="contactEmail2" placeholder="backup@example.com">
+                  <div class="form-hint" data-t>Optional backup email for notifications</div>
+                </div>
+                <div class="form-row" id="contactPasswordRow" style="display: none;">
+                  <label class="form-label" for="contactPassword" data-t>Confirm Password</label>
+                  <div class="form-input-group">
+                    <input type="password" class="form-input" id="contactPassword" placeholder="Enter current password" autocomplete="current-password">
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="togglePwVisibility('contactPassword', this)" aria-label="Toggle password visibility"><i class="ri-eye-line" aria-hidden="true"></i></button>
+                  </div>
+                  <div class="form-hint" data-t>Required to update contact information</div>
+                </div>
+                <div style="margin-top: var(--space-4);">
+                  <button type="button" class="btn btn-primary btn-sm" id="saveContactBtn" onclick="saveContactInfo()" disabled data-t>Save Contact Info</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notification Preferences -->
+            <div class="settings-card animate-in stagger-3">
+              <div class="settings-card-header">
+                <div class="settings-card-title"><i class="ri-notification-3-line" aria-hidden="true"></i> <span data-t>Notification Preferences</span></div>
+              </div>
+              <div class="settings-card-body">
+                <div class="notif-category">
+                  <div class="notif-category-title" data-t>Account Security</div>
+                  <label class="form-check">
+                    <input type="checkbox" data-pref="notify_account_login">
+                    <div>
+                      <div class="form-check-label" data-t>Login notifications</div>
+                      <div class="form-check-desc" data-t>Email when someone logs in to your account</div>
+                    </div>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" data-pref="notify_password_change">
+                    <div>
+                      <div class="form-check-label" data-t>Password change alerts</div>
+                      <div class="form-check-desc" data-t>Email when your password is changed</div>
+                    </div>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" data-pref="notify_twofactorauth_change">
+                    <div>
+                      <div class="form-check-label" data-t>2FA change alerts</div>
+                      <div class="form-check-desc" data-t>Email when two-factor authentication settings change</div>
+                    </div>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" data-pref="notify_contact_address_change">
+                    <div>
+                      <div class="form-check-label" data-t>Contact address changes</div>
+                      <div class="form-check-desc" data-t>Email when contact email is updated</div>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="notif-category">
+                  <div class="notif-category-title" data-t>Resource Alerts</div>
+                  <label class="form-check">
+                    <input type="checkbox" data-pref="notify_disk_limit">
+                    <div>
+                      <div class="form-check-label" data-t>Disk usage warnings</div>
+                      <div class="form-check-desc" data-t>Email when disk space exceeds limit</div>
+                    </div>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" data-pref="notify_bandwidth_limit">
+                    <div>
+                      <div class="form-check-label" data-t>Bandwidth warnings</div>
+                      <div class="form-check-desc" data-t>Email when bandwidth exceeds limit</div>
+                    </div>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" data-pref="notify_email_quota_limit">
+                    <div>
+                      <div class="form-check-label" data-t>Email quota warnings</div>
+                      <div class="form-check-desc" data-t>Email when a mailbox exceeds its quota</div>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="notif-category">
+                  <div class="notif-category-title" data-t>SSL & Certificates</div>
+                  <label class="form-check">
+                    <input type="checkbox" data-pref="notify_ssl_expiry">
+                    <div>
+                      <div class="form-check-label" data-t>SSL expiry warnings</div>
+                      <div class="form-check-desc" data-t>Email when an SSL certificate is about to expire</div>
+                    </div>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" data-pref="notify_autossl_expiry">
+                    <div>
+                      <div class="form-check-label" data-t>AutoSSL failure alerts</div>
+                      <div class="form-check-desc" data-t>Email when AutoSSL fails to renew a certificate</div>
+                    </div>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" data-pref="notify_autossl_renewal">
+                    <div>
+                      <div class="form-check-label" data-t>AutoSSL success notifications</div>
+                      <div class="form-check-desc" data-t>Email when certificates are successfully renewed</div>
+                    </div>
+                  </label>
+                </div>
+
+                <div style="margin-top: var(--space-4);">
+                  <button type="button" class="btn btn-primary btn-sm" onclick="saveNotificationPrefs()" data-t>Save Preferences</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right column -->
+          <div>
+            <!-- Change Password -->
+            <div class="settings-card animate-in stagger-2">
+              <div class="settings-card-header">
+                <div class="settings-card-title"><i class="ri-lock-password-line" aria-hidden="true"></i> <span data-t>Change Password</span></div>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-row">
+                  <label class="form-label" for="currentPw" data-t>Current Password</label>
+                  <div class="form-input-group">
+                    <input type="password" class="form-input" id="currentPw" placeholder="Enter current password" autocomplete="current-password">
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="togglePwVisibility('currentPw', this)" aria-label="Toggle password visibility"><i class="ri-eye-line" aria-hidden="true"></i></button>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label class="form-label" for="newPw" data-t>New Password</label>
+                  <div class="form-input-group">
+                    <input type="password" class="form-input" id="newPw" placeholder="Enter new password" autocomplete="new-password" oninput="updatePwStrength()">
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="togglePwVisibility('newPw', this)" aria-label="Toggle password visibility"><i class="ri-eye-line" aria-hidden="true"></i></button>
+                  </div>
+                  <div class="pw-strength" id="pwStrength">
+                    <div class="pw-strength-bar"></div>
+                    <div class="pw-strength-bar"></div>
+                    <div class="pw-strength-bar"></div>
+                    <div class="pw-strength-bar"></div>
+                    <div class="pw-strength-bar"></div>
+                  </div>
+                  <div class="pw-strength-label" id="pwStrengthLabel"></div>
+                </div>
+                <div style="margin-top: var(--space-4);">
+                  <button type="button" class="btn btn-primary btn-sm" onclick="changePassword()" data-t>Update Password</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Two-Factor Authentication -->
+            <div class="settings-card animate-in stagger-3" id="tfaCard">
+              <div class="settings-card-header">
+                <div class="settings-card-title"><i class="ri-shield-keyhole-line" aria-hidden="true"></i> <span data-t>Two-Factor Authentication</span></div>
+                <span class="badge" id="tfaBadge" data-t>Loading…</span>
+              </div>
+              <div class="settings-card-body">
+                <!-- Status view (shown when not in setup flow) -->
+                <div id="tfaStatus">
+                  <div id="tfaDisabledView" style="display: none;">
+                    <div style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-md); background: var(--status-warning-bg); color: var(--status-warning); margin-bottom: var(--space-4);">
+                      <i class="ri-error-warning-line" aria-hidden="true" style="font-size: var(--text-lg); flex-shrink: 0; margin-top: var(--space-1);"></i>
+                      <div style="color: var(--text-primary); font-size: var(--text-sm);" data-t>Your account is not protected by two-factor authentication. Enable it to add an extra layer of security.</div>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="startTfaSetup()">
+                      <i class="ri-shield-check-line" aria-hidden="true"></i> <span data-t>Set Up 2FA</span>
+                    </button>
+                  </div>
+                  <div id="tfaEnabledView" style="display: none;">
+                    <div style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-md); background: var(--status-success-bg); color: var(--status-success); margin-bottom: var(--space-4);">
+                      <i class="ri-shield-check-fill" aria-hidden="true" style="font-size: var(--text-lg); flex-shrink: 0; margin-top: var(--space-1);"></i>
+                      <div style="color: var(--text-primary); font-size: var(--text-sm);" data-t>Two-factor authentication is enabled. Your account requires a verification code on each login.</div>
+                    </div>
+                    <div style="display: flex; gap: var(--space-2);">
+                      <button type="button" class="btn btn-ghost btn-sm" onclick="startTfaSetup(true)">
+                        <i class="ri-refresh-line" aria-hidden="true"></i> <span data-t>Reconfigure</span>
+                      </button>
+                      <button type="button" class="btn btn-ghost btn-sm" style="color: var(--status-error);" onclick="confirmRemoveTfa()">
+                        <i class="ri-shield-cross-line" aria-hidden="true"></i> <span data-t>Remove</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Setup flow (hidden by default) -->
+                <div id="tfaSetupFlow" style="display: none;">
+                  <div id="tfaReconfigureWarning" style="display: none; margin-bottom: var(--space-4);">
+                    <div style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-md); background: var(--status-warning-bg);">
+                      <i class="ri-error-warning-line" aria-hidden="true" style="font-size: var(--text-lg); flex-shrink: 0; margin-top: var(--space-1); color: var(--status-warning);"></i>
+                      <div style="color: var(--text-primary); font-size: var(--text-sm);" data-t>This will replace your current 2FA configuration. Any existing setup will no longer produce valid codes.</div>
+                    </div>
+                  </div>
+                  <p class="t-body-sm t-muted" style="margin-bottom: var(--space-4);" data-t>Scan this QR code with your authenticator app (Google Authenticator, Authy, 1Password, etc.)</p>
+                  <div style="display: flex; flex-direction: column; align-items: center; gap: var(--space-4); margin-bottom: var(--space-4);">
+                    <div id="tfaQrCode" style="background: #fff; padding: var(--space-4); border-radius: var(--radius-md); display: inline-block;"></div>
+                    <details style="width: 100%; max-width: 360px;">
+                      <summary style="cursor: pointer; font-size: var(--text-sm); color: var(--text-secondary);" data-t>Can't scan? Enter manually</summary>
+                      <div style="margin-top: var(--space-2); padding: var(--space-3); border-radius: var(--radius-md); background: var(--bg-offset); font-family: var(--font-mono, monospace);">
+                        <div style="font-size: var(--text-xs); color: var(--text-secondary); margin-bottom: var(--space-1);" data-t>Secret Key</div>
+                        <div id="tfaSecretDisplay" style="font-size: var(--text-sm); letter-spacing: 0.1em; word-break: break-all; user-select: all;"></div>
+                      </div>
+                    </details>
+                  </div>
+                  <div class="form-row" style="max-width: 280px;">
+                    <label class="form-label" for="tfaVerifyCode" data-t>Verification Code</label>
+                    <input type="text" class="form-input" id="tfaVerifyCode" placeholder="Enter 6-digit code" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code">
+                  </div>
+                  <div style="display: flex; gap: var(--space-2); margin-top: var(--space-4);">
+                    <button type="button" class="btn btn-primary btn-sm" id="tfaVerifyBtn" onclick="verifyTfa()" disabled>
+                      <i class="ri-check-line" aria-hidden="true"></i> <span data-t>Verify & Enable</span>
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="cancelTfaSetup()" data-t>Cancel</button>
+                  </div>
+                </div>
+
+                <!-- Remove confirmation (hidden by default) -->
+                <div id="tfaRemoveConfirm" style="display: none;">
+                  <div style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-md); background: var(--status-error-bg); margin-bottom: var(--space-4);">
+                    <i class="ri-error-warning-fill" aria-hidden="true" style="font-size: var(--text-lg); flex-shrink: 0; margin-top: var(--space-1); color: var(--status-error);"></i>
+                    <div style="color: var(--text-primary); font-size: var(--text-sm);" data-t>Are you sure? Removing 2FA will make your account less secure. You'll only need your password to log in.</div>
+                  </div>
+                  <div style="display: flex; gap: var(--space-2);">
+                    <button type="button" class="btn btn-sm" style="background: var(--status-error); color: #fff;" onclick="removeTfa()">
+                      <i class="ri-shield-cross-line" aria-hidden="true"></i> <span data-t>Yes, Remove 2FA</span>
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="cancelRemoveTfa()" data-t>Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Language -->
+            <div class="settings-card animate-in stagger-4">
+              <div class="settings-card-header">
+                <div class="settings-card-title"><i class="ri-translate-2" aria-hidden="true"></i> <span data-t>Language</span></div>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-row">
+                  <label class="form-label" for="localeSelect" data-t>Interface Language</label>
+                  <select class="form-select" id="localeSelect" onchange="changeLocale()">
+                    <option value="en" selected>English</option>
+                  </select>
+                  <div class="form-hint" data-t>Changes the language for the entire cPanel interface</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Push Notifications -->
+            <div class="settings-card animate-in stagger-4">
+              <div class="settings-card-header">
+                <div class="settings-card-title"><i class="ri-smartphone-line" aria-hidden="true"></i> <span data-t>Push Notifications</span></div>
+                <span class="badge badge-neutral" data-t>Optional</span>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-row">
+                  <label class="form-label" for="pushbulletToken" data-t>Pushbullet Access Token</label>
+                  <div class="form-input-group">
+                    <input type="password" class="form-input" id="pushbulletToken" placeholder="Enter your Pushbullet token" autocomplete="off">
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="togglePwVisibility('pushbulletToken', this)" aria-label="Toggle visibility"><i class="ri-eye-line" aria-hidden="true"></i></button>
+                  </div>
+                  <div class="form-hint" data-t>Get push notifications on your phone via Pushbullet</div>
+                </div>
+                <div style="margin-top: var(--space-4);">
+                  <button type="button" class="btn btn-primary btn-sm" onclick="savePushbulletToken()" data-t>Save Token</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notification Position -->
+            <div class="settings-card animate-in stagger-4">
+              <div class="settings-card-header">
+                <div class="settings-card-title"><i class="ri-layout-line" aria-hidden="true"></i> <span data-t>Notification Position</span></div>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-row">
+                  <label class="form-label" for="notifPosition" data-t>Toast Notification Position</label>
+                  <select class="form-select" id="notifPosition" onchange="saveNotifPosition()">
+                    <option value="bottomCenter" data-t>Bottom Center</option>
+                    <option value="topRight" data-t>Top Right</option>
+                    <option value="topLeft" data-t>Top Left</option>
+                    <option value="topCenter" data-t>Top Center</option>
+                    <option value="bottomRight" data-t>Bottom Right</option>
+                    <option value="bottomLeft" data-t>Bottom Left</option>
+                  </select>
+                  <div class="form-hint" data-t>Where system notifications appear on screen</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Appearance -->
+            <div class="settings-card animate-in stagger-5">
+              <div class="settings-card-header">
+                <div class="settings-card-title"><i class="ri-palette-line" aria-hidden="true"></i> <span data-t>Appearance</span></div>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-row">
+                  <label class="form-label" data-t>Theme</label>
+                  <div class="option-cards" id="themeOptions">
+                    <button class="option-card" data-value="dark" onclick="setThemePref('dark')">
+                      <i class="ri-moon-line" aria-hidden="true"></i>
+                      <span data-t>Dark</span>
+                    </button>
+                    <button class="option-card" data-value="light" onclick="setThemePref('light')">
+                      <i class="ri-sun-line" aria-hidden="true"></i>
+                      <span data-t>Light</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label class="form-label" data-t>Dashboard Layout</label>
+                  <div class="option-cards" id="layoutOptions">
+                    <button class="option-card" data-value="modern" onclick="setDashLayoutPref('modern')">
+                      <i class="ri-layout-grid-line" aria-hidden="true"></i>
+                      <span data-t>Modern</span>
+                    </button>
+                    <button class="option-card" data-value="classic" onclick="setDashLayoutPref('classic')">
+                      <i class="ri-grid-fill" aria-hidden="true"></i>
+                      <span data-t>Classic</span>
+                    </button>
+                  </div>
+                  <div class="form-hint" data-t>Modern shows task-oriented cards. Classic shows the traditional icon grid.</div>
+                </div>
+                <div class="form-row" style="border-top: 1px solid var(--border-subtle); padding-top: var(--space-4); margin-top: var(--space-4);">
+                  <label class="form-label" data-t>Setup Wizard</label>
+                  <div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="restartOnboarding()">
+                      <i class="ri-rocket-line" aria-hidden="true"></i> <span data-t>Restart Setup Wizard</span>
+                    </button>
+                    <div class="form-hint" style="margin-top: var(--space-2);" data-t>Run the guided setup again to configure your domain, email, and website.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+// Page-specific API helpers (delegates to global CpanelAPI)
+const ProfileAPI = {
+  async getUserInfo() {
+    const r = await CpanelAPI.call('Variables', 'get_user_information');
+    return r.data || {};
+  },
+
+  async getNotificationPrefs() {
+    const r = await CpanelAPI.call('ContactInformation', 'get_notification_preferences');
+    return r.data || [];
+  },
+
+  async setNotificationPrefs(prefs) {
+    // Jupiter sends this as Content-Type: application/json with preferences as a nested object.
+    // The UAPI framework auto-deserializes JSON bodies into Perl hashrefs.
+    // The API declares requires_json => 1 to allow nested structures.
+    return CpanelAPI.callJson('ContactInformation', 'set_notification_preferences', {
+      preferences: prefs
+    });
+  },
+
+  async setEmailAddresses(addresses, oldAddresses, password) {
+    const params = { password };
+    addresses.forEach((a, i) => { params[`address-${i}`] = a; });
+    oldAddresses.forEach((a, i) => { params[`old_address-${i}`] = a; });
+    return CpanelAPI.call('ContactInformation', 'set_email_addresses', params);
+  },
+
+  async listLocales() {
+    const r = await CpanelAPI.call('Locale', 'list_locales');
+    return r.data || [];
+  },
+
+  async setLocale(locale) {
+    return CpanelAPI.call('Locale', 'set_locale', { locale });
+  },
+
+  async getLocaleAttributes() {
+    const r = await CpanelAPI.call('Locale', 'get_attributes');
+    return r.data || {};
+  },
+
+  async getPushbulletToken() {
+    const r = await CpanelAPI.call('ContactInformation', 'get_pushbullet_access_token');
+    return r.data || '';
+  },
+
+  async setPushbulletToken(token) {
+    return CpanelAPI.call('ContactInformation', 'set_pushbullet_access_token', { pushbullet_access_token: token });
+  },
+
+  async getPersonalization(names) {
+    const params = {};
+    names.forEach((n, i) => { params[`names-${i}`] = n; });
+    const r = await CpanelAPI.call('Personalization', 'get', params);
+    return r.data || {};
+  },
+
+  async setPersonalization(key, value) {
+    // Personalization::set also expects nested data via JSON body
+    return CpanelAPI.callJson('Personalization', 'set', {
+      personalization: { [key]: value }
+    });
+  },
+
+  async changePassword(password, newpassword) {
+    return CpanelAPI.call2('Passwd', 'change_password', { password, newpassword });
+  },
+
+  async getDomainList() {
+    const r = await CpanelAPI.call('DomainInfo', 'list_domains');
+    return r.data || {};
+  }
+};
+
+
+const isLive = true;
+
+
+// ===================================================================
+// STATE
+// ===================================================================
+
+let originalEmails = { primary: '', secondary: '' };
+let currentLocale = 'en';
+
+
+// ===================================================================
+// UTILITIES
+// ===================================================================
+
+function togglePwVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isPassword = input.type === 'password';
+  input.type = isPassword ? 'text' : 'password';
+  btn.innerHTML = isPassword ? '<i class="ri-eye-off-line" aria-hidden="true"></i>' : '<i class="ri-eye-line" aria-hidden="true"></i>';
+}
+
+
+// ===================================================================
+// CONTACT INFO
+// ===================================================================
+
+function setupContactForm() {
+  const email1 = document.getElementById('contactEmail');
+  const email2 = document.getElementById('contactEmail2');
+  const pwRow = document.getElementById('contactPasswordRow');
+  const saveBtn = document.getElementById('saveContactBtn');
+
+  function checkChanges() {
+    const changed = email1.value !== originalEmails.primary || email2.value !== originalEmails.secondary;
+    pwRow.style.display = changed ? '' : 'none';
+    saveBtn.disabled = !changed;
+  }
+
+  email1.addEventListener('input', checkChanges);
+  email2.addEventListener('input', checkChanges);
+}
+
+async function saveContactInfo() {
+  const email1 = document.getElementById('contactEmail').value.trim();
+  const email2 = document.getElementById('contactEmail2').value.trim();
+  const password = document.getElementById('contactPassword').value;
+
+  if (!email1) { showToast(t('Primary email is required'), 'error'); return; }
+  if (!password) { showToast(t('Password is required to update contact info'), 'error'); return; }
+
+  const newAddresses = [email1];
+  if (email2) newAddresses.push(email2);
+  const oldAddresses = [originalEmails.primary];
+  if (originalEmails.secondary) oldAddresses.push(originalEmails.secondary);
+
+  if (isLive) {
+    try {
+      await ProfileAPI.setEmailAddresses(newAddresses, oldAddresses, password);
+      originalEmails = { primary: email1, secondary: email2 };
+      document.getElementById('contactPassword').value = '';
+      document.getElementById('contactPasswordRow').style.display = 'none';
+      document.getElementById('saveContactBtn').disabled = true;
+      document.getElementById('profileEmail').textContent = email1;
+      showToast(t('Contact information updated'));
+    } catch (err) {
+      showToast(err.message.includes('password') ? t('Incorrect password') : err.message, 'error');
+    }
+  } else {
+    originalEmails = { primary: email1, secondary: email2 };
+    document.getElementById('contactPassword').value = '';
+    document.getElementById('contactPasswordRow').style.display = 'none';
+    document.getElementById('saveContactBtn').disabled = true;
+    document.getElementById('profileEmail').textContent = email1;
+    showToast(t('Contact information updated'));
+  }
+}
+
+
+// ===================================================================
+// NOTIFICATIONS
+// ===================================================================
+
+async function saveNotificationPrefs() {
+  const prefs = {};
+  document.querySelectorAll('[data-pref]').forEach(cb => {
+    prefs[cb.dataset.pref] = cb.checked ? 1 : 0;
+  });
+
+  if (isLive) {
+    try {
+      await ProfileAPI.setNotificationPrefs(prefs);
+      showToast(t('Notification preferences saved'));
+    } catch (err) {
+      showToast(t('Failed to save preferences: {0}', err.message), 'error');
+    }
+  } else {
+    showToast(t('Notification preferences saved'));
+  }
+}
+
+
+// ===================================================================
+// PASSWORD
+// ===================================================================
+
+function updatePwStrength() {
+  const pw = document.getElementById('newPw').value;
+  const bars = document.querySelectorAll('#pwStrength .pw-strength-bar');
+  const label = document.getElementById('pwStrengthLabel');
+
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+  if (/\d/.test(pw)) score++;
+  if (/[^a-zA-Z0-9]/.test(pw)) score++;
+
+  const strengths = ['', t('Weak'), t('Fair'), t('Good'), t('Strong'), t('Very Strong')];
+  const strengthClass = score <= 1 ? '' : score <= 2 ? 'medium' : 'strong';
+
+  bars.forEach((bar, i) => {
+    if (i < score) {
+      bar.className = `pw-strength-bar filled ${strengthClass}`;
+    } else {
+      bar.className = 'pw-strength-bar';
+    }
+  });
+
+  label.textContent = pw ? (strengths[score] || '') : '';
+}
+
+async function changePassword() {
+  const current = document.getElementById('currentPw').value;
+  const newPw = document.getElementById('newPw').value;
+
+  if (!current || !newPw) { showToast(t('Both fields are required'), 'error'); return; }
+  if (current === newPw) { showToast(t('New password must be different'), 'error'); return; }
+  if (newPw.length < 8) { showToast(t('Password must be at least 8 characters'), 'error'); return; }
+
+  if (isLive) {
+    try {
+      await ProfileAPI.changePassword(current, newPw);
+      showToast(t('Password changed. You will be redirected to login.'));
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 3000);
+    } catch (err) {
+      showToast(t('Failed: {0}', err.message), 'error');
+    }
+  } else {
+    document.getElementById('currentPw').value = '';
+    document.getElementById('newPw').value = '';
+    updatePwStrength();
+    showToast(t('Password updated successfully'));
+  }
+}
+
+
+// ===================================================================
+// TWO-FACTOR AUTHENTICATION
+// ===================================================================
+
+let _tfaSecret = null;
+let _tfaEnabled = false;
+
+async function loadTfaStatus() {
+  const badge = document.getElementById('tfaBadge');
+  const disabledView = document.getElementById('tfaDisabledView');
+  const enabledView = document.getElementById('tfaEnabledView');
+
+  try {
+    const r = await CpanelAPI.call('TwoFactorAuth', 'get_user_configuration');
+    const data = r.data || r;
+    _tfaEnabled = data.is_enabled == 1;
+  } catch (err) {
+    // Feature may not be available — hide card entirely
+    document.getElementById('tfaCard').style.display = 'none';
+    return;
+  }
+
+  if (_tfaEnabled) {
+    badge.textContent = t('Enabled');
+    badge.className = 'badge badge-success';
+    disabledView.style.display = 'none';
+    enabledView.style.display = '';
+  } else {
+    badge.textContent = t('Disabled');
+    badge.className = 'badge badge-warning';
+    disabledView.style.display = '';
+    enabledView.style.display = 'none';
+  }
+}
+
+async function startTfaSetup(reconfigure) {
+  const statusEl = document.getElementById('tfaStatus');
+  const setupEl = document.getElementById('tfaSetupFlow');
+  const removeEl = document.getElementById('tfaRemoveConfirm');
+  const reconfigWarn = document.getElementById('tfaReconfigureWarning');
+  const qrEl = document.getElementById('tfaQrCode');
+  const secretEl = document.getElementById('tfaSecretDisplay');
+  const verifyInput = document.getElementById('tfaVerifyCode');
+  const verifyBtn = document.getElementById('tfaVerifyBtn');
+
+  statusEl.style.display = 'none';
+  removeEl.style.display = 'none';
+  setupEl.style.display = '';
+  reconfigWarn.style.display = reconfigure ? '' : 'none';
+  verifyInput.value = '';
+  verifyBtn.disabled = true;
+
+  try {
+    const r = await CpanelAPI.call('TwoFactorAuth', 'generate_user_configuration');
+    const data = r.data || r;
+    _tfaSecret = data.secret;
+    secretEl.textContent = data.secret;
+
+    // Render QR code
+    qrEl.innerHTML = '';
+    if (window.QRCode) {
+      new QRCode(qrEl, { text: data.otpauth_str, width: 200, height: 200, colorDark: '#000', colorLight: '#fff' });
+    } else {
+      // Fallback: render QR via img tag using Google Charts API
+      const img = document.createElement('img');
+      img.width = 200; img.height = 200;
+      img.alt = 'QR Code for authenticator app';
+      img.src = 'https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=' + encodeURIComponent(data.otpauth_str);
+      qrEl.appendChild(img);
+    }
+  } catch (err) {
+    showToast(t('Failed to generate 2FA configuration: {0}', err.message), 'error');
+    cancelTfaSetup();
+    return;
+  }
+
+  // Enable verify button when 6 digits entered
+  verifyInput.oninput = function() {
+    verifyBtn.disabled = !/^\d{6}$/.test(this.value);
+  };
+  verifyInput.focus();
+}
+
+function cancelTfaSetup() {
+  document.getElementById('tfaStatus').style.display = '';
+  document.getElementById('tfaSetupFlow').style.display = 'none';
+  document.getElementById('tfaRemoveConfirm').style.display = 'none';
+  _tfaSecret = null;
+}
+
+async function verifyTfa() {
+  const code = document.getElementById('tfaVerifyCode').value.trim();
+  if (!/^\d{6}$/.test(code)) { showToast(t('Enter a valid 6-digit code'), 'error'); return; }
+
+  try {
+    await CpanelAPI.call('TwoFactorAuth', 'set_user_configuration', {
+      secret: _tfaSecret,
+      tfa_token: code
+    });
+    _tfaEnabled = true;
+    showToast(t('Two-factor authentication enabled'));
+  } catch (err) {
+    showToast(t('Invalid code — check your authenticator app and try again'), 'error');
+    return;
+  }
+
+  _tfaSecret = null;
+  document.getElementById('tfaSetupFlow').style.display = 'none';
+  document.getElementById('tfaStatus').style.display = '';
+  loadTfaStatus();
+}
+
+function confirmRemoveTfa() {
+  document.getElementById('tfaStatus').style.display = 'none';
+  document.getElementById('tfaRemoveConfirm').style.display = '';
+}
+
+function cancelRemoveTfa() {
+  document.getElementById('tfaRemoveConfirm').style.display = 'none';
+  document.getElementById('tfaStatus').style.display = '';
+}
+
+async function removeTfa() {
+  try {
+    await CpanelAPI.call('TwoFactorAuth', 'remove_user_configuration');
+    _tfaEnabled = false;
+    showToast(t('Two-factor authentication removed'));
+  } catch (err) {
+    showToast(t('Failed to remove 2FA: {0}', err.message), 'error');
+    return;
+  }
+
+  document.getElementById('tfaRemoveConfirm').style.display = 'none';
+  document.getElementById('tfaStatus').style.display = '';
+  loadTfaStatus();
+}
+
+
+// ===================================================================
+// LANGUAGE
+// ===================================================================
+
+async function loadLocales() {
+  const select = document.getElementById('localeSelect');
+
+  // Only show locales that have Meridian translation files deployed
+  var supported = ['en'].concat(window.MERIDIAN_LOCALES || []);
+
+  if (isLive) {
+    try {
+      const locales = await ProfileAPI.listLocales();
+      const filtered = locales.filter(l => supported.indexOf(l.locale) !== -1);
+      select.innerHTML = filtered
+        .sort((a, b) => (a.name || a.locale).localeCompare(b.name || b.locale))
+        .map(l => `<option value="${esc(l.locale)}" ${l.locale === currentLocale ? 'selected' : ''}>${esc(l.name || l.locale)}${l.local_name && l.local_name !== l.name ? ` (${esc(l.local_name)})` : ''}</option>`)
+        .join('');
+    } catch { /* Keep default English */ }
+  } else {
+    // Mock locales — only supported ones
+    const mockLocales = [
+      { locale: 'en', name: 'English' },
+      { locale: 'es', name: 'Spanish', local_name: 'Espa\u00f1ol' },
+    ];
+    select.innerHTML = mockLocales
+      .map(l => `<option value="${l.locale}" ${l.locale === currentLocale ? 'selected' : ''}>${l.name}${l.local_name && l.local_name !== l.name ? ` (${l.local_name})` : ''}</option>`)
+      .join('');
+  }
+}
+
+async function changeLocale() {
+  const locale = document.getElementById('localeSelect').value;
+  if (locale === currentLocale) return;
+
+  if (isLive) {
+    try {
+      await ProfileAPI.setLocale(locale);
+      currentLocale = locale;
+      const opt = document.getElementById('localeSelect').selectedOptions[0];
+      document.getElementById('profileLocale').textContent = opt ? opt.textContent : locale;
+      showToast(t('Language updated. Refresh to see changes.'));
+    } catch (err) {
+      showToast(t('Failed: {0}', err.message), 'error');
+    }
+  } else {
+    currentLocale = locale;
+    const opt = document.getElementById('localeSelect').selectedOptions[0];
+    document.getElementById('profileLocale').textContent = opt ? opt.textContent : locale;
+    showToast(t('Language updated'));
+  }
+}
+
+
+// ===================================================================
+// PUSHBULLET
+// ===================================================================
+
+async function savePushbulletToken() {
+  const token = document.getElementById('pushbulletToken').value.trim();
+
+  if (isLive) {
+    try {
+      await ProfileAPI.setPushbulletToken(token);
+      showToast(token ? t('Pushbullet token saved') : t('Pushbullet token cleared'));
+    } catch (err) {
+      showToast(t('Failed: {0}', err.message), 'error');
+    }
+  } else {
+    showToast(token ? t('Pushbullet token saved') : t('Pushbullet token cleared'));
+  }
+}
+
+
+// ===================================================================
+// NOTIFICATION POSITION
+// ===================================================================
+
+async function saveNotifPosition() {
+  const position = document.getElementById('notifPosition').value;
+  localStorage.setItem(CpanelAPI.userKey('meridian-toast-position'), position);
+
+  if (isLive) {
+    try {
+      await ProfileAPI.setPersonalization('common-alertList', { position });
+      showToast(t('Notification position updated'));
+    } catch (err) {
+      showToast(t('Failed: {0}', err.message), 'error');
+    }
+  } else {
+    showToast(t('Notification position updated'));
+  }
+}
+
+
+// ===================================================================
+// LIVE DATA LOADER
+// ===================================================================
+
+async function loadLiveData() {
+  const results = await Promise.allSettled([
+    ProfileAPI.getUserInfo(),           // 0
+    ProfileAPI.getNotificationPrefs(),  // 1
+    ProfileAPI.getDomainList(),         // 2
+    ProfileAPI.getPushbulletToken(),    // 3
+    ProfileAPI.getLocaleAttributes(),   // 4
+  ]);
+
+  const [resUser, resPrefs, resDomains, resPush, resLocale] = results;
+
+  // User info
+  if (resUser.status === 'fulfilled') {
+    const u = resUser.value;
+    const name = u.user || 'User';
+    document.getElementById('profileName').textContent = name;
+    document.getElementById('profileAvatar').textContent = name.substring(0, 2).toUpperCase();
+
+    if (u.contact_email) {
+      document.getElementById('contactEmail').value = u.contact_email;
+      document.getElementById('profileEmail').textContent = u.contact_email;
+      originalEmails.primary = u.contact_email;
+    }
+    if (u.contact_email_2) {
+      document.getElementById('contactEmail2').value = u.contact_email_2;
+      originalEmails.secondary = u.contact_email_2;
+    }
+
+    // Update header avatar
+    const avatar = document.querySelector('.header-avatar');
+    if (avatar) {
+      avatar.textContent = name.substring(0, 2).toUpperCase();
+      avatar.setAttribute('aria-label', `Account menu for ${name}`);
+    }
+  }
+
+  // Domain
+  if (resDomains.status === 'fulfilled') {
+    const d = resDomains.value;
+    if (d.main_domain) document.getElementById('profileDomain').textContent = d.main_domain;
+  }
+
+  // Notification preferences
+  if (resPrefs.status === 'fulfilled') {
+    const prefs = resPrefs.value;
+    document.querySelectorAll('[data-pref]').forEach(cb => { cb.checked = false; });
+    prefs.forEach(p => {
+      const cb = document.querySelector(`[data-pref="${p.name}"]`);
+      // UAPI may return the setting in 'enabled' or 'value' depending on the version.
+      // Check both: 'value' is the saved preference, 'enabled' is availability.
+      if (cb) cb.checked = !!(p.value !== undefined ? p.value : p.enabled);
+    });
+  }
+
+  // Pushbullet token
+  if (resPush.status === 'fulfilled' && resPush.value) {
+    document.getElementById('pushbulletToken').value = resPush.value;
+  }
+
+  // Locale
+  if (resLocale.status === 'fulfilled') {
+    currentLocale = resLocale.value.locale || 'en';
+    const localeName = resLocale.value.name || resLocale.value.locale || 'English';
+    document.getElementById('profileLocale').textContent = localeName;
+  }
+
+  // Immediately restore toast position from localStorage (fast, no API wait)
+  const savedPos = localStorage.getItem(CpanelAPI.userKey('meridian-toast-position'));
+  if (savedPos) document.getElementById('notifPosition').value = savedPos;
+
+  // Load locale list and personalization in parallel (API is authoritative, overrides localStorage)
+  await Promise.allSettled([
+    loadLocales(),
+    (async () => {
+      try {
+        const p = await ProfileAPI.getPersonalization(['common-alertList']);
+        if (p && p['common-alertList']) {
+          const raw = p['common-alertList'].value || p['common-alertList'];
+          const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          if (parsed.position) {
+            document.getElementById('notifPosition').value = parsed.position;
+            localStorage.setItem(CpanelAPI.userKey('meridian-toast-position'), parsed.position);
+          }
+        }
+      } catch {}
+    })()
+  ]);
+}
+
+
+// ===================================================================
+// APPEARANCE
+// ===================================================================
+
+function loadAppearancePrefs() {
+  const theme = localStorage.getItem('meridian-theme') || 'light';
+  const dashLayout = localStorage.getItem(CpanelAPI.userKey('meridian-dashboard-mode')) || 'modern';
+  document.querySelectorAll('#themeOptions .option-card').forEach(function(c) {
+    c.classList.toggle('active', c.dataset.value === theme);
+  });
+  document.querySelectorAll('#layoutOptions .option-card').forEach(function(c) {
+    c.classList.toggle('active', c.dataset.value === dashLayout);
+  });
+}
+
+function setThemePref(val) {
+  localStorage.setItem('meridian-theme', val);
+  document.documentElement.dataset.theme = val;
+  if (typeof CpanelAPI !== 'undefined' && CpanelAPI.isInsideCpanel()) {
+    CpanelAPI.setPersonalization({ meridian_theme: val }).catch(function() {});
+  }
+  var icon = document.querySelector('#headerThemeToggle i');
+  if (icon) icon.className = val === 'light' ? 'ri-moon-line' : 'ri-sun-line';
+  document.querySelectorAll('#themeOptions .option-card').forEach(function(c) {
+    c.classList.toggle('active', c.dataset.value === val);
+  });
+  showToast(t('Theme updated'));
+}
+
+function setDashLayoutPref(val) {
+  localStorage.setItem(CpanelAPI.userKey('meridian-dashboard-mode'), val);
+  localStorage.setItem(CpanelAPI.userKey('meridian-onboarding-complete'), 'true');
+  if (CpanelAPI.isInsideCpanel()) {
+    CpanelAPI.setPersonalization({ 'meridian-onboarding-complete': '1' }).catch(function() {});
+  }
+  document.querySelectorAll('#layoutOptions .option-card').forEach(function(c) {
+    c.classList.toggle('active', c.dataset.value === val);
+  });
+  showToast(t('Dashboard layout updated'));
+}
+
+async function restartOnboarding() {
+  localStorage.removeItem(CpanelAPI.userKey('meridian-onboarding-complete'));
+  if (typeof CpanelAPI !== 'undefined' && CpanelAPI.isInsideCpanel()) {
+    try {
+      await CpanelAPI.setPersonalization({ meridian_onboarding_complete: '' });
+    } catch (e) {
+      console.warn('Failed to clear onboarding preference:', e);
+    }
+  }
+  window.location.href = '../onboarding/';
+}
+
+
+// ===================================================================
+// INIT
+// ===================================================================
+
+async function init() {
+  const content = document.getElementById('pageContent');
+
+  try {
+    await loadLiveData();
+  } catch (err) {
+    console.error('Failed to load profile data:', err);
+  }
+
+  content.style.display = '';
+  setupContactForm();
+  loadAppearancePrefs();
+  loadTfaStatus();
+
+  if (window.initAnimations) window.initAnimations();
+}
+
+init();
+</script>
+[% END %]

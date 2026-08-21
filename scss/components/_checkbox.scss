@@ -1,0 +1,19 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ── Table Checkbox ──
+// Checkbox for data table row selection, multi-select patterns.
+//
+// Markup contract:
+//   input.table-checkbox[type="checkbox"]
+
+.table-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: var(--radius-xs);
+}

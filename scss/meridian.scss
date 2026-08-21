@@ -1,0 +1,58 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ============================================================
+// MERIDIAN DESIGN SYSTEM — Main Entry Point
+//
+// Compiles to a single `meridian.css` that any page can import.
+// Injects all CSS custom properties into :root, applies base
+// styles, and includes every component.
+//
+// Usage:
+//   <link rel="stylesheet" href="meridian.css">
+//   <html data-theme="dark">  <!-- or "light" -->
+//
+// For SCSS consumers (Angular, Stencil), import tokens only:
+//   @use "@cpanel/meridian-styles/tokens" as *;
+// ============================================================
+
+// 1. Tokens — SCSS variables + CSS custom property injection
+@use 'tokens/typography'  as typography;
+@use 'tokens/spacing'     as spacing;
+@use 'tokens/radius'      as radius;
+@use 'tokens/motion'       as motion;
+@use 'tokens/z-index'     as zindex;
+@use 'tokens/layout'      as layout;
+@use 'tokens/palette'     as palette;
+@use 'tokens/themes'      as themes;
+
+// 3. Base styles (reset, typography classes, accessibility)
+@use 'base/reset';
+@use 'base/typography' as base-typography;
+@use 'base/accessibility';
+
+// 4. Components — imports all via _index.scss barrel
+@use 'components';
+
+// 5. Layout primitives
+@use 'layout/index';
+
+// 6. Animations
+@use 'animations';
+
+// Inject all tokens into :root
+:root {
+  @include typography.typography-tokens;
+  @include spacing.spacing-tokens;
+  @include radius.radius-tokens;
+  @include motion.motion-tokens;
+  @include zindex.z-index-tokens;
+  @include layout.layout-tokens;
+  @include palette.palette-tokens;
+}
+
+// 2. Theme application
+[data-theme="dark"]  { @include themes.theme-dark; }
+[data-theme="light"] { @include themes.theme-light; }

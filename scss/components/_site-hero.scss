@@ -1,0 +1,26 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ─────────────────────────────────────────────────────────────
+// Site Hero — compact domain header with status dot, domain
+// name, meta info, and action buttons.
+// ─────────────────────────────────────────────────────────────
+
+.site-hero { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-6); }
+.site-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.site-dot.healthy { background: var(--status-success); }
+.site-dot.warning { background: var(--status-warning); }
+.site-dot.error   { background: var(--status-error); }
+.site-dot.inactive { background: var(--text-disabled); }
+.site-hero-info { flex: 1; }
+.site-domain { font-size: var(--text-xl); font-weight: var(--weight-bold); }
+.site-meta { color: var(--text-secondary); font-size: var(--text-sm); margin-top: 2px; }
+.site-hero-actions { display: flex; gap: var(--space-2); }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .site-hero { flex-wrap: wrap; }
+  .site-hero-actions { width: 100%; }
+}

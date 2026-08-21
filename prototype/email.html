@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cPanel — Email Accounts</title>
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="stylesheet" href="meridian.css">
+
+<style>
+/* ===================================================================
+   EMAIL PAGE -- SPECIFIC STYLES
+   =================================================================== */
+
+/* Email-specific stat card icon colors */
+.stat-card-icon.accounts { background: var(--feature-bg); color: var(--feature-color); }
+.stat-card-icon.storage { background: var(--accent-subtle); color: var(--text-brand); }
+.stat-card-icon.forwarders { background: var(--status-info-bg); color: var(--status-info); }
+.stat-card-icon.autoresponders { background: var(--status-success-bg); color: var(--status-success); }
+
+/* Modern Email Grid */
+.email-grid-modern .data-list-head,
+.email-grid-modern .data-list-row {
+  grid-template-columns: 1fr 120px 90px 80px 80px;
+  gap: var(--space-4);
+}
+.storage-mini { display: flex; align-items: center; gap: var(--space-2); }
+.storage-mini-bar { width: 40px; height: 4px; background: var(--bg-muted); border-radius: var(--radius-full); overflow: hidden; flex-shrink: 0; }
+.storage-mini-fill { height: 100%; border-radius: var(--radius-full); background: var(--accent); }
+.btn-manage { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); font-weight: var(--weight-medium); background: transparent; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; font-family: var(--font-body); transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out); }
+.btn-manage:hover { border-color: var(--border-default); color: var(--text-primary); background: var(--bg-hover); }
+.account-detail { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-6); margin-top: var(--space-4); }
+.account-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.account-field-label { font-size: var(--text-xs); color: var(--text-tertiary); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-weight: var(--weight-semibold); margin-bottom: var(--space-1); }
+.account-field-value { font-size: var(--text-sm); }
+
+@media (max-width: 768px) {
+  .email-grid-modern .data-list-head { display: none; }
+  .email-grid-modern .data-list-row { grid-template-columns: 1fr auto; }
+  .account-detail-grid { grid-template-columns: 1fr; }
+}
+
+/* Filter editor */
+.filter-rule-row select,
+.filter-action-row select { font-size: var(--text-sm); }
+@media (max-width: 768px) {
+  .filter-rule-row, .filter-action-row { flex-direction: column; align-items: stretch; }
+  .filter-rule-row select, .filter-action-row select { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="sr-only">Skip to main content</a>
+
+<div class="layout-shell" id="layoutShell">
+
+  <!-- Header -->
+  <meridian-header></meridian-header>
+
+  <!-- Sidebar -->
+  <meridian-sidebar active="email"></meridian-sidebar>
+
+  <!-- Main Content -->
+  <main class="layout-main" id="main-content">
+    <div class="main-content">
+
+      <!-- Page header -->
+      <div class="page-header animate-in stagger-1" id="pageHeader">
+        <div class="page-header-left">
+          <div>
+            <h1 class="page-title">Email Accounts</h1>
+            <div class="page-subtitle">Manage email accounts, forwarders, and settings</div>
+          </div>
+        </div>
+        <div class="page-header-right">
+          <button type="button" class="btn btn-primary" id="createAccountBtn" onclick="openCreateEmailModal()">
+            <i class="ri-add-line" aria-hidden="true"></i> Create Account
+          </button>
+        </div>
+      </div>
+
+      <!-- Email List (modern domain-grouped view) -->
+      <div class="filter-bar animate-in stagger-2 u-mb-4">
+        <div class="filter-search">
+          <i class="ri-search-line" aria-hidden="true"></i>
+          <input type="search" placeholder="Filter by domain or email..." id="modernEmailSearch" aria-label="Filter email accounts">
+        </div>
+        <button type="button" class="filter-chip" id="toggleAllEmailGroups" onclick="toggleAllEmailGroups()">
+          <i class="ri-expand-up-down-line" aria-hidden="true"></i> <span>Expand All</span>
+        </button>
+      </div>
+      <div class="data-list email-grid-modern" id="modernEmailList" role="table"></div>
+
+      <div id="modernAccountView" style="display:none;">
+        <button class="detail-back" id="modernBackToEmail" type="button">
+          <i class="ri-arrow-left-s-line" aria-hidden="true"></i> Email
+        </button>
+        <div id="modernAccountDetail"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Filter Editor Modal -->
+<div class="modal-overlay" id="filterEditorOverlay" role="dialog" aria-modal="true" aria-labelledby="filterEditorTitle">
+  <div class="modal" style="max-width: 640px;">
+    <div class="modal-header">
+      <h2 class="t-heading t-heading-md" id="filterEditorTitle">Add Filter</h2>
+      <button type="button" class="modal-close" aria-label="Close" onclick="closeFilterEditor()">
+        <i class="ri-close-line" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label" for="filterName">Filter Name</label>
+        <input type="text" id="filterName" class="form-input" placeholder="e.g. Block spam senders" required>
+      </div>
+
+      <div class="u-mb-4">
+        <div class="u-flex-between u-mb-2">
+          <div class="form-label" style="margin-bottom:0;">Rules</div>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="addFilterRule()"><i class="ri-add-line" aria-hidden="true"></i> Add Rule</button>
+        </div>
+        <div id="filterRules"></div>
+      </div>
+
+      <div>
+        <div class="u-flex-between u-mb-2">
+          <div class="form-label" style="margin-bottom:0;">Actions</div>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="addFilterAction()"><i class="ri-add-line" aria-hidden="true"></i> Add Action</button>
+        </div>
+        <div id="filterActions"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeFilterEditor()">Cancel</button>
+      <button type="button" class="btn btn-primary" id="filterSaveBtn" onclick="saveFilter()">Save Filter</button>
+    </div>
+  </div>
+</div>
+
+<script src="components/shell.js"></script>
+<script src="components/wizard-steps.js" defer></script>
+<script src="components/wizard-modal.js" defer></script>
+<script src="components/create-email-modal.js" defer></script>
+<script>
+// ===================================================================
+// MOCK DATA
+// ===================================================================
+
+var MOCK_EMAIL_DOMAINS = [
+  { domain: 'example.com', domainType: 'main', accounts: [
+    { address: 'info@example.com', used: '124 MB', usedMB: 124, quota: '1 GB', quotaMB: 1024, status: 'Active', lastAccess: '2 hours ago' },
+    { address: 'support@example.com', used: '89 MB', usedMB: 89, quota: '1 GB', quotaMB: 1024, status: 'Active', lastAccess: '5 hours ago' },
+    { address: 'jesse@example.com', used: '312 MB', usedMB: 312, quota: '1 GB', quotaMB: 1024, status: 'Active', lastAccess: '1 day ago' },
+    { address: 'sales@example.com', used: '56 MB', usedMB: 56, quota: '1 GB', quotaMB: 1024, status: 'Active', lastAccess: '4 hours ago' },
+    { address: 'billing@example.com', used: '201 MB', usedMB: 201, quota: '1 GB', quotaMB: 1024, status: 'Active', lastAccess: '1 hour ago' },
+    { address: 'noreply@example.com', used: '12 MB', usedMB: 12, quota: '500 MB', quotaMB: 500, status: 'Active', lastAccess: '6 hours ago' }
+  ]},
+  { domain: 'shop.example.net', domainType: 'addon', accounts: [
+    { address: 'hello@shop.example.net', used: '45 MB', usedMB: 45, quota: '500 MB', quotaMB: 500, status: 'Active', lastAccess: '3 hours ago' },
+    { address: 'orders@shop.example.net', used: '178 MB', usedMB: 178, quota: '1 GB', quotaMB: 1024, status: 'Active', lastAccess: '30 minutes ago' },
+    { address: 'returns@shop.example.net', used: '34 MB', usedMB: 34, quota: '500 MB', quotaMB: 500, status: 'Active', lastAccess: '2 days ago' }
+  ]},
+  { domain: 'clientsite.org', domainType: 'addon', accounts: [
+    { address: 'info@clientsite.org', used: '234 MB', usedMB: 234, quota: '2 GB', quotaMB: 2048, status: 'Active', lastAccess: '30 minutes ago' },
+    { address: 'admin@clientsite.org', used: '67 MB', usedMB: 67, quota: '1 GB', quotaMB: 1024, status: 'Active', lastAccess: '1 hour ago' },
+    { address: 'contact@clientsite.org', used: '91 MB', usedMB: 91, quota: '1 GB', quotaMB: 1024, status: 'Active', lastAccess: '3 hours ago' }
+  ]}
+];
+
+var mockForwarders = {
+  'info@example.com': [
+    { dest: 'jesse@example.com', enabled: true },
+    { dest: 'admin@clientsite.org', enabled: false }
+  ],
+  'support@example.com': [
+    { dest: 'info@example.com', enabled: true }
+  ]
+};
+
+
+// ===================================================================
+// HELPERS
+// ===================================================================
+
+function getDomainTypeLabel(t) {
+  return { main: 'Main Domain', addon: 'Addon Domain', subdomain: 'Subdomain', alias: 'Alias' }[t] || t;
+}
+
+function getTotalStorage(accounts) {
+  var total = 0;
+  for (var i = 0; i < accounts.length; i++) total += accounts[i].usedMB || 0;
+  if (total >= 1024) return (total / 1024).toFixed(1) + ' GB';
+  return Math.round(total) + ' MB';
+}
+
+function getTotalQuota(accounts) {
+  var total = 0;
+  for (var i = 0; i < accounts.length; i++) total += accounts[i].quotaMB || 0;
+  if (total >= 1024) return (total / 1024).toFixed(1) + ' GB';
+  return Math.round(total) + ' MB';
+}
+
+function getAllAccounts() {
+  var all = [];
+  for (var i = 0; i < MOCK_EMAIL_DOMAINS.length; i++) {
+    var d = MOCK_EMAIL_DOMAINS[i];
+    for (var j = 0; j < d.accounts.length; j++) {
+      all.push({ domain: d.domain, domainType: d.domainType, account: d.accounts[j] });
+    }
+  }
+  return all;
+}
+
+
+// ===================================================================
+// SORTING
+// ===================================================================
+
+var sortField = 'address';
+var sortDir = 'asc';
+
+function sortAccounts(accounts) {
+  return accounts.slice().sort(function(a, b) {
+    // Main domain accounts always first
+    var aIsMain = a.domainType === 'main' ? 1 : 0;
+    var bIsMain = b.domainType === 'main' ? 1 : 0;
+    if (aIsMain !== bIsMain) return bIsMain - aIsMain;
+
+    var va, vb;
+    if (sortField === 'address') { va = a.account.address; vb = b.account.address; }
+    else if (sortField === 'storage') { va = a.account.usedMB; vb = b.account.usedMB; }
+    else if (sortField === 'quota') { va = a.account.quotaMB; vb = b.account.quotaMB; }
+    else if (sortField === 'status') { va = a.account.status; vb = b.account.status; }
+    else { va = a.account.address; vb = b.account.address; }
+    if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+    if (va < vb) return sortDir === 'asc' ? -1 : 1;
+    if (va > vb) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+}
+
+function toggleSort(field) {
+  if (sortField === field) {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortField = field;
+    sortDir = 'asc';
+  }
+  var s = document.getElementById('modernEmailSearch');
+  renderEmailList(s ? s.value : '');
+}
+
+function sortIcon(field) {
+  if (sortField !== field) return '<i class="ri-arrow-up-down-line sort-icon" aria-hidden="true"></i>';
+  var icon = sortDir === 'asc' ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line';
+  return '<i class="' + icon + ' sort-icon active" aria-hidden="true"></i>';
+}
+
+
+// ===================================================================
+// EXPAND / COLLAPSE STATE
+// ===================================================================
+
+var expandedDomains = {};
+var allEmailExpanded = false;
+var emailUserToggled = false;
+
+function toggleDomainGroup(domain, badge) {
+  expandedDomains[domain] = !expandedDomains[domain];
+  badge.classList.toggle('open');
+  var container = document.querySelector('.group-children[data-parent="' + domain + '"]');
+  if (container) container.classList.toggle('open');
+}
+
+function toggleAllEmailGroups() {
+  emailUserToggled = true;
+  allEmailExpanded = !allEmailExpanded;
+  for (var i = 0; i < MOCK_EMAIL_DOMAINS.length; i++) {
+    if (MOCK_EMAIL_DOMAINS[i].accounts.length > 0) {
+      expandedDomains[MOCK_EMAIL_DOMAINS[i].domain] = allEmailExpanded;
+    }
+  }
+  var btn = document.getElementById('toggleAllEmailGroups');
+  if (btn) {
+    var span = btn.querySelector('span');
+    var icon = btn.querySelector('i');
+    if (span) span.textContent = allEmailExpanded ? 'Minimize All' : 'Expand All';
+    if (icon) icon.className = allEmailExpanded ? 'ri-contract-up-down-line' : 'ri-expand-up-down-line';
+  }
+  var s = document.getElementById('modernEmailSearch');
+  renderEmailList(s ? s.value : '');
+}
+
+
+// ===================================================================
+// RENDER EMAIL LIST
+// ===================================================================
+
+function renderEmailList(filter) {
+  var list = document.getElementById('modernEmailList');
+  if (!list) return;
+  var q = filter ? filter.toLowerCase() : '';
+
+  var all = getAllAccounts();
+  if (q) {
+    all = all.filter(function(item) {
+      return item.account.address.toLowerCase().indexOf(q) !== -1
+        || item.domain.toLowerCase().indexOf(q) !== -1;
+    });
+  }
+  var sorted = sortAccounts(all);
+
+  // Group sorted results back by domain
+  var domainOrder = [];
+  var domainMap = {};
+  for (var i = 0; i < sorted.length; i++) {
+    var d = sorted[i].domain;
+    if (!domainMap[d]) {
+      domainMap[d] = { domain: d, domainType: sorted[i].domainType, accounts: [] };
+      domainOrder.push(d);
+    }
+    domainMap[d].accounts.push(sorted[i].account);
+  }
+
+  // Only show domains that have email accounts (no empty domain rows)
+
+  var totalAccounts = sorted.length;
+  var useTreeMode = !emailUserToggled && totalAccounts <= 10;
+
+  var html = '';
+
+  // Column headers
+  html += '<div class="data-list-head" role="row">'
+    + '<div class="sortable" onclick="toggleSort(\'address\')" role="columnheader" tabindex="0">Account ' + sortIcon('address') + '</div>'
+    + '<div class="sortable" onclick="toggleSort(\'storage\')" role="columnheader" tabindex="0">Storage ' + sortIcon('storage') + '</div>'
+    + '<div class="sortable" onclick="toggleSort(\'quota\')" role="columnheader" tabindex="0">Quota ' + sortIcon('quota') + '</div>'
+    + '<div class="sortable" onclick="toggleSort(\'status\')" role="columnheader" tabindex="0">Status ' + sortIcon('status') + '</div>'
+    + '<div role="columnheader"></div>'
+    + '</div>';
+
+  if (domainOrder.length === 0) {
+    html += '<div style="text-align:center;padding:var(--space-12);color:var(--text-tertiary);">'
+      + '<i class="ri-search-line" style="font-size:2rem;display:block;margin-bottom:var(--space-3);" aria-hidden="true"></i>'
+      + 'No results match your search'
+      + '</div>';
+    list.innerHTML = html;
+    return;
+  }
+
+  for (var i = 0; i < domainOrder.length; i++) {
+    var group = domainMap[domainOrder[i]];
+    var count = group.accounts.length;
+    var totalUsed = getTotalStorage(group.accounts);
+    var totalQuota = getTotalQuota(group.accounts);
+
+    html += '<div class="data-list-row domain-parent-row" data-domain="' + esc(group.domain) + '" role="row">'
+      + '<div class="cell-name" role="cell">'
+      + '<span class="domain-icon icon-' + esc(group.domainType) + '"><i class="ri-global-line" aria-hidden="true"></i></span>'
+      + '<span class="u-flex-col" style="min-width:0;">'
+      + '<span class="domain-name-text">' + esc(group.domain) + '</span>'
+      + '<span class="domain-type-label">' + esc(getDomainTypeLabel(group.domainType));
+
+    if (count > 0) {
+      html += ' <span class="badge-toggle" data-toggle="' + esc(group.domain) + '" onclick="event.stopPropagation(); toggleDomainGroup(\'' + esc(group.domain) + '\', this)">'
+        + count + ' <i class="ri-arrow-down-s-line" aria-hidden="true"></i></span>';
+    }
+
+    html += '</span></span>'
+      + '</div>'
+      + '<div class="cell" role="cell">' + (count > 0 ? esc(totalUsed) : '') + '</div>'
+      + '<div class="cell" role="cell">' + (count > 0 ? esc(totalQuota) : '') + '</div>'
+      + '<div class="cell status-ok" role="cell">' + (count > 0 ? 'Delivering' : '') + '</div>'
+      + '<div class="cell" role="cell"><button type="button" class="btn-manage" onclick="event.stopPropagation()"><i class="ri-mail-add-line" aria-hidden="true"></i> Create</button></div>'
+      + '</div>';
+
+    // Default expanded when ≤10, collapsed when >10; user toggle overrides
+    var isExpanded = useTreeMode || !!expandedDomains[group.domain];
+    html += '<div class="group-children' + (isExpanded ? ' open' : '') + '" data-parent="' + esc(group.domain) + '" role="rowgroup">';
+    for (var j = 0; j < group.accounts.length; j++) {
+      html += renderAccountRow(group.accounts[j], false);
+    }
+    html += '</div>';
+  }
+
+  list.innerHTML = html;
+  bindEmailEvents(list);
+}
+
+function renderAccountRow(account, isTree) {
+  var pct = account.quotaMB > 0 ? Math.round((account.usedMB / account.quotaMB) * 100) : 0;
+  var rowClass = 'data-list-row' + (isTree ? ' tree-row' : ' child-row');
+
+  return '<div class="' + rowClass + '" data-account="' + esc(account.address) + '" tabindex="0" role="row">'
+    + '<div class="cell-name" role="cell"><span class="domain-icon icon-subdomain icon-sm"><i class="ri-mail-line" aria-hidden="true"></i></span> <span>' + esc(account.address) + '</span></div>'
+    + '<div class="cell" role="cell"><div class="storage-mini"><span class="storage-mini-bar"><span class="storage-mini-fill" style="width:' + Math.min(pct, 100) + '%"></span></span> ' + esc(account.used) + '</div></div>'
+    + '<div class="cell" role="cell">' + esc(account.quota) + '</div>'
+    + '<div class="cell status-ok" role="cell">' + esc(account.status) + '</div>'
+    + '<div class="cell" role="cell"><button type="button" class="btn-manage" onclick="event.stopPropagation(); showAccount(\'' + esc(account.address) + '\')">Manage</button></div>'
+    + '</div>';
+}
+
+function bindEmailEvents(list) {
+  var rows = list.querySelectorAll('.data-list-row');
+  for (var j = 0; j < rows.length; j++) {
+    rows[j].addEventListener('click', function() {
+      var addr = this.getAttribute('data-account');
+      if (addr) showAccount(addr);
+    });
+    rows[j].addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+    });
+  }
+  // Keyboard support for sortable column headers
+  var headers = list.querySelectorAll('.sortable[role="columnheader"]');
+  for (var h = 0; h < headers.length; h++) {
+    headers[h].addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+    });
+  }
+}
+
+
+// ===================================================================
+// ACCOUNT DETAIL VIEW
+// ===================================================================
+
+function showAccount(address) {
+  var account = null;
+  var domainName = '';
+  for (var i = 0; i < MOCK_EMAIL_DOMAINS.length; i++) {
+    var d = MOCK_EMAIL_DOMAINS[i];
+    for (var j = 0; j < d.accounts.length; j++) {
+      if (d.accounts[j].address === address) {
+        account = d.accounts[j];
+        domainName = d.domain;
+        break;
+      }
+    }
+    if (account) break;
+  }
+  if (!account) return;
+
+  var pct = account.quotaMB > 0 ? Math.round((account.usedMB / account.quotaMB) * 100) : 0;
+
+  document.getElementById('modernEmailList').style.display = 'none';
+  var fb = document.querySelector('.filter-bar');
+  if (fb) fb.style.display = 'none';
+  document.getElementById('modernAccountView').style.display = '';
+
+  var html = '<div class="module-header">'
+    + '<span class="module-header-icon" style="background:rgba(56,189,248,0.08);color:var(--status-info);"><i class="ri-mail-line" aria-hidden="true"></i></span>'
+    + '<div class="module-header-info">'
+    + '<h2 class="module-header-title">' + esc(account.address) + '</h2>'
+    + '<p class="module-header-meta">on ' + esc(domainName) + ' \xB7 ' + esc(account.status) + '</p>'
+    + '</div>'
+    + '</div>';
+
+  html += '<div class="account-detail"><div class="account-detail-grid">'
+    + '<div><div class="account-field-label">Storage Used</div><div class="account-field-value">' + esc(account.used) + ' of ' + esc(account.quota) + ' (' + pct + '%)</div></div>'
+    + '<div><div class="account-field-label">Last Access</div><div class="account-field-value">' + esc(account.lastAccess || 'Never') + '</div></div>'
+    + '<div><div class="account-field-label">Status</div><div class="account-field-value status-ok">' + esc(account.status) + '</div></div>'
+    + '<div><div class="account-field-label">Domain</div><div class="account-field-value">' + esc(domainName) + '</div></div>'
+    + '</div></div>';
+
+  html += '<div class="u-flex u-gap-2 u-flex-wrap" style="margin-top:var(--space-6);">'
+    + '<button type="button" class="btn btn-sm btn-ghost"><i class="ri-lock-password-line" aria-hidden="true"></i> Change Password</button>'
+    + '<button type="button" class="btn btn-sm btn-ghost"><i class="ri-corner-up-right-line" aria-hidden="true"></i> Forwarding</button>'
+    + '<button type="button" class="btn btn-sm btn-ghost"><i class="ri-reply-line" aria-hidden="true"></i> Autoresponder</button>'
+    + '<button type="button" class="btn btn-sm btn-ghost" onclick="event.stopPropagation(); showFiltersPanel(\'' + esc(account.address) + '\')"><i class="ri-filter-3-line" aria-hidden="true"></i> Filters</button>'
+    + '<button type="button" class="btn btn-sm btn-ghost"><i class="ri-smartphone-line" aria-hidden="true"></i> Connect to Device</button>'
+    + '<button type="button" class="btn btn-sm btn-ghost"><i class="ri-mail-open-line" aria-hidden="true"></i> Open Webmail</button>'
+    + '<button type="button" class="btn btn-sm" style="background:var(--status-error-bg);color:var(--status-error);border:none;"><i class="ri-delete-bin-line" aria-hidden="true"></i> Delete Account</button>'
+    + '</div>';
+
+  document.getElementById('modernAccountDetail').innerHTML = html;
+  window.scrollTo(0, 0);
+}
+
+
+// ===================================================================
+// CREATE ACCOUNT MODAL (uses shared create-email-modal.js)
+// ===================================================================
+
+function openCreateEmailModal() {
+  var domains = MOCK_EMAIL_DOMAINS.map(function(d) { return d.domain; });
+  createEmailModal.open({
+    domains: domains,
+    onCreated: function(account) {
+      // Add to mock data for this page
+      for (var i = 0; i < MOCK_EMAIL_DOMAINS.length; i++) {
+        if (MOCK_EMAIL_DOMAINS[i].domain === account.domain) {
+          MOCK_EMAIL_DOMAINS[i].accounts.push(account);
+          break;
+        }
+      }
+      renderEmailList(document.getElementById('modernEmailSearch').value);
+    }
+  });
+}
+
+
+// ===================================================================
+// EVENTS & INIT
+// ===================================================================
+
+document.getElementById('modernBackToEmail').addEventListener('click', function() {
+  document.getElementById('modernAccountView').style.display = 'none';
+  document.getElementById('modernEmailList').style.display = '';
+  var fb = document.querySelector('.filter-bar');
+  if (fb) fb.style.display = '';
+});
+
+var _emailSearchTimer;
+document.getElementById('modernEmailSearch').addEventListener('input', function() {
+  var val = this.value;
+  clearTimeout(_emailSearchTimer);
+  _emailSearchTimer = setTimeout(function() { renderEmailList(val); }, 200);
+});
+
+// Render on load
+renderEmailList('');
+
+// Handle deep-link: #account=user@domain.com (from Websites page cross-link)
+(function() {
+  var hashMatch = location.hash.match(/account=([^&]+)/);
+  if (hashMatch) {
+    var decoded = decodeURIComponent(hashMatch[1]);
+    showAccount(decoded);
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+})();
+
+// Set initial toggle label based on account count
+(function() {
+  var allAccounts = getAllAccounts();
+  if (allAccounts.length <= 10) {
+    allEmailExpanded = true;
+    var btn = document.getElementById('toggleAllEmailGroups');
+    if (btn) {
+      var span = btn.querySelector('span');
+      var icon = btn.querySelector('i');
+      if (span) span.textContent = 'Minimize All';
+      if (icon) icon.className = 'ri-contract-up-down-line';
+    }
+  }
+})();
+
+
+// ===================================================================
+// EMAIL FILTERS
+// ===================================================================
+
+var mockFilters = {
+  'info@example.com': [
+    {
+      filtername: 'Block spam senders',
+      enabled: 1,
+      rules: [{ part: '$header_from:', match: 'contains', val: 'spam@evil.com', opt: '' }],
+      actions: [{ action: 'fail', dest: '' }]
+    },
+    {
+      filtername: 'Sort newsletters',
+      enabled: 1,
+      rules: [{ part: '$h_List-Id:', match: 'is not', val: '', opt: '' }],
+      actions: [{ action: 'save', dest: '/.Newsletters' }]
+    },
+    {
+      filtername: 'Forward invoices',
+      enabled: 0,
+      rules: [{ part: '$header_subject:', match: 'contains', val: 'invoice', opt: '' }],
+      actions: [{ action: 'deliver', dest: 'billing@company.com' }]
+    }
+  ]
+};
+
+var _editingFilterName = null;
+var _filterAccount = '';
+var _filterEditorTrap = null;
+
+function showFiltersPanel(address) {
+  var detail = document.getElementById('modernAccountDetail');
+  if (!detail) return;
+
+  _filterAccount = address;
+  window._currentFilterAccount = address;
+
+  var filters = mockFilters[address] || [];
+  window._currentFilters = filters;
+
+  var filterHtml = '';
+  if (filters.length === 0) {
+    filterHtml = '<div class="t-body-sm t-muted" style="text-align:center; padding:var(--space-6) 0;">'
+      + '<i class="ri-filter-off-line" style="font-size:32px; display:block; margin-bottom:var(--space-2); color:var(--text-tertiary);" aria-hidden="true"></i>'
+      + 'No filters configured'
+      + '</div>';
+  } else {
+    for (var i = 0; i < filters.length; i++) {
+      var f = filters[i];
+      filterHtml += '<div class="list-item" style="padding:var(--space-3) 0;">'
+        + '<div class="list-item-left u-gap-3">'
+        + '<label style="display:flex; align-items:center; cursor:pointer;" title="' + (f.enabled ? 'Enabled' : 'Disabled') + '">'
+        + '<input type="checkbox" class="toggle" ' + (f.enabled ? 'checked' : '') + ' onchange="toggleFilter(\'' + esc(f.filtername) + '\', this.checked)">'
+        + '</label>'
+        + '<div>'
+        + '<div class="list-item-text">' + esc(f.filtername) + '</div>'
+        + '<div class="list-item-sub">' + summarizeFilter(f) + '</div>'
+        + '</div>'
+        + '</div>'
+        + '<div class="list-item-right u-gap-1">'
+        + '<button type="button" class="btn btn-ghost btn-sm btn-icon" onclick="openFilterEditor(' + i + ', \'' + esc(address) + '\')" title="Edit"><i class="ri-edit-line" aria-hidden="true"></i></button>'
+        + '<button type="button" class="btn btn-ghost btn-sm btn-icon" style="color:var(--status-error);" onclick="deleteFilter(\'' + esc(f.filtername) + '\')" title="Delete"><i class="ri-delete-bin-line" aria-hidden="true"></i></button>'
+        + '</div>'
+        + '</div>';
+    }
+  }
+
+  detail.innerHTML = '<div class="site-info">'
+    + '<div class="u-flex-between u-mb-4">'
+    + '<div class="site-info-title" style="margin-bottom:0;">Email Filters</div>'
+    + '<button type="button" class="btn btn-primary btn-sm" onclick="openFilterEditor(null, \'' + esc(address) + '\')"><i class="ri-add-line" aria-hidden="true"></i> Add Filter</button>'
+    + '</div>'
+    + '<div id="filterList">' + filterHtml + '</div>'
+    + '</div>';
+}
+
+function summarizeFilter(f) {
+  var partLabels = {
+    '$header_from:': 'From', '$header_to:': 'To', '$header_subject:': 'Subject',
+    '$message_body': 'Body', '$reply_address:': 'Reply', '$message_headers': 'Headers',
+    '$h_X-Spam-Status:': 'Spam Status', '$h_X-Spam-Score:': 'Spam Score',
+    '$h_X-Spam-Bar:': 'Spam Bar', '$h_List-Id:': 'List ID',
+    'foranyaddress $h_to:,$h_cc:,$h_bcc:': 'Any Recipient'
+  };
+  var actionLabels = { deliver: 'Forward to', save: 'Save to', fail: 'Discard', finish: 'Stop', pipe: 'Pipe to' };
+
+  var rule = f.rules && f.rules[0];
+  var action = f.actions && f.actions[0];
+
+  var summary = '';
+  if (rule) {
+    var field = partLabels[rule.part] || rule.part;
+    summary += 'If ' + field + ' ' + rule.match + ' "' + (rule.val || '') + '"';
+    if (f.rules.length > 1) summary += ' (+' + (f.rules.length - 1) + ')';
+  }
+  if (action) {
+    var act = actionLabels[action.action] || action.action;
+    summary += ' \u2192 ' + act;
+    if (action.dest) summary += ' ' + esc(action.dest);
+  }
+  return summary;
+}
+
+function openFilterEditor(filterIndex, account) {
+  _filterAccount = account;
+  var overlay = document.getElementById('filterEditorOverlay');
+
+  if (filterIndex !== null && window._currentFilters && window._currentFilters[filterIndex]) {
+    var f = window._currentFilters[filterIndex];
+    _editingFilterName = f.filtername;
+    document.getElementById('filterEditorTitle').textContent = 'Edit Filter';
+    document.getElementById('filterName').value = f.filtername;
+
+    document.getElementById('filterRules').innerHTML = '';
+    for (var i = 0; i < f.rules.length; i++) addFilterRule(f.rules[i]);
+
+    document.getElementById('filterActions').innerHTML = '';
+    for (var j = 0; j < f.actions.length; j++) addFilterAction(f.actions[j]);
+  } else {
+    _editingFilterName = null;
+    document.getElementById('filterEditorTitle').textContent = 'Add Filter';
+    document.getElementById('filterName').value = '';
+    document.getElementById('filterRules').innerHTML = '';
+    document.getElementById('filterActions').innerHTML = '';
+    addFilterRule();
+    addFilterAction();
+  }
+
+  overlay.classList.add('show');
+  _filterEditorTrap = trapFocus(overlay);
+}
+
+function closeFilterEditor() {
+  document.getElementById('filterEditorOverlay').classList.remove('show');
+  if (_filterEditorTrap) { _filterEditorTrap(); _filterEditorTrap = null; }
+}
+
+// Close filter editor on backdrop click
+document.getElementById('filterEditorOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeFilterEditor();
+});
+
+function addFilterRule(data) {
+  var container = document.getElementById('filterRules');
+  var row = document.createElement('div');
+  row.className = 'filter-rule-row u-flex-center u-gap-2 u-mb-2 u-flex-wrap';
+
+  var partOptions = [
+    ['$header_from:', 'From'],
+    ['$header_to:', 'To'],
+    ['$header_subject:', 'Subject'],
+    ['$reply_address:', 'Reply Address'],
+    ['$message_body', 'Body'],
+    ['$message_headers', 'Any Header'],
+    ['foranyaddress $h_to:,$h_cc:,$h_bcc:', 'Any Recipient'],
+    ['$h_X-Spam-Status:', 'Spam Status'],
+    ['$h_X-Spam-Score:', 'Spam Score'],
+    ['$h_X-Spam-Bar:', 'Spam Bar'],
+    ['$h_List-Id:', 'List ID']
+  ];
+
+  var matchOptions = [
+    'begins', 'contains', 'does not begin', 'does not contain',
+    'does not end', 'does not match', 'ends',
+    'is', 'matches',
+    'is above', 'is below', 'is not above', 'is not below'
+  ];
+
+  var partHtml = '';
+  for (var i = 0; i < partOptions.length; i++) {
+    var sel = data && data.part === partOptions[i][0] ? ' selected' : '';
+    partHtml += '<option value="' + esc(partOptions[i][0]) + '"' + sel + '>' + esc(partOptions[i][1]) + '</option>';
+  }
+
+  var matchHtml = '';
+  for (var j = 0; j < matchOptions.length; j++) {
+    var msel = data && data.match === matchOptions[j] ? ' selected' : '';
+    matchHtml += '<option value="' + esc(matchOptions[j]) + '"' + msel + '>' + esc(matchOptions[j]) + '</option>';
+  }
+
+  row.innerHTML = '<select class="form-select-sm rule-part" style="min-width:120px;" aria-label="Filter field">' + partHtml + '</select>'
+    + '<select class="form-select-sm rule-match" style="min-width:120px;" aria-label="Match condition">' + matchHtml + '</select>'
+    + '<input type="text" class="form-input rule-val" placeholder="Value" value="' + (data ? esc(data.val || '') : '') + '" style="flex:1; min-width:120px;">'
+    + '<select class="form-select-sm rule-opt" style="width:70px;" aria-label="Logical operator">'
+    + '<option value="and"' + (data && data.opt === 'and' ? ' selected' : '') + '>AND</option>'
+    + '<option value="or"' + (data && data.opt === 'or' ? ' selected' : '') + '>OR</option>'
+    + '</select>'
+    + '<button type="button" class="btn btn-ghost btn-sm btn-icon" onclick="this.closest(\'.filter-rule-row\').remove()" title="Remove" class="u-no-shrink" style="color:var(--status-error);">'
+    + '<i class="ri-close-line" aria-hidden="true"></i></button>';
+  container.appendChild(row);
+}
+
+function addFilterAction(data) {
+  var container = document.getElementById('filterActions');
+  var row = document.createElement('div');
+  row.className = 'filter-action-row u-flex-center u-gap-2 u-mb-2 u-flex-wrap';
+
+  var actionOptions = [
+    ['deliver', 'Forward to Email'],
+    ['save', 'Deliver to Folder'],
+    ['pipe', 'Pipe to Program'],
+    ['fail', 'Discard Message'],
+    ['finish', 'Stop Processing']
+  ];
+
+  var needsDest = !data || (['fail', 'finish'].indexOf(data.action) === -1);
+
+  var actHtml = '';
+  for (var i = 0; i < actionOptions.length; i++) {
+    var sel = data && data.action === actionOptions[i][0] ? ' selected' : '';
+    actHtml += '<option value="' + esc(actionOptions[i][0]) + '"' + sel + '>' + esc(actionOptions[i][1]) + '</option>';
+  }
+
+  row.innerHTML = '<select class="form-select-sm action-type" style="min-width:160px;" onchange="toggleActionDest(this)" aria-label="Action type">' + actHtml + '</select>'
+    + '<input type="text" class="form-input action-dest" placeholder="Destination" value="' + (data ? esc(data.dest || '') : '') + '" style="flex:1; min-width:140px;' + (needsDest ? '' : ' display:none;') + '">'
+    + '<button type="button" class="btn btn-ghost btn-sm btn-icon" onclick="this.closest(\'.filter-action-row\').remove()" title="Remove" class="u-no-shrink" style="color:var(--status-error);">'
+    + '<i class="ri-close-line" aria-hidden="true"></i></button>';
+  container.appendChild(row);
+}
+
+function toggleActionDest(select) {
+  var dest = select.closest('.filter-action-row').querySelector('.action-dest');
+  var needsDest = ['fail', 'finish'].indexOf(select.value) === -1;
+  dest.style.display = needsDest ? '' : 'none';
+  if (!needsDest) dest.value = '';
+}
+
+function saveFilter() {
+  var name = document.getElementById('filterName').value.trim();
+  if (!name) { showToast('Please enter a filter name', 'error'); return; }
+
+  var rules = document.querySelectorAll('.filter-rule-row');
+  var actions = document.querySelectorAll('.filter-action-row');
+
+  if (rules.length === 0) { showToast('Add at least one rule', 'error'); return; }
+  if (actions.length === 0) { showToast('Add at least one action', 'error'); return; }
+
+  // Build filter object from form
+  var filterRules = [];
+  rules.forEach(function(row) {
+    filterRules.push({
+      part: row.querySelector('.rule-part').value,
+      match: row.querySelector('.rule-match').value,
+      val: row.querySelector('.rule-val').value,
+      opt: row.querySelector('.rule-opt').value
+    });
+  });
+
+  var filterActions = [];
+  actions.forEach(function(row) {
+    filterActions.push({
+      action: row.querySelector('.action-type').value,
+      dest: row.querySelector('.action-dest').value
+    });
+  });
+
+  var newFilter = {
+    filtername: name,
+    enabled: 1,
+    rules: filterRules,
+    actions: filterActions
+  };
+
+  // Update mock data
+  if (!mockFilters[_filterAccount]) mockFilters[_filterAccount] = [];
+  var filters = mockFilters[_filterAccount];
+
+  if (_editingFilterName) {
+    // Replace existing filter
+    for (var i = 0; i < filters.length; i++) {
+      if (filters[i].filtername === _editingFilterName) {
+        filters[i] = newFilter;
+        break;
+      }
+    }
+    showToast('Filter updated');
+  } else {
+    filters.push(newFilter);
+    showToast('Filter created');
+  }
+
+  closeFilterEditor();
+  showFiltersPanel(_filterAccount);
+}
+
+function toggleFilter(filtername, enabled) {
+  var filters = mockFilters[_filterAccount] || [];
+  for (var i = 0; i < filters.length; i++) {
+    if (filters[i].filtername === filtername) {
+      filters[i].enabled = enabled ? 1 : 0;
+      break;
+    }
+  }
+  showToast(enabled ? 'Filter enabled' : 'Filter disabled');
+}
+
+function deleteFilter(filtername) {
+  if (!confirm('Delete filter "' + filtername + '"?')) return;
+
+  var filters = mockFilters[_filterAccount] || [];
+  for (var i = 0; i < filters.length; i++) {
+    if (filters[i].filtername === filtername) {
+      filters.splice(i, 1);
+      break;
+    }
+  }
+  showToast('Filter deleted');
+  showFiltersPanel(_filterAccount);
+}
+</script>
+</body>
+</html>

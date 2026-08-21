@@ -1,0 +1,27 @@
+{
+  "apiversion": 3,
+  "module": "ResourceUsage",
+  "func": "get_usages",
+  "result": {
+    "status": 1,
+    "data": [
+      {"id": "disk_usage", "description": "Disk Space", "usage": 4500000000, "maximum": 10737418240, "formatter": "format_bytes", "url": "diskusage/", "error": null},
+      {"id": "bandwidth", "description": "Bandwidth", "usage": 28400000000, "maximum": 107374182400, "formatter": "format_bytes", "url": null, "error": null},
+      {"id": "filesusage", "description": "Files (Inodes)", "usage": 45230, "maximum": 300000, "formatter": null, "url": null, "error": null},
+      {"id": "email_accounts", "description": "Email Accounts", "usage": 12, "maximum": null, "formatter": null, "url": "email_accounts/", "error": null},
+      {"id": "mysql_databases", "description": "MySQL Databases", "usage": 3, "maximum": null, "formatter": null, "url": "sql/", "error": null},
+      {"id": "addon_domains", "description": "Addon Domains", "usage": 2, "maximum": 10, "formatter": null, "url": "addon_domains/", "error": null},
+      {"id": "subdomains", "description": "Subdomains", "usage": 4, "maximum": null, "formatter": null, "url": "subdomains/", "error": null},
+      {"id": "ftp_accounts", "description": "FTP Accounts", "usage": 1, "maximum": null, "formatter": null, "url": "ftp_accounts/", "error": null},
+      {"id": "aliases", "description": "Aliases", "usage": 1, "maximum": null, "formatter": null, "url": "aliases/", "error": null},
+      {"id": "mailing_lists", "description": "Mailing Lists", "usage": 0, "maximum": null, "formatter": null, "url": null, "error": null},
+      {"id": "autoresponders", "description": "Autoresponders", "usage": 2, "maximum": null, "formatter": null, "url": null, "error": null},
+      {"id": "forwarders", "description": "Forwarders", "usage": 5, "maximum": null, "formatter": null, "url": null, "error": null},
+      {"id": "email_filters", "description": "Email Filters", "usage": 3, "maximum": null, "formatter": null, "url": null, "error": null}
+    ],
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

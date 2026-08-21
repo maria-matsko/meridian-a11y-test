@@ -1,0 +1,13 @@
+{
+  "apiversion": 3,
+  "module": "TwoFactorAuth",
+  "func": "get_user_configuration",
+  "result": {
+    "status": 1,
+    "data": {"is_enabled": 0, "issuer": "WebPros International, LLC"},
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

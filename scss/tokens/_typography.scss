@@ -1,0 +1,73 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// Typography tokens — font families, scale, weights, leading, tracking.
+// These are injected into :root and available globally via var(--token).
+
+// ── SCSS variables (for use in SCSS calculations/mixins) ──
+$font-display: 'Instrument Serif', Georgia, serif;
+$font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+$font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+$text-xs: 0.75rem;       // 12px
+$text-sm: 0.8125rem;     // 13px
+$text-base: 0.9375rem;   // 15px
+$text-md: 1.0625rem;     // 17px
+$text-lg: 1.25rem;       // 20px
+$text-xl: 1.5rem;        // 24px
+$text-2xl: 2rem;         // 32px
+$text-3xl: 2.75rem;      // 44px
+$text-4xl: 3.75rem;      // 60px
+
+$leading-tight: 1.15;
+$leading-snug: 1.3;
+$leading-normal: 1.55;
+$leading-relaxed: 1.7;
+
+$tracking-tight: -0.025em;
+$tracking-normal: 0;
+$tracking-wide: 0.035em;
+$tracking-widest: 0.08em;
+
+$weight-light: 300;
+$weight-regular: 400;
+$weight-medium: 500;
+$weight-semibold: 600;
+$weight-bold: 700;
+$weight-extrabold: 800;
+
+// ── CSS custom property injection ──
+@mixin typography-tokens {
+  --font-display: #{$font-display};
+  --font-body: #{$font-body};
+  --font-mono: #{$font-mono};
+
+  --text-xs: #{$text-xs};
+  --text-sm: #{$text-sm};
+  --text-base: #{$text-base};
+  --text-md: #{$text-md};
+  --text-lg: #{$text-lg};
+  --text-xl: #{$text-xl};
+  --text-2xl: #{$text-2xl};
+  --text-3xl: #{$text-3xl};
+  --text-4xl: #{$text-4xl};
+
+  --leading-tight: #{$leading-tight};
+  --leading-snug: #{$leading-snug};
+  --leading-normal: #{$leading-normal};
+  --leading-relaxed: #{$leading-relaxed};
+
+  --tracking-tight: #{$tracking-tight};
+  --tracking-normal: #{$tracking-normal};
+  --tracking-wide: #{$tracking-wide};
+  --tracking-widest: #{$tracking-widest};
+
+  --weight-light: #{$weight-light};
+  --weight-regular: #{$weight-regular};
+  --weight-medium: #{$weight-medium};
+  --weight-semibold: #{$weight-semibold};
+  --weight-bold: #{$weight-bold};
+  --weight-extrabold: #{$weight-extrabold};
+}

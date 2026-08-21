@@ -1,0 +1,13 @@
+{
+  "apiversion": 3,
+  "module": "DomainInfo",
+  "func": "list_domains",
+  "result": {
+    "status": 1,
+    "data": {"main_domain": "example.com", "addon_domains": ["shop.example.net", "blog.example.org"], "sub_domains": ["www.example.com", "mail.example.com", "dev.example.com"], "parked_domains": ["alias1.com"], "is_temporary": {"example.com": 0, "shop.example.net": 0, "blog.example.org": 0, "www.example.com": 0, "mail.example.com": 0, "dev.example.com": 0, "alias1.com": 0}},
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

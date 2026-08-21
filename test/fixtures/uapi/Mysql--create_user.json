@@ -1,0 +1,13 @@
+{
+  "apiversion": 3,
+  "module": "Mysql",
+  "func": "create_user",
+  "result": {
+    "status": 1,
+    "data": null,
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

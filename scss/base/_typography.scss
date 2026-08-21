@@ -1,0 +1,47 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// Typography utility classes.
+
+// ── Display (serif headline) ──
+.t-display {
+  font-family: var(--font-display);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+}
+.t-display-xl { font-size: var(--text-4xl); }
+.t-display-lg { font-size: var(--text-3xl); }
+.t-display-md { font-size: var(--text-2xl); }
+
+// ── Heading (sans-serif headline) ──
+.t-heading {
+  font-family: var(--font-body);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+}
+.t-heading-xl { font-size: var(--text-2xl); }
+.t-heading-lg { font-size: var(--text-xl); }
+.t-heading-md { font-size: var(--text-lg); }
+.t-heading-sm { font-size: var(--text-md); }
+
+// ── Body + utility ──
+.t-body    { font-size: var(--text-base); line-height: var(--leading-normal); }
+.t-body-sm { font-size: var(--text-sm);   line-height: var(--leading-normal); }
+.t-caption { font-size: var(--text-xs);   line-height: var(--leading-normal); letter-spacing: var(--tracking-wide); }
+
+.t-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.t-mono  { font-family: var(--font-mono); font-size: var(--text-sm); }
+.t-brand { color: var(--text-brand); }
+.t-muted { color: var(--text-secondary); }
+.t-dimmed { color: var(--text-tertiary); }

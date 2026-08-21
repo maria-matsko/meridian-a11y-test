@@ -1,0 +1,170 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ─────────────────────────────────────────────────────────────
+// Tool Card — Advanced Hub tool grid with category sections,
+// onboarding hero, and onboarding cards.
+// ─────────────────────────────────────────────────────────────
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-3);
+}
+.tool-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              background var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+}
+.tool-card:hover {
+  border-color: var(--border-default);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-sm);
+}
+.tool-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  background: var(--accent-subtle);
+  color: var(--text-brand);
+}
+.tool-info { flex: 1; min-width: 0; }
+.tool-name { font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.tool-desc { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: 1px; }
+.tool-card[hidden] { display: none; }
+
+/* Category Section (Advanced Hub) */
+.category-section { margin-bottom: var(--space-8); }
+.category-section[hidden] { display: none; }
+.category-title {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-3);
+}
+
+/* Onboarding Cards (Dashboard empty state) */
+.onboarding-hero {
+  text-align: center;
+  padding: var(--space-16) var(--space-8) var(--space-10);
+}
+.onboarding-hero-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-regular);
+  margin-bottom: var(--space-3);
+}
+.onboarding-hero-desc {
+  color: var(--text-secondary);
+  font-size: var(--text-md);
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.onboarding-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-4);
+  max-width: 720px;
+  margin: var(--space-8) auto 0;
+}
+.onboarding-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
+}
+.onboarding-card:hover {
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+.onboarding-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin: 0 auto var(--space-4);
+}
+.onboarding-card-title {
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-base);
+  margin-bottom: var(--space-2);
+}
+.onboarding-card-desc {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* Onboarding Progress */
+.onboarding-progress {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+.onboarding-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-disabled);
+}
+.onboarding-step.completed { color: var(--status-success); }
+.onboarding-step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--text-disabled);
+}
+.onboarding-step.completed .onboarding-step-dot { background: var(--status-success); }
+
+/* Status Dots (extended) */
+.status-dot,
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+.status-dot.dot-healthy, .dot.dot-healthy  { background: var(--status-success); }
+.status-dot.dot-warning, .dot.dot-warning  { background: var(--status-warning); }
+.status-dot.dot-error,   .dot.dot-error    { background: var(--status-error); }
+.status-dot.dot-inactive,.dot.dot-inactive { background: var(--text-disabled); }
+.status-dot.dot-lg {
+  width: 10px;
+  height: 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tool-grid { grid-template-columns: 1fr; }
+  .onboarding-cards { grid-template-columns: 1fr; }
+}

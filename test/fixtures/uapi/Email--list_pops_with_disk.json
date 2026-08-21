@@ -1,0 +1,16 @@
+{
+  "apiversion": 3,
+  "module": "Email",
+  "func": "list_pops_with_disk",
+  "result": {
+    "status": 1,
+    "data": [
+      {"email": "info@example.com", "user": "info", "domain": "example.com", "login": "info@example.com", "_diskquota": 1073741824, "_diskused": 130023424, "diskquota": "1024", "diskused": 124, "diskusedpercent": 12, "humandiskquota": "1 GB", "humandiskused": "124 MB", "txtdiskquota": "1024", "mtime": 1710504000, "suspended_login": 0, "suspended_incoming": 0, "has_suspended": 0},
+      {"email": "admin@example.com", "user": "admin", "domain": "example.com", "login": "admin@example.com", "_diskquota": 0, "_diskused": 483, "diskquota": "unlimited", "diskused": 0, "diskusedpercent": 0, "humandiskquota": "None", "humandiskused": "483 bytes", "txtdiskquota": "unlimited", "mtime": 1710418000, "suspended_login": 0, "suspended_incoming": 0, "has_suspended": 0}
+    ],
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

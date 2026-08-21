@@ -1,0 +1,13 @@
+{
+  "apiversion": 3,
+  "module": "Notifications",
+  "func": "get_notifications_count",
+  "result": {
+    "status": 1,
+    "data": "3",
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

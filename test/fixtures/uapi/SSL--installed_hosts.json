@@ -1,0 +1,16 @@
+{
+  "apiversion": 3,
+  "module": "SSL",
+  "func": "installed_hosts",
+  "result": {
+    "status": 1,
+    "data": [
+      {"host": "example.com", "certificate": {"auto_ssl_provider": "cPanel", "auto_ssl_provider_display_name": "Sectigo", "domains": ["example.com", "www.example.com"]}},
+      {"host": "shop.example.net", "certificate": {"auto_ssl_provider": "cPanel", "auto_ssl_provider_display_name": "Sectigo", "domains": ["shop.example.net"]}}
+    ],
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

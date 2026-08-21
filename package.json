@@ -1,0 +1,26 @@
+{
+  "name": "meridian-design-system",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run test/unit",
+    "test:component": "vitest run test/component",
+    "test:integration": "vitest run test/integration",
+    "test:scss": "vitest run test/scss",
+    "test:sync": "vitest run test/sync",
+    "test:e2e": "npx playwright test",
+    "test:e2e:update": "npx playwright test --update-snapshots",
+    "test:all": "vitest run && npx playwright test",
+    "mock-server": "node test/mock-server/server.js",
+    "scss:build": "npx sass scss/meridian.scss prototype/meridian.css --no-source-map"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.0",
+    "happy-dom": "^16.0.0",
+    "@playwright/test": "^1.50.0",
+    "@axe-core/playwright": "^4.10.0",
+    "express": "^4.21.0"
+  }
+}

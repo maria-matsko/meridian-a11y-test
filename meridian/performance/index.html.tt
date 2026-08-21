@@ -1,0 +1,558 @@
+[% WRAPPER '_assets/master.html.tt'
+    page_title = 'Performance'
+    page_id    = 'performance'
+%]
+<style>
+/* ===================================================================
+   PERFORMANCE PAGE -- SPECIFIC STYLES
+   =================================================================== */
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.metric-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex; flex-direction: column; gap: var(--space-3);
+}
+.metric-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.metric-card-title {
+  font-size: var(--text-sm); font-weight: var(--weight-semibold);
+  color: var(--text-secondary); text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+.metric-card-trend {
+  font-size: var(--text-xs); color: var(--status-success);
+  display: flex; align-items: center; gap: var(--space-1);
+}
+.metric-card-value {
+  font-size: var(--text-xl); font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+}
+.metric-card-sub {
+  font-size: var(--text-sm); color: var(--text-tertiary);
+}
+.metric-bar {
+  width: 100%; height: 8px;
+  background: var(--bg-muted); border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.metric-bar-fill {
+  height: 100%; border-radius: var(--radius-full);
+  background: var(--accent);
+  transition: width 0.8s var(--ease-out);
+}
+.metric-bar-fill.good    { background: var(--status-success); }
+.metric-bar-fill.moderate { background: var(--accent); }
+.metric-bar-fill.high    { background: var(--status-warning); }
+.metric-bar-fill.critical { background: var(--status-error); }
+
+.resource-list {
+  display: flex; flex-direction: column; gap: var(--space-3);
+  margin-top: var(--space-1);
+}
+.resource-item {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: var(--text-sm);
+}
+.resource-item-label { color: var(--text-secondary); }
+.resource-item-value { font-weight: var(--weight-semibold); color: var(--text-primary); }
+
+/* Per-site breakdown */
+.site-breakdown {
+  margin-bottom: var(--space-8);
+}
+.section-heading {
+  font-size: var(--text-lg); font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-4);
+}
+
+/* Error log summary */
+.error-table {
+  width: 100%; border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); overflow: hidden;
+  background: var(--bg-surface); margin-bottom: var(--space-8);
+}
+.error-head {
+  display: grid;
+  grid-template-columns: 80px 1fr 80px 120px;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  background: var(--bg-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-xs); font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary); text-transform: uppercase;
+}
+.error-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 80px 120px;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.error-row:last-child { border-bottom: none; }
+.error-cell {
+  font-size: var(--text-sm); color: var(--text-secondary);
+}
+
+/* Error type badges */
+.error-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs); font-weight: var(--weight-semibold);
+  font-family: var(--font-mono);
+}
+.error-badge-500 { background: var(--status-error-bg); color: var(--status-error); }
+.error-badge-404 { background: var(--status-warning-bg); color: var(--status-warning); }
+.error-badge-403 { background: var(--status-info-bg); color: var(--status-info); }
+
+/* Recommendations */
+.recommendations {
+  display: flex; flex-direction: column; gap: var(--space-3);
+}
+.suggestion-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex; align-items: flex-start; gap: var(--space-4);
+}
+.suggestion-icon {
+  width: 36px; height: 36px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; flex-shrink: 0;
+  background: var(--accent-subtle); color: var(--text-brand);
+}
+.suggestion-text { flex: 1; }
+.suggestion-title {
+  font-size: var(--text-sm); font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-1);
+}
+.suggestion-desc {
+  font-size: var(--text-sm); color: var(--text-tertiary);
+}
+
+@media (max-width: 768px) {
+  .metrics-grid { grid-template-columns: 1fr; }
+  .error-head, .error-row {
+    grid-template-columns: 60px 1fr 60px;
+  }
+  .error-head > *:nth-child(4),
+  .error-row > *:nth-child(4) { display: none; }
+}
+</style>
+
+<a href="#main-content" class="sr-only" data-t>Skip to main content</a>
+
+<div class="layout-shell">
+
+  <meridian-header></meridian-header>
+  <meridian-sidebar active="performance"></meridian-sidebar>
+
+  <main class="layout-main" id="main-content">
+    <div class="main-content">
+
+      <!-- All page content hidden until data is ready -->
+      <div id="pageContent" style="display:none;">
+
+        <!-- Page Header -->
+        <div class="page-header animate-in stagger-1">
+          <div class="page-header-left">
+            <div>
+              <h1 class="page-title" data-t>Performance</h1>
+              <div class="page-subtitle" data-t>Account metrics and optimization</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="metrics-grid animate-in stagger-2" id="metricsGrid"></div>
+
+        <!-- Per-Website Breakdown -->
+        <div class="site-breakdown animate-in stagger-3">
+          <div class="section-heading" data-t>Per-Website Breakdown</div>
+          <div id="breakdownTable"></div>
+        </div>
+
+        <!-- Error Log Summary -->
+        <div class="animate-in stagger-4">
+          <div class="section-heading" data-t>Recent Errors</div>
+          <div id="errorTable"></div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="animate-in stagger-5">
+          <div class="section-heading" data-t>Recommendations</div>
+          <div class="recommendations" id="recommendations"></div>
+        </div>
+
+      </div><!-- /#pageContent -->
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// Performance Page — API helpers
+// ══════════════════════════════════════════════════════════════
+var PerfAPI = {
+  getResourceUsage: function() {
+    return CpanelAPI.call('ResourceUsage', 'get_usages');
+  },
+  getStats: function() {
+    return CpanelAPI.call('StatsBar', 'get_stats', {
+      display: 'bandwidthusage|diskusage|cpanelversion|hostingpackage'
+    });
+  },
+  getErrorLog: function() {
+    return CpanelAPI.call('Errors', 'get_error_log', { count: 20 }).catch(function() {
+      return { data: [] };
+    });
+  },
+  getDomainList: function() {
+    return CpanelAPI.call('DomainInfo', 'list_domains');
+  }
+};
+
+// ══════════════════════════════════════════════════════════════
+// Helpers
+// ══════════════════════════════════════════════════════════════
+function getBarClass(pct) {
+  if (pct < 50) return 'good';
+  if (pct < 75) return 'moderate';
+  if (pct < 90) return 'high';
+  return 'critical';
+}
+
+// ══════════════════════════════════════════════════════════════
+// renderMetrics — Bandwidth, Disk, Errors, Resources
+// ══════════════════════════════════════════════════════════════
+function renderMetrics(usageData, statsData, errorCount) {
+  var bandwidth = { used: '0 B', max: t('Unlimited'), pct: 0 };
+  var disk      = { used: '0 B', max: t('Unlimited'), pct: 0 };
+  var resources = {};
+
+  // Prefer StatsBar data for bandwidth / disk (has humanised values)
+  if (Array.isArray(statsData)) {
+    statsData.forEach(function(item) {
+      if (item.id === 'bandwidthusage') {
+        bandwidth.used = item.count  || item.value || '0';
+        bandwidth.max  = item.max   || t('Unlimited');
+        bandwidth.pct  = parseInt(item.percent || '0', 10) || 0;
+      }
+      if (item.id === 'diskusage') {
+        disk.used = item.count || item.value || '0';
+        disk.max  = item.max  || t('Unlimited');
+        disk.pct  = parseInt(item.percent || '0', 10) || 0;
+      }
+    });
+  }
+
+  // ResourceUsage provides granular CPU/IO/memory/entryProcs
+  if (Array.isArray(usageData)) {
+    usageData.forEach(function(item) {
+      var id = (item.id || '').toLowerCase();
+      // Fallback bandwidth from ResourceUsage if StatsBar missed it
+      if ((id === 'bandwidthusage' || id === 'bandwidth_usage') && !bandwidth.pct) {
+        bandwidth.used = item.humanused  || item.used  || '0';
+        bandwidth.max  = item.humanmaximum || item.maximum || t('Unlimited');
+        bandwidth.pct  = parseInt(item.percent || '0', 10) || 0;
+      }
+      if (id === 'cpu')        resources.cpu        = (item.humanused || item.used || '—') + (item.humanmaximum ? ' / ' + item.humanmaximum : '');
+      if (id === 'pmem' || id === 'mem') resources.memory = item.humanused || item.used || '—';
+      if (id === 'iops' || id === 'iobps') resources.io    = item.humanused || item.used || '—';
+      if (id === 'nproc' || id === 'ep')  resources.ep    = (item.humanused || item.used || '—') + (item.humanmaximum ? ' / ' + item.humanmaximum : '');
+    });
+  }
+
+  var html = '';
+
+  // --- Bandwidth card ---
+  html += '<div class="metric-card">'
+    + '<div class="metric-card-header">'
+    +   '<div class="metric-card-title">' + t('Bandwidth') + '</div>'
+    + '</div>'
+    + '<div class="metric-card-value">' + esc(bandwidth.used)
+    +   '<span class="metric-card-sub"> / ' + esc(bandwidth.max) + '</span>'
+    + '</div>'
+    + '<div class="metric-bar"><div class="metric-bar-fill ' + getBarClass(bandwidth.pct) + '" style="width:' + bandwidth.pct + '%;"></div></div>'
+    + '<div class="metric-card-sub">' + bandwidth.pct + '% ' + t('used') + '</div>'
+    + '</div>';
+
+  // --- Disk card ---
+  html += '<div class="metric-card">'
+    + '<div class="metric-card-header">'
+    +   '<div class="metric-card-title">' + t('Disk Usage') + '</div>'
+    + '</div>'
+    + '<div class="metric-card-value">' + esc(disk.used)
+    +   '<span class="metric-card-sub"> / ' + esc(disk.max) + '</span>'
+    + '</div>'
+    + '<div class="metric-bar"><div class="metric-bar-fill ' + getBarClass(disk.pct) + '" style="width:' + disk.pct + '%;"></div></div>'
+    + '<div class="metric-card-sub">' + disk.pct + '% ' + t('used') + '</div>'
+    + '</div>';
+
+  // --- Errors card ---
+  var errColor = errorCount > 0 ? 'color: var(--status-error);' : '';
+  html += '<div class="metric-card">'
+    + '<div class="metric-card-header">'
+    +   '<div class="metric-card-title">' + t('Errors') + '</div>'
+    + '</div>'
+    + '<div class="metric-card-value" style="' + errColor + '">' + esc(String(errorCount)) + '</div>'
+    + '<div class="metric-card-sub">' + t('Total errors this period') + '</div>'
+    + '</div>';
+
+  // --- Resources card ---
+  html += '<div class="metric-card">'
+    + '<div class="metric-card-header">'
+    +   '<div class="metric-card-title">' + t('Resources') + '</div>'
+    + '</div>'
+    + '<div class="resource-list">';
+  if (resources.cpu) {
+    html += '<div class="resource-item">'
+      + '<span class="resource-item-label">' + t('CPU Usage') + '</span>'
+      + '<span class="resource-item-value">' + esc(resources.cpu) + '</span>'
+      + '</div>';
+  }
+  if (resources.memory) {
+    html += '<div class="resource-item">'
+      + '<span class="resource-item-label">' + t('Memory') + '</span>'
+      + '<span class="resource-item-value">' + esc(resources.memory) + '</span>'
+      + '</div>';
+  }
+  if (resources.io) {
+    html += '<div class="resource-item">'
+      + '<span class="resource-item-label">' + t('I/O Rate') + '</span>'
+      + '<span class="resource-item-value">' + esc(resources.io) + '</span>'
+      + '</div>';
+  }
+  if (resources.ep) {
+    html += '<div class="resource-item">'
+      + '<span class="resource-item-label">' + t('Entry Procs') + '</span>'
+      + '<span class="resource-item-value">' + esc(resources.ep) + '</span>'
+      + '</div>';
+  }
+  if (!resources.cpu && !resources.memory && !resources.io && !resources.ep) {
+    html += '<div class="resource-item">'
+      + '<span class="resource-item-label" style="color:var(--text-tertiary);">'
+      + t('Resource data unavailable') + '</span>'
+      + '</div>';
+  }
+  html += '</div></div>';
+
+  document.getElementById('metricsGrid').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// renderBreakdown — per-domain rows
+// ══════════════════════════════════════════════════════════════
+function renderBreakdown(domainData) {
+  // DomainInfo::list_domains returns an object with domain arrays
+  var domains = [];
+  if (domainData && domainData.main_domain) {
+    domains.push(domainData.main_domain);
+  }
+  if (domainData && Array.isArray(domainData.addon_domains)) {
+    domains = domains.concat(domainData.addon_domains);
+  }
+  if (domainData && Array.isArray(domainData.sub_domains)) {
+    domains = domains.concat(domainData.sub_domains);
+  }
+
+  if (!domains.length) {
+    document.getElementById('breakdownTable').innerHTML =
+      '<p style="color:var(--text-tertiary);font-size:var(--text-sm);">' + t('No domains found.') + '</p>';
+    return;
+  }
+
+  var html = '<div class="data-list">'
+    + '<div class="data-list-head">'
+    +   '<div>' + t('Website') + '</div>'
+    +   '<div>' + t('Type') + '</div>'
+    +   '<div></div>'
+    + '</div>';
+
+  for (var i = 0; i < domains.length; i++) {
+    var domain = domains[i];
+    var domainName = typeof domain === 'object' ? (domain.domain || domain) : domain;
+    var domainType = (i === 0 && domainData.main_domain === domain)
+      ? t('Primary')
+      : (typeof domain === 'object' && domain.type ? esc(domain.type) : t('Addon'));
+    html += '<div class="data-list-row" role="button" tabindex="0"'
+      + ' onclick="location.href=\'../websites/#domain=' + esc(String(domainName)) + '\'">'
+      +   '<div class="cell-name"><span>' + esc(String(domainName)) + '</span></div>'
+      +   '<div class="cell">' + domainType + '</div>'
+      +   '<div class="cell-action"><i class="ri-arrow-right-s-line" aria-hidden="true"></i></div>'
+      + '</div>';
+  }
+  html += '</div>';
+  document.getElementById('breakdownTable').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// renderErrors — error log table
+// ══════════════════════════════════════════════════════════════
+function renderErrors(errorData) {
+  if (!Array.isArray(errorData) || !errorData.length) {
+    document.getElementById('errorTable').innerHTML =
+      '<p style="color:var(--text-tertiary);font-size:var(--text-sm);">' + t('No recent errors found.') + '</p>';
+    return;
+  }
+
+  var html = '<div class="error-table">'
+    + '<div class="error-head">'
+    +   '<div>' + t('Type') + '</div>'
+    +   '<div>' + t('Message') + '</div>'
+    +   '<div>' + t('Count') + '</div>'
+    +   '<div>' + t('Last Seen') + '</div>'
+    + '</div>';
+
+  // Group errors by status code / type
+  var grouped = {};
+  errorData.forEach(function(e) {
+    var type = e.type || e.status_code || e.error_type || '500';
+    var msg  = e.message || e.error || e.description || '';
+    var key  = type + '|' + msg;
+    if (!grouped[key]) {
+      grouped[key] = { type: String(type), message: msg, count: 0, lastSeen: e.datestamp || e.time || '' };
+    }
+    grouped[key].count++;
+    if (e.datestamp || e.time) {
+      grouped[key].lastSeen = e.datestamp || e.time;
+    }
+  });
+
+  var entries = Object.keys(grouped).map(function(k) { return grouped[k]; });
+  // Sort by count descending
+  entries.sort(function(a, b) { return b.count - a.count; });
+
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i];
+    var badgeClass = 'error-badge-' + esc(entry.type.substring(0, 3));
+    html += '<div class="error-row">'
+      + '<div class="error-cell"><span class="error-badge ' + badgeClass + '">' + esc(entry.type.substring(0, 3)) + '</span></div>'
+      + '<div class="error-cell">' + esc(entry.message) + '</div>'
+      + '<div class="error-cell" style="font-weight:var(--weight-semibold);">' + esc(String(entry.count)) + '</div>'
+      + '<div class="error-cell">' + esc(entry.lastSeen) + '</div>'
+      + '</div>';
+  }
+  html += '</div>';
+  document.getElementById('errorTable').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// renderRecommendations — data-driven suggestions
+// ══════════════════════════════════════════════════════════════
+function renderRecommendations(usageData, statsData, errorCount) {
+  var recs = [];
+
+  // Derive disk/bandwidth pct from statsData
+  var diskPct = 0, bwPct = 0;
+  if (Array.isArray(statsData)) {
+    statsData.forEach(function(item) {
+      if (item.id === 'diskusage')      diskPct = parseInt(item.percent || '0', 10) || 0;
+      if (item.id === 'bandwidthusage') bwPct   = parseInt(item.percent || '0', 10) || 0;
+    });
+  }
+
+  if (diskPct > 80) {
+    recs.push({
+      icon: 'ri-hard-drive-2-line',
+      title: t('Clean up disk space'),
+      desc:  t('Disk usage is above 80%. Remove unused files, backups, or email attachments to free up space.')
+    });
+  }
+  if (bwPct > 75) {
+    recs.push({
+      icon: 'ri-speed-line',
+      title: t('Enable browser caching'),
+      desc:  t('High bandwidth usage detected. Enabling browser caching can significantly reduce bandwidth consumption.')
+    });
+  }
+  if (errorCount > 10) {
+    recs.push({
+      icon: 'ri-bug-line',
+      title: t('Review error logs'),
+      desc:  t('A high number of errors were detected. Review the error log to identify and fix recurring issues.')
+    });
+  }
+
+  // Always include general optimisation tips
+  recs.push({
+    icon: 'ri-image-line',
+    title: t('Optimize images'),
+    desc:  t('Compressing and resizing images can reduce page load times and bandwidth usage.')
+  });
+  recs.push({
+    icon: 'ri-lock-line',
+    title: t('Enable HTTPS everywhere'),
+    desc:  t('Ensure all your websites use SSL/TLS to improve security and SEO rankings.')
+  });
+
+  var html = '';
+  for (var i = 0; i < recs.length; i++) {
+    var r = recs[i];
+    html += '<div class="suggestion-card">'
+      + '<div class="suggestion-icon"><i class="' + r.icon + '" aria-hidden="true"></i></div>'
+      + '<div class="suggestion-text">'
+      +   '<div class="suggestion-title">' + r.title + '</div>'
+      +   '<div class="suggestion-desc">' + r.desc + '</div>'
+      + '</div>'
+      + '</div>';
+  }
+  document.getElementById('recommendations').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// init — load all data concurrently then render
+// ══════════════════════════════════════════════════════════════
+async function init() {
+  await CpanelAPI.loadFeatures();
+  if (typeof applyFeatureGating === 'function') applyFeatureGating();
+
+  try {
+    var results = await Promise.all([
+      PerfAPI.getResourceUsage().catch(function() { return { data: [] }; }),
+      PerfAPI.getStats().catch(function() { return { data: [] }; }),
+      PerfAPI.getErrorLog(),
+      PerfAPI.getDomainList().catch(function() { return { data: {} }; })
+    ]);
+
+    var usageData  = results[0].data || [];
+    var statsData  = results[1].data || [];
+    var errorData  = results[2].data || [];
+    var domainData = results[3].data || {};
+
+    var errorCount = Array.isArray(errorData) ? errorData.length : 0;
+
+    renderMetrics(usageData, statsData, errorCount);
+    renderBreakdown(domainData);
+    renderErrors(errorData);
+    renderRecommendations(usageData, statsData, errorCount);
+
+  } catch (err) {
+    console.error('Performance data error:', err);
+    renderMetrics([], [], 0);
+    renderBreakdown({});
+    renderErrors([]);
+    renderRecommendations([], [], 0);
+  }
+
+  document.getElementById('pageContent').style.display = '';
+  if (typeof window.initAnimations === 'function') window.initAnimations();
+}
+
+init();
+</script>
+
+    </div>
+  </main>
+</div>
+[% END %]

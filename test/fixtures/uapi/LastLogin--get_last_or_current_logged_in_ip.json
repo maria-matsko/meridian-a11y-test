@@ -1,0 +1,13 @@
+{
+  "apiversion": 3,
+  "module": "LastLogin",
+  "func": "get_last_or_current_logged_in_ip",
+  "result": {
+    "status": 1,
+    "data": "192.168.1.42",
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

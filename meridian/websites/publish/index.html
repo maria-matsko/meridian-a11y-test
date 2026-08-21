@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Redirecting…</title>
+  <script>
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      var siteId = params.get('site_id') || '';
+      var base = window.location.pathname.replace(/\/+publish\/?$/, '/');
+      window.location.replace(base + '?published=' + encodeURIComponent(siteId));
+    })();
+  </script>
+</head>
+<body><p>Redirecting&hellip;</p></body>
+</html>

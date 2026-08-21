@@ -1,0 +1,2899 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cPanel — Websites</title>
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="stylesheet" href="meridian.css">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   DOMAIN PAGE — SPECIFIC STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* page-header, filter-bar, filter-chip are in meridian.css */
+
+/* Domain list table */
+.domain-table {
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+
+.domain-table-head {
+  display: grid;
+  grid-template-columns: 1fr 160px 110px 90px 90px;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  background: var(--bg-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-xs); font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary); text-transform: uppercase;
+}
+
+/* ── Domain group (hierarchical parent) ── */
+.domain-group { border-bottom: 1px solid var(--border-subtle); }
+.domain-group:last-child { border-bottom: none; }
+
+.domain-group-header {
+  display: grid;
+  grid-template-columns: 1fr 160px 110px 90px 90px;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-4) var(--space-5);
+  transition: background var(--duration-fast) var(--ease-out);
+  cursor: pointer;
+}
+.domain-group-header:hover { background: var(--bg-hover); }
+.domain-group-header.expanded { background: var(--bg-raised); }
+
+.domain-group-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: var(--radius-sm);
+  font-size: 0.75rem; color: var(--text-tertiary);
+  transition: transform var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out);
+  flex-shrink: 0;
+}
+.domain-group-header.group-open .domain-group-toggle {
+  transform: rotate(90deg); color: var(--text-secondary);
+}
+.domain-group-children-count {
+  font-size: var(--text-xs); color: var(--text-tertiary);
+  background: var(--bg-muted); border-radius: var(--radius-full);
+  padding: 1px 8px; margin-inline-start: var(--space-2);
+  font-weight: var(--weight-medium);
+}
+
+/* ── Nested children (subdomains/aliases under a parent) ── */
+.domain-group-children {
+  max-height: 0; overflow: hidden; opacity: 0;
+  transition: max-height var(--duration-slow) var(--ease-out),
+              opacity var(--duration-fast) var(--ease-out);
+  background: var(--bg-muted);
+}
+.domain-group.group-open > .domain-group-children {
+  max-height: 600px; opacity: 1;
+}
+
+.domain-row {
+  display: grid;
+  grid-template-columns: 1fr 160px 110px 90px 90px;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--duration-fast) var(--ease-out);
+  cursor: pointer;
+}
+.domain-row:last-child { border-bottom: none; }
+.domain-row:hover { background: var(--bg-hover); }
+.domain-row.expanded { background: var(--bg-raised); }
+
+/* Indented child rows */
+.domain-group-children .domain-row {
+  padding-inline-start: calc(var(--space-5) + 28px);
+  border-bottom-color: var(--border-subtle);
+}
+.domain-group-children .domain-row:first-child {
+  border-top: 1px solid var(--border-subtle);
+}
+.domain-group-children .domain-icon {
+  width: 28px; height: 28px; font-size: 0.85rem;
+}
+
+/* Standalone rows (aliases, domains with no children) */
+.domain-row.standalone {
+  border-bottom: 1px solid var(--border-subtle);
+}
+.domain-row.standalone:last-child { border-bottom: none; }
+
+.domain-name {
+  display: flex; align-items: center; gap: var(--space-3);
+  min-width: 0;
+}
+.domain-name-text {
+  font-weight: var(--weight-semibold); font-size: var(--text-sm);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.domain-name-type {
+  font-size: var(--text-xs); color: var(--text-tertiary);
+}
+.domain-icon {
+  width: 36px; height: 36px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; flex-shrink: 0;
+  background: var(--accent-subtle); color: var(--text-brand);
+}
+.domain-icon.subdomain { background: var(--status-info-bg); color: var(--status-info); }
+.domain-icon.addon { background: var(--feature-bg); color: var(--feature-color); }
+.domain-icon.alias { background: var(--status-warning-bg); color: var(--status-warning); }
+
+.domain-cell {
+  font-size: var(--text-sm); color: var(--text-secondary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.domain-actions {
+  display: flex; justify-content: flex-end;
+}
+
+/* SSL status indicators */
+.ssl-status { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); }
+.ssl-dot {
+  width: 8px; height: 8px; border-radius: var(--radius-full); flex-shrink: 0;
+}
+.ssl-dot.valid { background: var(--status-success); }
+.ssl-dot.expiring { background: var(--status-warning); }
+.ssl-dot.expired { background: var(--status-error); }
+.ssl-dot.none { background: var(--text-disabled); }
+
+/* (old inline detail panel removed — now using full-page detail view) */
+
+/* DNS records table */
+.dns-table {
+  width: 100%; font-size: var(--text-sm);
+  border-collapse: collapse;
+}
+.dns-table th {
+  text-align: start;
+  font-size: var(--text-xs); font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide); text-transform: uppercase;
+  color: var(--text-tertiary);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.dns-table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.dns-table tr:last-child td { border-bottom: none; }
+.dns-table .dns-type {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  padding: 2px 6px; border-radius: var(--radius-xs);
+  background: var(--bg-muted);
+}
+.dns-table .dns-name {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  word-break: break-all;
+}
+.dns-table .dns-value {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  word-break: break-all; max-width: 400px;
+}
+
+/* Info grid for domain overview */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+.info-item { min-width: 0; }
+.info-label {
+  font-size: var(--text-xs); font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide); text-transform: uppercase;
+  color: var(--text-tertiary); margin-bottom: var(--space-1);
+}
+.info-value {
+  font-size: var(--text-sm); color: var(--text-primary);
+  word-break: break-all;
+}
+.info-value.mono { font-family: var(--font-mono); font-size: var(--text-xs); }
+
+/* Add domain modal — uses display:none/flex toggle pattern with .show */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  z-index: var(--z-modal);
+  display: none; align-items: center; justify-content: center;
+  padding: var(--space-6);
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  width: 100%; max-width: 520px;
+  box-shadow: var(--shadow-xl);
+  animation: fadeUp var(--duration-normal) var(--ease-out) both;
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+.modal-close {
+  width: 36px; height: 36px; border-radius: var(--radius-md);
+  border: none; background: transparent; color: var(--text-tertiary);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+.modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+/* ── Confirm dialog ── */
+.confirm-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  z-index: calc(var(--z-modal) + 10);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-6);
+  animation: fadeIn var(--duration-fast) var(--ease-out) both;
+}
+.confirm-dialog {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  width: 100%; max-width: 420px;
+  box-shadow: var(--shadow-xl);
+  animation: fadeUp var(--duration-normal) var(--ease-out) both;
+}
+.confirm-icon {
+  width: 48px; height: 48px;
+  border-radius: var(--radius-full);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: var(--space-5);
+}
+.confirm-icon-danger {
+  background: var(--status-error-bg);
+  color: var(--status-error);
+}
+.confirm-icon-warning {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+}
+.confirm-icon-info {
+  background: var(--status-info-bg);
+  color: var(--status-info);
+}
+.confirm-title {
+  font-family: var(--font-body);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+.confirm-message {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+  margin-bottom: var(--space-6);
+}
+.confirm-actions {
+  display: flex; gap: var(--space-3); justify-content: flex-end;
+}
+
+/* form-group, form-label, form-input, form-hint, form-select are in meridian.css */
+
+/* spinner is in meridian.css */
+
+/* Feature tags */
+.domain-tags { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.domain-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: var(--text-xs); font-weight: var(--weight-semibold);
+  padding: 2px var(--space-2); border-radius: var(--radius-full);
+  line-height: 1.4; letter-spacing: 0.02em; white-space: nowrap;
+}
+.domain-tag i { font-size: 0.7rem; }
+.domain-tag-wp { background: var(--status-info-bg); color: var(--status-info); }
+.domain-tag-sitejet { background: var(--feature-bg); color: var(--feature-color); }
+.domain-tag-git { background: var(--accent-subtle); color: var(--text-brand); }
+.domain-tag-autossl { background: var(--status-success-bg); color: var(--status-success); }
+
+/* pagination, form-select-sm, filter-select are in meridian.css */
+
+/* detail-view, detail-back, detail-hero*, detail-tabs-bar, stats-row, stat-card are in meridian.css */
+/* Page-specific stat-card icon variants */
+.stat-card-icon.visitors { background: var(--status-info-bg); color: var(--status-info); }
+.stat-card-icon.uptime { background: var(--status-success-bg); color: var(--status-success); }
+.stat-card-icon.storage { background: var(--accent-subtle); color: var(--text-brand); }
+/* site-info, settings-section, settings-row are in meridian.css */
+
+/* Feature cards in settings panel */
+.feature-card {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.feature-card:hover { background: var(--bg-hover); }
+.feature-card-icon {
+  width: 40px; height: 40px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+}
+.feature-card-icon.wp { background: var(--status-info-bg); color: var(--status-info); }
+.feature-card-icon.sitejet { background: var(--feature-bg); color: var(--feature-color); }
+.feature-card-icon.git { background: var(--accent-subtle); color: var(--text-brand); }
+.feature-card-body { flex: 1; min-width: 0; }
+.feature-card-title { font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.feature-card-desc { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: var(--space-1); }
+.feature-card-action { flex-shrink: 0; }
+
+/* (manage button uses .btn .btn-secondary .btn-sm from design system) */
+
+/* ═══════════════════════════════════════════════════════════════
+   MODERN VIEW — PAGE-SPECIFIC STYLES FOR OVERVIEW TABS
+   ═══════════════════════════════════════════════════════════════ */
+
+/* DNS table (grid variant for modern overview) */
+.modern-dns-table {
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+.modern-dns-table-head {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr 80px auto;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  background: var(--bg-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+.modern-dns-table-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr 80px auto;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  align-items: center;
+}
+.modern-dns-table-row:last-child { border-bottom: none; }
+.modern-dns-type-badge {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+}
+.modern-dns-value {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: var(--text-xs);
+  word-break: break-all;
+}
+
+/* Empty state within tab */
+.tab-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-10) var(--space-6);
+  text-align: center;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+.tab-empty i {
+  font-size: 2rem;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-3);
+  display: block;
+}
+.tab-empty .tab-empty-title {
+  font-weight: var(--weight-semibold);
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+.tab-empty .tab-empty-desc {
+  font-size: var(--text-sm);
+  max-width: 360px;
+  line-height: var(--leading-relaxed);
+}
+
+/* Overflow menu for modern view */
+.overflow-menu {
+  position: relative;
+  display: inline-block;
+}
+.overflow-menu-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  inset-inline-end: 0;
+  z-index: 20;
+  min-width: 180px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2) 0;
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0,0,0,.25));
+}
+.overflow-menu-dropdown.open { display: block; }
+.overflow-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: start;
+  font-family: var(--font-body);
+}
+.overflow-menu-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+  .domain-table-head, .domain-row, .domain-group-header {
+    grid-template-columns: 1fr 110px 90px 90px;
+  }
+  /* Hide Features column on tablet */
+  .domain-table-head > *:nth-child(2),
+  .domain-row > *:nth-child(2),
+  .domain-group-header > *:nth-child(2) { display: none; }
+}
+
+@media (max-width: 768px) {
+  .domain-table-head, .domain-row, .domain-group-header {
+    grid-template-columns: 1fr 90px 90px;
+  }
+  /* Hide SSL column on mobile */
+  .domain-table-head > *:nth-child(3),
+  .domain-row > *:nth-child(3),
+  .domain-group-header > *:nth-child(3) { display: none; }
+}
+
+@media (max-width: 480px) {
+  /* Hide table header, show only domain name + actions on very small screens */
+  .domain-table-head { display: none; }
+  .domain-row, .domain-group-header {
+    grid-template-columns: 1fr auto;
+    padding: var(--space-3) var(--space-4);
+  }
+  /* Hide type and actions columns, keep domain name */
+  .domain-row > *:nth-child(4),
+  .domain-row > *:nth-child(5),
+  .domain-group-header > *:nth-child(4),
+  .domain-group-header > *:nth-child(5) { display: none; }
+  .domain-group-children .domain-row {
+    padding-inline-start: calc(var(--space-4) + 20px);
+  }
+  .domain-icon { width: 28px; height: 28px; font-size: 0.85rem; }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="sr-only">Skip to main content</a>
+
+<div class="layout-shell" id="layoutShell">
+
+  <!-- Header -->
+  <meridian-header></meridian-header>
+
+  <!-- Sidebar -->
+  <meridian-sidebar active="websites"></meridian-sidebar>
+
+  <!-- Main Content -->
+  <main class="layout-main" id="main-content">
+    <div class="main-content">
+
+      <!-- Page header -->
+      <div class="page-header animate-in stagger-1">
+        <div class="page-header-left">
+          <div>
+            <h1 class="page-title">Websites</h1>
+            <div class="page-subtitle">Manage domains, subdomains, and website settings</div>
+          </div>
+        </div>
+        <div class="page-header-right">
+          <button type="button" class="btn btn-primary" id="addDomainBtn">
+            <i class="ri-add-line" aria-hidden="true"></i> Add Website
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar animate-in stagger-2 u-mb-4" id="websiteFilterBar">
+        <div class="filter-search">
+          <i class="ri-search-line" aria-hidden="true"></i>
+          <input type="search" placeholder="Filter by domain..." id="modernSearch" aria-label="Filter websites">
+        </div>
+        <button type="button" class="filter-chip" id="toggleAllGroups" onclick="modernToggleAllGroups()">
+          <i class="ri-expand-up-down-line" aria-hidden="true"></i> <span>Expand All</span>
+        </button>
+      </div>
+
+      <!-- Data List with Hierarchy -->
+      <div class="data-list websites-grid" id="websiteList" role="table"></div>
+
+      <!-- Domain Detail View (shown when managing a domain) -->
+      <div class="detail-view" id="detailView" style="display:none;">
+        <button class="detail-back" onclick="closeSettings()" type="button">
+          <i class="ri-arrow-left-line" aria-hidden="true"></i> Back to Websites
+        </button>
+
+        <div class="detail-hero">
+          <div class="detail-hero-left">
+            <div class="domain-icon detail-hero-icon" id="detailIcon"><i class="ri-global-line" aria-hidden="true"></i></div>
+            <div>
+              <h1 class="detail-hero-title" id="detailTitle">example.com</h1>
+              <div class="detail-hero-badges" id="detailBadges"></div>
+            </div>
+          </div>
+          <div class="detail-hero-actions" id="detailActions"></div>
+        </div>
+
+        <div class="detail-tabs-bar" id="detailTabsBar" role="tablist"></div>
+
+        <div id="detailTabContent" role="tabpanel"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Confirm dialog (created dynamically by confirmAction()) -->
+<div id="confirmContainer"></div>
+
+<!-- Inline: settings panel is no longer used -->
+
+<script src="components/shell.js"></script>
+<script src="components/wizard-steps.js" defer></script>
+<script src="components/wizard-modal.js" defer></script>
+
+<script>
+
+
+// ═══════════════════════════════════════════════════════════════
+// MOCK DATA — used when not connected to cPanel
+// ═══════════════════════════════════════════════════════════════
+
+const MOCK_DOMAINS = [
+  {
+    domain: 'example.com',
+    type: 'main',
+    docroot: '/home/cpuser/public_html',
+    ssl: { active: true, daysLeft: 88, status: 'valid', issuer: "Let's Encrypt", expires: '2026-06-15', selfSigned: false },
+    ip: '192.168.1.100',
+    serveralias: 'www.example.com',
+    features: ['wordpress', 'autossl'],
+    phpVersion: '8.2',
+    phpOutdated: false,
+    httpsRedirect: true,
+    autosslProblem: ''
+  },
+  {
+    domain: 'blog.example.com',
+    type: 'subdomain',
+    docroot: '/home/cpuser/public_html/blog',
+    ssl: { active: true, daysLeft: 88, status: 'valid', issuer: "Let's Encrypt", expires: '2026-06-15', selfSigned: false },
+    ip: '192.168.1.100',
+    features: ['wordpress'],
+    phpVersion: '8.2',
+    phpOutdated: false,
+    httpsRedirect: true,
+    autosslProblem: ''
+  },
+  {
+    domain: 'shop.example.net',
+    type: 'addon',
+    docroot: '/home/cpuser/shop.example.net',
+    ssl: { active: true, daysLeft: 1, status: 'expiring', issuer: "Let's Encrypt", expires: '2026-03-20', selfSigned: false },
+    ip: '192.168.1.100',
+    features: [],
+    phpVersion: '8.1',
+    phpOutdated: false,
+    httpsRedirect: false,
+    autosslProblem: ''
+  },
+  {
+    domain: 'staging.example.com',
+    type: 'subdomain',
+    docroot: '/home/cpuser/public_html/staging',
+    ssl: { active: false, daysLeft: null, status: 'none', selfSigned: false },
+    ip: '192.168.1.100',
+    features: [],
+    phpVersion: '8.2',
+    phpOutdated: false,
+    httpsRedirect: false,
+    autosslProblem: ''
+  },
+  {
+    domain: 'olddomain.com',
+    type: 'alias',
+    docroot: '/home/cpuser/public_html',
+    ssl: { active: true, daysLeft: -109, status: 'expired', issuer: "Let's Encrypt", expires: '2025-12-01', selfSigned: false },
+    ip: '192.168.1.100',
+    features: [],
+    phpVersion: null,
+    phpOutdated: false,
+    httpsRedirect: false,
+    autosslProblem: 'Domain does not resolve to any IPv4 addresses on this server'
+  },
+  {
+    domain: 'clientsite.org',
+    type: 'addon',
+    docroot: '/home/cpuser/clientsite.org',
+    ssl: { active: true, daysLeft: 297, status: 'valid', issuer: 'Sectigo', expires: '2027-01-10', selfSigned: false },
+    ip: '192.168.1.100',
+    features: ['wordpress', 'git'],
+    phpVersion: '8.3',
+    phpOutdated: false,
+    httpsRedirect: true,
+    autosslProblem: ''
+  },
+  {
+    domain: 'dev.shop.example.net',
+    type: 'subdomain',
+    docroot: '/home/cpuser/shop.example.net/dev',
+    ssl: { active: false, daysLeft: null, status: 'none', selfSigned: false },
+    ip: '192.168.1.100',
+    features: [],
+    phpVersion: '8.1',
+    phpOutdated: false,
+    httpsRedirect: false,
+    autosslProblem: ''
+  },
+  {
+    domain: 'api.example.com',
+    type: 'subdomain',
+    docroot: '/home/cpuser/public_html/api',
+    ssl: { active: true, daysLeft: 88, status: 'valid', issuer: "Let's Encrypt", expires: '2026-06-15', selfSigned: false },
+    ip: '192.168.1.100',
+    features: ['git'],
+    phpVersion: '7.4',
+    phpOutdated: true,
+    httpsRedirect: false,
+    autosslProblem: ''
+  },
+  {
+    domain: 'mail.clientsite.org',
+    type: 'subdomain',
+    docroot: '/home/cpuser/clientsite.org/mail',
+    ssl: { active: true, daysLeft: 297, status: 'valid', issuer: 'Sectigo', expires: '2027-01-10', selfSigned: false },
+    ip: '192.168.1.100',
+    features: [],
+    phpVersion: '8.3',
+    phpOutdated: false,
+    httpsRedirect: true,
+    autosslProblem: ''
+  }
+];
+
+const MOCK_DNS = {
+  'example.com': [
+    { type: 'A', name: 'example.com.', ttl: 14400, value: '192.168.1.100' },
+    { type: 'CNAME', name: 'www.example.com.', ttl: 14400, value: 'example.com.' },
+    { type: 'MX', name: 'example.com.', ttl: 14400, value: '0 mail.example.com.' },
+    { type: 'TXT', name: 'example.com.', ttl: 14400, value: 'v=spf1 +a +mx +ip4:192.168.1.100 ~all' },
+    { type: 'NS', name: 'example.com.', ttl: 86400, value: 'ns1.example.com.' },
+    { type: 'NS', name: 'example.com.', ttl: 86400, value: 'ns2.example.com.' },
+    { type: 'TXT', name: 'default._domainkey.example.com.', ttl: 14400, value: 'v=DKIM1; k=rsa; p=MIIBIj...' },
+  ]
+};
+
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+
+let domains = [];
+let sslMap = {};
+let hasSitejetFeature = true; // Mock mode: Sitejet is available
+let sitejetInfo = {}; // Per-domain Sitejet state (mock)
+let currentFilter = 'all';
+let searchQuery = '';
+let expandedGroups = new Set(); // Track which parent domains are expanded to show children
+let settingsDomain = null; // Currently open settings panel domain
+
+// Pagination
+let currentPage = 1;
+let pageSize = 25;
+const PAGE_SIZES = [10, 25, 50, 100];
+
+
+// ═══════════════════════════════════════════════════════════════
+// INITIALIZATION
+// ═══════════════════════════════════════════════════════════════
+
+function openCpanelPage(page) {
+  showToast(`Would open ${page} in cPanel`, 'info');
+}
+
+function initMockData() {
+  domains = JSON.parse(JSON.stringify(MOCK_DOMAINS));
+
+  // Mock Sitejet detection data
+  sitejetInfo = {
+    'shop.example.net': {
+      is_sitejet: true, has_sitejet_website: true, has_sitejet_published: true,
+      shared_doc_root: false, redirection_enabled: false, is_restore_point_available: true
+    },
+    'staging.example.com': {
+      is_sitejet: false, has_sitejet_website: true, has_sitejet_published: false,
+      shared_doc_root: false, redirection_enabled: false, is_restore_point_available: false
+    },
+    'olddomain.com': {
+      is_sitejet: false, has_sitejet_website: false, has_sitejet_published: false,
+      shared_doc_root: false, redirection_enabled: true, is_restore_point_available: false
+    }
+  };
+
+  // Mock account-wide stats
+  window._cpanelStats = [
+    { id: 'diskusage', name: 'Disk Usage', count: '1.24 GB', max: '10 GB', percent: 12.4, icon: 'ri-hard-drive-3-line', iconClass: 'disk' },
+    { id: 'bandwidthusage', name: 'Bandwidth', count: '38.7 GB', max: 'unlimited', percent: 0, icon: 'ri-speed-line', iconClass: 'bandwidth' },
+    { id: 'addondomains', name: 'Addon Domains', count: '2', max: '10', percent: 20, icon: 'ri-add-circle-line', iconClass: 'domains' },
+    { id: 'subdomains', name: 'Subdomains', count: '4', max: 'unlimited', percent: 0, icon: 'ri-node-tree', iconClass: 'subdomains' }
+  ];
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════
+
+function renderAccountResources() {
+  const stats = window._cpanelStats || [];
+  const container = document.getElementById('accountResources');
+  if (!container || !stats.length) return;
+
+  // Friendly names and icons for stats from the StatsBar API
+  const statMeta = {
+    diskusage:      { name: 'Disk Usage',      icon: 'ri-hard-drive-3-line', iconClass: 'disk' },
+    bandwidthusage: { name: 'Bandwidth',        icon: 'ri-speed-line',        iconClass: 'bandwidth' },
+    addondomains:   { name: 'Addon Domains',    icon: 'ri-add-circle-line',   iconClass: 'domains' },
+    subdomains:     { name: 'Subdomains',       icon: 'ri-node-tree',         iconClass: 'subdomains' },
+    emailaccounts:  { name: 'Email Accounts',   icon: 'ri-mail-line',         iconClass: 'email' },
+    parkeddomains:  { name: 'Aliases',          icon: 'ri-links-line',        iconClass: 'aliases' },
+    ftpaccounts:    { name: 'FTP Accounts',     icon: 'ri-upload-2-line',     iconClass: 'storage' },
+    sqldatabases:   { name: 'MySQL Databases',  icon: 'ri-database-2-line',   iconClass: 'subdomains' }
+  };
+
+  container.innerHTML = stats.map(stat => {
+    const meta = statMeta[stat.id] || {};
+    const isUnlimited = !stat.max || stat.max === 'unlimited' || stat.max === '∞' || stat.max === 0;
+    const pct = stat.percent != null ? stat.percent
+      : (isUnlimited ? 0 : (parseFloat(stat.count) / parseFloat(stat.max)) * 100);
+    const icon = stat.icon || meta.icon || 'ri-bar-chart-line';
+    const iconClass = stat.iconClass || meta.iconClass || 'storage';
+    const friendlyName = meta.name || stat.name || stat.id;
+    const barClass = pct >= 90 ? ' danger' : pct >= 75 ? ' warning' : '';
+
+    const limitHtml = isUnlimited
+      ? `<div class="stat-card-limit"><i class="ri-infinity-line" aria-hidden="true"></i> Unlimited</div>`
+      : `<div class="stat-card-limit">of ${stat.max}</div>`;
+
+    return `<div class="stat-card${isUnlimited ? ' unlimited' : ''}">
+      <div class="stat-card-header">
+        <div class="stat-card-icon ${iconClass}"><i class="${icon}"></i></div>
+        <div class="stat-card-title">${friendlyName}</div>
+      </div>
+      <div class="stat-card-value">${stat.count}</div>
+      ${limitHtml}
+      <div class="stat-card-bar"><div class="stat-card-bar-fill${barClass}" style="width: ${Math.min(pct, 100)}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function getFilteredDomains() {
+  return domains.filter(d => {
+    if (currentFilter !== 'all' && d.type !== currentFilter) return false;
+    if (searchQuery && !d.domain.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    return true;
+  });
+}
+
+// Get the Sitejet state for a domain.
+// Based on the Sitejet plugin's list-domains.component detection logic:
+//   'disabled'   → redirection_enabled || shared_doc_root → no buttons
+//   'published'  → is_sitejet (index.html contains "ed-element class) → "Edit Site"
+//   'editing'    → has_sitejet_website but not is_sitejet → "Continue Editing"
+//   'available'  → no Sitejet website created yet → "Try Sitejet AI"
+//   null         → Sitejet plugin not available or domain is alias
+function getSitejetState(domain) {
+  if (!hasSitejetFeature) return null;
+  const d = domains.find(x => x.domain === domain);
+  if (!d || d.type === 'alias') return null;
+
+  const info = sitejetInfo[domain];
+  if (!info) return 'available'; // No info from API = not yet used
+
+  // Builder disabled if domain has redirects or shares docroot with another domain
+  if (info.redirection_enabled || info.shared_doc_root) return 'disabled';
+
+  // is_sitejet = index.html on disk contains Sitejet HTML (class "ed-element")
+  if (info.is_sitejet) return 'published';
+
+  // has_sitejet_website = websiteId exists in metadata (created but not published, or unpublished)
+  if (info.has_sitejet_website) return 'editing';
+
+  return 'available';
+}
+
+function renderDomains() {
+  const list = document.getElementById('domainList');
+  if (!list) return;
+  const filtered = getFilteredDomains();
+
+  if (filtered.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state" style="padding: var(--space-12) var(--space-8);">
+        <i class="ri-global-line" aria-hidden="true"></i>
+        <div class="t-body-sm t-muted u-mb-2">No websites found</div>
+        <div class="t-caption t-dimmed">${searchQuery ? 'Try a different search term' : 'Add your first domain to get started'}</div>
+      </div>`;
+    var paginationEl = document.getElementById('pagination');
+    if (paginationEl) paginationEl.innerHTML = '';
+    return;
+  }
+
+  // Build hierarchical groups
+  // Aliases are parked on the main domain, so they group under it alongside subdomains
+  const allParents = domains.filter(d => d.type === 'main' || d.type === 'addon');
+  const mainDomain = domains.find(d => d.type === 'main');
+  const filteredSubdomains = filtered.filter(d => d.type === 'subdomain');
+  const filteredParents = filtered.filter(d => d.type === 'main' || d.type === 'addon');
+  const filteredAliases = filtered.filter(d => d.type === 'alias');
+
+  const childMap = new Map();
+  const orphans = [];
+  const parentDomainsNeeded = new Set();
+
+  // Group subdomains under their parent (main or addon)
+  filteredSubdomains.forEach(sub => {
+    const parent = allParents.find(p => sub.domain.endsWith('.' + p.domain));
+    if (parent) {
+      if (!childMap.has(parent.domain)) childMap.set(parent.domain, []);
+      childMap.get(parent.domain).push(sub);
+      parentDomainsNeeded.add(parent.domain);
+    } else {
+      orphans.push(sub);
+    }
+  });
+
+  // Group aliases under the main domain (they're parked on it)
+  filteredAliases.forEach(alias => {
+    if (mainDomain) {
+      if (!childMap.has(mainDomain.domain)) childMap.set(mainDomain.domain, []);
+      childMap.get(mainDomain.domain).push(alias);
+      parentDomainsNeeded.add(mainDomain.domain);
+    } else {
+      orphans.push(alias);
+    }
+  });
+
+  filteredParents.forEach(p => {
+    const allChildren = domains.filter(d =>
+      (d.type === 'subdomain' && d.domain.endsWith('.' + p.domain)) ||
+      (d.type === 'alias' && p.type === 'main')
+    );
+    if (allChildren.length > 0 && !childMap.has(p.domain)) {
+      childMap.set(p.domain, []);
+    }
+  });
+
+  if (searchQuery) {
+    childMap.forEach((children, parent) => {
+      if (children.length > 0) expandedGroups.add(parent);
+    });
+  }
+
+  // Build the flat list of "top-level items" for pagination
+  // Each parent group counts as 1 item, orphans each count as 1
+  const topLevelItems = [];
+  const renderedParents = new Set();
+
+  filteredParents.forEach(p => {
+    renderedParents.add(p.domain);
+    topLevelItems.push({ type: 'group', parent: p, children: childMap.get(p.domain) || [] });
+  });
+
+  parentDomainsNeeded.forEach(parentDomain => {
+    if (renderedParents.has(parentDomain)) return;
+    const parent = allParents.find(p => p.domain === parentDomain);
+    if (!parent) return;
+    renderedParents.add(parentDomain);
+    topLevelItems.push({ type: 'context-group', parent, children: childMap.get(parentDomain) || [] });
+  });
+
+  orphans.forEach(d => topLevelItems.push({ type: 'standalone', domain: d }));
+
+  // Pagination
+  const totalItems = topLevelItems.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  if (currentPage > totalPages) currentPage = totalPages || 1;
+  const startIdx = (currentPage - 1) * pageSize;
+  const pageItems = topLevelItems.slice(startIdx, startIdx + pageSize);
+
+  let html = '';
+
+  pageItems.forEach(item => {
+    if (item.type === 'group') {
+      const p = item.parent;
+      const allChildren = domains.filter(d =>
+        (d.type === 'subdomain' && d.domain.endsWith('.' + p.domain)) ||
+        (d.type === 'alias' && p.type === 'main')
+      );
+      const totalChildCount = allChildren.length;
+      const isGroupOpen = expandedGroups.has(p.domain);
+
+      if (totalChildCount === 0) {
+        html += renderDomainRow(p, false);
+      } else {
+        html += `<div class="domain-group ${isGroupOpen ? 'group-open' : ''}">`;
+        html += renderGroupHeader(p, totalChildCount, isGroupOpen);
+        html += `<div class="domain-group-children">`;
+        item.children.forEach(child => html += renderDomainRow(child, true));
+        html += `</div></div>`;
+      }
+    } else if (item.type === 'context-group') {
+      const allChildren = domains.filter(d =>
+        (d.type === 'subdomain' && d.domain.endsWith('.' + item.parent.domain)) ||
+        (d.type === 'alias' && item.parent.type === 'main')
+      );
+      html += `<div class="domain-group group-open">`;
+      html += renderGroupHeader(item.parent, allChildren.length, true);
+      html += `<div class="domain-group-children">`;
+      item.children.forEach(child => html += renderDomainRow(child, true));
+      html += `</div></div>`;
+    } else {
+      html += renderDomainRow(item.domain, false);
+    }
+  });
+
+  list.innerHTML = html;
+  renderPagination(totalItems, totalPages);
+}
+
+function renderFeatureTags(d) {
+  const features = d.features || [];
+  const sjState = getSitejetState(d.domain);
+  const tagMap = {
+    wordpress: { label: 'WP', css: 'domain-tag-wp', icon: 'ri-wordpress-line' },
+    git: { label: 'Git', css: 'domain-tag-git', icon: 'ri-git-branch-line' },
+    autossl: { label: 'AutoSSL', css: 'domain-tag-autossl', icon: 'ri-shield-check-line' }
+  };
+  let tags = features.filter(f => f !== 'sitejet').map(f => {
+    const t = tagMap[f];
+    return t ? `<span class="domain-tag ${t.css}"><i class="${t.icon}"></i> ${t.label}</span>` : '';
+  }).join('');
+  // Add Sitejet tag based on detection state
+  if (sjState === 'published') {
+    tags += `<span class="domain-tag domain-tag-sitejet"><i class="ri-layout-masonry-line" aria-hidden="true"></i> Sitejet</span>`;
+  } else if (sjState === 'editing') {
+    tags += `<span class="domain-tag domain-tag-sitejet" style="opacity:0.75;"><i class="ri-layout-masonry-line" aria-hidden="true"></i> Draft</span>`;
+  }
+  return tags ? `<div class="domain-tags">${tags}</div>` : '';
+}
+
+function renderGroupHeader(d, childCount, isGroupOpen) {
+  const iconMap = { main: 'ri-global-line', addon: 'ri-add-circle-line' };
+  const iconClass = d.type === 'addon' ? 'addon' : '';
+  const typeLabel = { main: 'Main Domain', addon: 'Addon' };
+  const sslLabel = { valid: 'Valid', expiring: 'Expiring', expired: 'Expired', none: 'None' };
+
+  return `
+    <div class="domain-group-header ${isGroupOpen ? 'group-open' : ''}" onclick="toggleGroup('${d.domain}')" tabindex="0" role="row">
+      <div class="domain-name">
+        <div class="domain-group-toggle" title="${isGroupOpen ? 'Collapse' : 'Expand'} subdomains" aria-label="Toggle subdomains for ${escapeHtml(d.domain)}">
+          <i class="ri-arrow-right-s-line" aria-hidden="true"></i>
+        </div>
+        <div class="domain-icon ${iconClass}" aria-hidden="true">
+          <i class="${iconMap[d.type] || 'ri-global-line'}"></i>
+        </div>
+        <div>
+          <div class="domain-name-text">${escapeHtml(d.domain)}</div>
+          <div class="domain-name-type">${typeLabel[d.type]}<span class="domain-group-children-count">${childCount} associated domain${childCount !== 1 ? 's' : ''}</span></div>
+        </div>
+      </div>
+      <div class="domain-cell">${renderFeatureTags(d)}</div>
+      <div class="domain-cell">
+        <div class="ssl-status">
+          <span class="ssl-dot ${d.ssl.status}" aria-hidden="true"></span>
+          ${sslLabel[d.ssl.status]}
+        </div>
+      </div>
+      <div class="domain-cell">
+        <span class="badge ${d.type === 'main' ? 'badge-success' : 'badge-neutral'}">Active</span>
+      </div>
+      <div class="domain-actions" onclick="event.stopPropagation()">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="openSettings('${d.domain}')" aria-label="Manage ${escapeHtml(d.domain)}">
+          <i class="ri-settings-3-line" aria-hidden="true"></i> Manage
+        </button>
+      </div>
+    </div>`;
+}
+
+function renderDomainRow(d, isChild) {
+  const iconClass = d.type === 'subdomain' ? 'subdomain' : d.type === 'addon' ? 'addon' : d.type === 'alias' ? 'alias' : '';
+  const iconMap = { main: 'ri-global-line', subdomain: 'ri-git-branch-line', addon: 'ri-add-circle-line', alias: 'ri-links-line' };
+  const typeLabel = { main: 'Main Domain', subdomain: 'Subdomain', addon: 'Addon', alias: 'Alias' };
+  const sslLabel = { valid: 'Valid', expiring: 'Expiring', expired: 'Expired', none: 'None' };
+
+  return `
+    <div class="domain-row ${!isChild ? 'standalone' : ''}" role="row" tabindex="0">
+      <div class="domain-name">
+        <div class="domain-icon ${iconClass}" aria-hidden="true">
+          <i class="${iconMap[d.type] || 'ri-global-line'}"></i>
+        </div>
+        <div>
+          <div class="domain-name-text">${escapeHtml(d.domain)}</div>
+          <div class="domain-name-type">${typeLabel[d.type]}</div>
+        </div>
+      </div>
+      <div class="domain-cell">${renderFeatureTags(d)}</div>
+      <div class="domain-cell">
+        <div class="ssl-status">
+          <span class="ssl-dot ${d.ssl.status}" aria-hidden="true"></span>
+          ${sslLabel[d.ssl.status]}
+        </div>
+      </div>
+      <div class="domain-cell">
+        <span class="badge ${d.type === 'main' ? 'badge-success' : 'badge-neutral'}">Active</span>
+      </div>
+      <div class="domain-actions">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="openSettings('${d.domain}')" aria-label="Manage ${escapeHtml(d.domain)}">
+          <i class="ri-settings-3-line" aria-hidden="true"></i> Manage
+        </button>
+      </div>
+    </div>`;
+}
+
+function renderPagination(totalItems, totalPages) {
+  const el = document.getElementById('pagination');
+  if (!el) return;
+  if (totalPages <= 1) { el.innerHTML = ''; return; }
+
+  const start = (currentPage - 1) * pageSize + 1;
+  const end = Math.min(currentPage * pageSize, totalItems);
+
+  let pageButtons = '';
+  const maxVisible = 5;
+  let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+  let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+  if (endPage - startPage < maxVisible - 1) startPage = Math.max(1, endPage - maxVisible + 1);
+
+  for (let i = startPage; i <= endPage; i++) {
+    pageButtons += `<button type="button" class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+  }
+
+  el.innerHTML = `
+    <div class="pagination-info">
+      <span>Showing ${start}-${end} of ${totalItems}</span>
+      <select class="form-select-sm" onchange="changePageSize(this.value)" aria-label="Items per page">
+        ${PAGE_SIZES.map(s => `<option value="${s}" ${s === pageSize ? 'selected' : ''}>${s} per page</option>`).join('')}
+      </select>
+    </div>
+    <div class="pagination-controls">
+      <button type="button" class="pagination-btn" onclick="goToPage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Previous page">
+        <i class="ri-arrow-left-s-line" aria-hidden="true"></i>
+      </button>
+      ${pageButtons}
+      <button type="button" class="pagination-btn" onclick="goToPage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Next page">
+        <i class="ri-arrow-right-s-line" aria-hidden="true"></i>
+      </button>
+    </div>`;
+}
+
+function goToPage(page) {
+  const totalPages = Math.ceil(getFilteredDomains().length / pageSize);
+  if (page < 1 || page > totalPages) return;
+  currentPage = page;
+  renderDomains();
+}
+
+function changePageSize(size) {
+  pageSize = parseInt(size, 10);
+  currentPage = 1;
+  renderDomains();
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// SETTINGS PANEL
+// ═══════════════════════════════════════════════════════════════
+
+// Build issue banner HTML for a specific tab based on domain data
+function getTabIssueBanner(d, tabId) {
+  var banners = [];
+  var ssl = d.ssl || {};
+  var sslStatus = ssl.status || 'none';
+
+  if (tabId === 'ssl') {
+    if (sslStatus === 'expired')
+      banners.push({ severity: 'error', icon: 'ri-lock-unlock-line', title: 'SSL certificate has expired', desc: 'Visitors will see a browser security warning when visiting this domain. Renew the certificate or run AutoSSL to resolve this.' });
+    else if (sslStatus === 'expiring')
+      banners.push({ severity: 'warn', icon: 'ri-lock-line', title: 'SSL certificate expires soon', desc: 'The certificate will expire shortly. AutoSSL should renew it automatically. If not, check for AutoSSL issues below.' });
+    if (ssl.selfSigned)
+      banners.push({ severity: 'warn', icon: 'ri-error-warning-line', title: 'Self-signed certificate', desc: 'This certificate is not trusted by browsers. Visitors will see a security warning. Install a certificate from a trusted authority.' });
+    if (sslStatus === 'none')
+      banners.push({ severity: 'warn', icon: 'ri-lock-unlock-line', title: 'No SSL certificate installed', desc: 'This domain has no SSL certificate. HTTP traffic is unencrypted. Run AutoSSL or install a certificate manually.' });
+    if (d.autosslProblem)
+      banners.push({ severity: 'warn', icon: 'ri-refresh-line', title: 'AutoSSL could not issue a certificate', desc: esc(d.autosslProblem) });
+  }
+
+  if (tabId === 'settings') {
+    if (d.phpOutdated && d.phpVersion)
+      banners.push({ severity: 'warn', icon: 'ri-code-s-slash-line', title: 'PHP ' + d.phpVersion + ' is no longer supported', desc: 'This PHP version has reached end-of-life and no longer receives security updates. Select a newer version below.' });
+    if (sslStatus !== 'none' && sslStatus !== 'expired' && !d.httpsRedirect)
+      banners.push({ severity: 'info', icon: 'ri-arrow-right-line', title: 'HTTPS redirect is not enabled', desc: 'You have an active SSL certificate but HTTP traffic is not being redirected. Enable Force HTTPS below to ensure all visitors use a secure connection.' });
+  }
+
+  if (tabId === 'overview') {
+    var allAlerts = [];
+    if (sslStatus === 'expired' || sslStatus === 'expiring' || sslStatus === 'none' || ssl.selfSigned || d.autosslProblem)
+      allAlerts.push('ssl');
+    if (d.phpOutdated || (sslStatus !== 'none' && sslStatus !== 'expired' && !d.httpsRedirect))
+      allAlerts.push('settings');
+    if (allAlerts.length > 0) {
+      var hasCritical = sslStatus === 'expired';
+      var tabLinks = allAlerts.map(function(tab) {
+        return '<a href="#" onclick="event.preventDefault();switchDetailTab(\'' + tab + '\')" style="font-weight:var(--weight-semibold);color:inherit;text-decoration:underline;">' + { ssl: 'SSL', settings: 'Settings' }[tab] + '</a>';
+      }).join(', ');
+      banners.push({
+        severity: hasCritical ? 'error' : 'warn',
+        icon: hasCritical ? 'ri-error-warning-line' : 'ri-alert-line',
+        title: hasCritical ? 'Critical issues need attention' : 'Issues need attention',
+        desc: 'Check the ' + tabLinks + ' tab for details.'
+      });
+    }
+  }
+
+  if (banners.length === 0) return '';
+  var html = '';
+  for (var i = 0; i < banners.length; i++) {
+    var b = banners[i];
+    html += '<div class="tab-issue-banner ' + b.severity + '">';
+    html += '<i class="' + b.icon + '" aria-hidden="true"></i>';
+    html += '<div class="tab-issue-banner-text"><div class="tab-issue-banner-title">' + b.title + '</div>';
+    if (b.desc) html += '<div class="tab-issue-banner-desc">' + b.desc + '</div>';
+    html += '</div></div>';
+  }
+  return html;
+}
+
+// Compute dot indicators for detail tabs based on domain data
+function getTabDots(d) {
+  var dots = {};
+  var sslStatus = (d.ssl && d.ssl.status) || 'none';
+
+  // SSL tab: error if expired, warn if expiring/self-signed/missing/autossl issue
+  if (sslStatus === 'expired') {
+    dots.ssl = 'error';
+  } else if (sslStatus === 'expiring' || (d.ssl && d.ssl.selfSigned) || sslStatus === 'none' || d.autosslProblem) {
+    dots.ssl = 'warn';
+  }
+
+  // Settings tab: warn if PHP outdated or HTTPS redirect off (with valid SSL)
+  if (d.phpOutdated || (sslStatus !== 'none' && sslStatus !== 'expired' && !d.httpsRedirect)) {
+    dots.settings = 'warn';
+  }
+
+  // Overview tab: show highest severity dot if any issues exist
+  if (dots.ssl === 'error') {
+    dots.overview = 'error';
+  } else if (dots.ssl === 'warn' || dots.settings === 'warn') {
+    dots.overview = 'warn';
+  }
+
+  return dots;
+}
+
+async function openSettings(domainName) {
+  const d = domains.find(x => x.domain === domainName);
+  if (!d) return;
+  settingsDomain = d;
+
+  // Cache for live detail data fetched per-domain
+  d._detailCache = d._detailCache || {};
+
+  const typeLabel = { main: 'Main Domain', subdomain: 'Subdomain', addon: 'Addon', alias: 'Alias' };
+  const iconClass = d.type === 'subdomain' ? 'subdomain' : d.type === 'addon' ? 'addon' : d.type === 'alias' ? 'alias' : '';
+  const iconMap = { main: 'ri-global-line', subdomain: 'ri-git-branch-line', addon: 'ri-add-circle-line', alias: 'ri-links-line' };
+  const features = d.features || [];
+
+  // Update hero
+  document.getElementById('detailTitle').textContent = d.domain;
+  const iconEl = document.getElementById('detailIcon');
+  iconEl.className = `domain-icon detail-hero-icon ${iconClass}`;
+  iconEl.innerHTML = `<i class="${iconMap[d.type] || 'ri-global-line'}"></i>`;
+
+  // Badges
+  let badges = `<span class="badge badge-success">Active</span>`;
+  if (d.ssl.status === 'valid') badges += `<span class="badge badge-success"><i class="ri-lock-line" aria-hidden="true"></i> SSL</span>`;
+  else if (d.ssl.status === 'expiring') badges += `<span class="badge badge-warning"><i class="ri-lock-line" aria-hidden="true"></i> SSL Expiring</span>`;
+  else if (d.ssl.status === 'expired') badges += `<span class="badge badge-error"><i class="ri-lock-unlock-line" aria-hidden="true"></i> SSL Expired</span>`;
+  if (features.includes('wordpress')) badges += `<span class="badge badge-info"><i class="ri-wordpress-line" aria-hidden="true"></i> WordPress</span>`;
+  const sjState = getSitejetState(d.domain);
+  if (sjState === 'published') badges += `<span class="badge badge-accent"><i class="ri-layout-masonry-line" aria-hidden="true"></i> Sitejet</span>`;
+  else if (sjState === 'editing') badges += `<span class="badge badge-accent" style="opacity:0.8;"><i class="ri-layout-masonry-line" aria-hidden="true"></i> Sitejet (Draft)</span>`;
+  document.getElementById('detailBadges').innerHTML = badges;
+
+  // Action buttons
+  let actions = `<a href="https://${escapeHtml(d.domain)}" target="_blank" class="btn btn-secondary btn-sm"><i class="ri-external-link-line" aria-hidden="true"></i> Visit Site</a>`;
+  if (features.includes('wordpress')) {
+    const wpUrl = d.wpAdminUrl || `https://${d.domain}/wp-admin/`;
+    actions += `<a href="${escapeHtml(wpUrl)}" target="_blank" class="btn btn-sm" style="background: var(--status-info); color: var(--text-inverse); border-color: var(--status-info);"><i class="ri-wordpress-line" aria-hidden="true"></i> WP Admin</a>`;
+  }
+  if (sjState === 'published') {
+    actions += `<button type="button" class="btn btn-secondary btn-sm" style="color: var(--feature-color);" onclick="launchSitejetBuilder('${escapeHtml(d.domain)}')"><i class="ri-edit-line" aria-hidden="true"></i> Edit Site</button>`;
+  } else if (sjState === 'editing') {
+    actions += `<button type="button" class="btn btn-secondary btn-sm" style="color: var(--feature-color);" onclick="launchSitejetBuilder('${escapeHtml(d.domain)}')"><i class="ri-draft-line" aria-hidden="true"></i> Continue Editing</button>`;
+  } else if (sjState === 'available' && d.appType === 'sitejet') {
+    actions += `<button type="button" class="btn btn-secondary btn-sm" onclick="launchSitejetBuilder('${escapeHtml(d.domain)}')"><i class="ri-magic-line" aria-hidden="true"></i> Try Sitejet AI</button>`;
+  }
+  document.getElementById('detailActions').innerHTML = actions;
+
+  // Tabs — aliases don't have their own vhost, files, or DNS
+  const isAlias = d.type === 'alias';
+
+  // Compute tab dot indicators from domain data
+  const tabDots = getTabDots(d);
+
+  const tabs = [
+    { id: 'overview', icon: 'ri-dashboard-line', label: 'Overview' },
+    ...(!isAlias ? [{ id: 'files', icon: 'ri-folder-3-line', label: 'Files' }] : []),
+    { id: 'dns', icon: 'ri-dns-line', label: 'DNS' },
+    { id: 'ssl', icon: 'ri-shield-check-line', label: 'SSL' },
+    ...(!isAlias ? [{ id: 'email', icon: 'ri-mail-line', label: 'Email' }] : []),
+    ...(!isAlias ? [{ id: 'backups', icon: 'ri-history-line', label: 'Backups' }] : []),
+    { id: 'settings', icon: 'ri-settings-3-line', label: 'Settings' }
+  ];
+  document.getElementById('detailTabsBar').innerHTML = tabs.map((t, i) => {
+    var dot = tabDots[t.id] || '';
+    var dotHtml = dot ? ` <span class="tab-dot ${dot}"></span>` : '';
+    return `<button class="detail-tab ${i === 0 ? 'active' : ''}" onclick="switchDetailTab('${t.id}')" type="button" role="tab" aria-selected="${i === 0}" aria-controls="detailTabContent"><i class="${t.icon}"></i> ${t.label}${dotHtml}</button>`;
+  }).join('');
+
+  // Render first tab
+  renderDetailTab('overview', d);
+
+  // Show detail, hide the data list and filter bar
+  document.getElementById('websiteList').style.display = 'none';
+  var filterBar = document.getElementById('websiteFilterBar');
+  if (filterBar) filterBar.style.display = 'none';
+  document.getElementById('detailView').style.display = 'block';
+}
+
+function closeSettings() {
+  document.getElementById('detailView').style.display = 'none';
+  document.getElementById('websiteList').style.display = '';
+  var filterBar = document.getElementById('websiteFilterBar');
+  if (filterBar) filterBar.style.display = '';
+  settingsDomain = null;
+}
+
+function switchDetailTab(tabId) {
+  var tabs = document.querySelectorAll('.detail-tabs-bar .detail-tab');
+  tabs.forEach(function(btn) {
+    var isTarget = btn.getAttribute('onclick') && btn.getAttribute('onclick').indexOf("'" + tabId + "'") !== -1;
+    btn.classList.toggle('active', isTarget);
+    btn.setAttribute('aria-selected', isTarget);
+  });
+  renderDetailTab(tabId, settingsDomain);
+}
+
+function renderDetailTab(tabId, d) {
+  const el = document.getElementById('detailTabContent');
+  const sslLabel = { valid: 'Valid (Let\'s Encrypt)', expiring: 'Expiring Soon', expired: 'Expired', none: 'Not Installed' };
+  const features = d.features || [];
+  const sjState = getSitejetState(d.domain);
+
+  // Issue banner for this tab
+  const issueBanner = getTabIssueBanner(d, tabId);
+
+  if (tabId === 'overview') {
+    // Use live data if available, otherwise show mock values
+    const emailCount = d.emailCount != null ? d.emailCount : 3;
+    const wpVersion = d.wpVersion || '6.7';
+    const wpTheme = d.wpTheme || 'Astra';
+
+    // Domain type info
+    const typeLabels = { main: 'Main Domain', addon: 'Addon Domain', subdomain: 'Subdomain', alias: 'Alias (Parked)' };
+
+    const isAlias = d.type === 'alias';
+    const aliasNote = isAlias ? `<div class="u-flex-center u-gap-3 u-mb-5" style="padding:var(--space-3) var(--space-4);background:var(--status-info-bg);border:1px solid var(--status-info-border);border-radius:var(--radius-md);">
+        <i class="ri-links-line u-no-shrink" aria-hidden="true" style="color:var(--status-info);font-size:1.1rem;"></i>
+        <span class="t-body-sm">This is an alias domain parked on <strong>${escapeHtml(domains.find(x => x.type === 'main')?.domain || 'main domain')}</strong>. Visitors to this domain see the same content as the main domain.</span>
+      </div>` : '';
+
+    el.innerHTML = `${issueBanner}${aliasNote}
+      <div class="site-info">
+        <div class="site-info-title">Site Information</div>
+        <div class="site-info-grid">
+          <div class="site-info-item">
+            <div class="site-info-label">Document Root</div>
+            <div class="site-info-value mono">${escapeHtml(d.docroot)}</div>
+          </div>
+          ${d.type !== 'alias' ? `<div class="site-info-item">
+            <div class="site-info-label">PHP Version</div>
+            <div class="site-info-value">${escapeHtml(d.phpVersion || 'N/A')}</div>
+          </div>` : ''}
+          <div class="site-info-item">
+            <div class="site-info-label">SSL Certificate</div>
+            <div class="site-info-value ${d.ssl.status === 'valid' ? 'success' : ''}">${d.ssl.status === 'valid' ? 'Valid (' + escapeHtml(d.ssl.issuer || 'Unknown') + ')' : sslLabel[d.ssl.status]}</div>
+          </div>
+          <div class="site-info-item">
+            <div class="site-info-label">SSL Expiry</div>
+            <div class="site-info-value">${d.ssl.expires ? escapeHtml(d.ssl.expires) : 'N/A'}</div>
+          </div>
+          ${features.includes('wordpress') ? `
+          <div class="site-info-item">
+            <div class="site-info-label">WordPress Version</div>
+            <div class="site-info-value">${escapeHtml(wpVersion)}</div>
+          </div>
+          <div class="site-info-item">
+            <div class="site-info-label">Active Theme</div>
+            <div class="site-info-value">${escapeHtml(wpTheme)}</div>
+          </div>` : ''}
+          ${sjState === 'published' ? `
+          <div class="site-info-item">
+            <div class="site-info-label">Website Builder</div>
+            <div class="site-info-value" style="color:var(--feature-color);">Sitejet Builder</div>
+          </div>` : sjState === 'editing' ? `
+          <div class="site-info-item">
+            <div class="site-info-label">Website Builder</div>
+            <div class="site-info-value" style="color:var(--feature-color);">Sitejet (Draft)</div>
+          </div>` : ''}
+          <div class="site-info-item">
+            <div class="site-info-label">IP Address</div>
+            <div class="site-info-value mono">${escapeHtml(d.ip || 'N/A')}</div>
+          </div>
+          <div class="site-info-item">
+            <div class="site-info-label">Domain Type</div>
+            <div class="site-info-value">${{main:'Main Domain',addon:'Addon Domain',subdomain:'Subdomain',alias:'Alias (Parked)'}[d.type]}</div>
+          </div>
+          ${d.type === 'alias' ? `<div class="site-info-item">
+            <div class="site-info-label">Parked On</div>
+            <div class="site-info-value">${escapeHtml(domains.find(x => x.type === 'main')?.domain || 'Main Domain')}</div>
+          </div>` : ''}
+          ${d.type === 'main' || d.type === 'subdomain' ? `<div class="site-info-item">
+            <div class="site-info-label">HTTPS Redirect</div>
+            <div class="site-info-value">${d.httpsRedirect ? '<span style="color:var(--status-success);">Enabled</span>' : 'Disabled'}</div>
+          </div>` : d.type === 'addon' || d.type === 'alias' ? `<div class="site-info-item">
+            <div class="site-info-label">HTTPS Redirect</div>
+            <div class="site-info-value t-muted">Inherited from main domain</div>
+          </div>` : ''}
+          <div class="site-info-item">
+            <div class="site-info-label">Server Alias</div>
+            <div class="site-info-value mono">${escapeHtml(d.serveralias || 'www.' + d.domain)}</div>
+          </div>
+        </div>
+      </div>
+      ${sjState === 'published' ? `
+      <div class="site-info u-mt-4">
+        <div class="site-info-title">Website Builder</div>
+        <div class="u-flex-center u-gap-4 u-p-4" style="background:var(--feature-bg);border:1px solid var(--feature-bg);border-radius:var(--radius-md);">
+          <div class="u-no-shrink" style="width:44px;height:44px;border-radius:var(--radius-md);background:var(--feature-bg);display:flex;align-items:center;justify-content:center;">
+            <i class="ri-layout-masonry-line" aria-hidden="true" style="font-size:1.25rem;color:var(--feature-color);"></i>
+          </div>
+          <div class="u-flex-1" style="min-width:0;">
+            <div class="t-body-sm" style="font-weight:var(--weight-semibold);margin-bottom:var(--space-1);">Sitejet Builder</div>
+            <div class="t-body-xs t-muted">This site is built with Sitejet. Edit your site visually or create a restore point before making changes.</div>
+          </div>
+          <div class="u-flex u-gap-2 u-no-shrink">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="handleSitejetRestorePoint('${escapeHtml(d.domain)}')" title="Create a backup restore point before editing">
+              <i class="ri-history-line" aria-hidden="true"></i> Restore Point
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" style="background:var(--feature-color);border-color:var(--feature-color);" onclick="launchSitejetBuilder('${escapeHtml(d.domain)}')">
+              <i class="ri-edit-line" aria-hidden="true"></i> Edit Site
+            </button>
+          </div>
+        </div>
+      </div>` : sjState === 'editing' ? `
+      <div class="site-info u-mt-4">
+        <div class="site-info-title">Website Builder</div>
+        <div class="u-flex-center u-gap-4 u-p-4" style="background:var(--feature-bg);border:1px solid var(--feature-bg);border-radius:var(--radius-md);">
+          <div class="u-no-shrink" style="width:44px;height:44px;border-radius:var(--radius-md);background:var(--feature-bg);display:flex;align-items:center;justify-content:center;">
+            <i class="ri-layout-masonry-line" aria-hidden="true" style="font-size:1.25rem;color:var(--feature-color);"></i>
+          </div>
+          <div class="u-flex-1" style="min-width:0;">
+            <div class="t-body-sm" style="font-weight:var(--weight-semibold);margin-bottom:var(--space-1);">Sitejet Builder <span class="badge badge-accent badge-xs" style="vertical-align:middle;">Draft</span></div>
+            <div class="t-body-xs t-muted">You have an unpublished website in progress. Continue editing or publish when ready.</div>
+          </div>
+          <div class="u-flex u-gap-2 u-no-shrink">
+            <button type="button" class="btn btn-primary btn-sm" style="background:var(--feature-color);border-color:var(--feature-color);" onclick="launchSitejetBuilder('${escapeHtml(d.domain)}')">
+              <i class="ri-draft-line" aria-hidden="true"></i> Continue Editing
+            </button>
+          </div>
+        </div>
+      </div>` : (sjState === 'available' && (!d.appType || d.appType === 'none')) ? `
+      <div class="site-info u-mt-4">
+        <div class="site-info-title">Website Builder</div>
+        <div class="u-flex-center u-gap-4 u-p-4" style="border:1px dashed var(--border-default);border-radius:var(--radius-md);">
+          <div class="u-no-shrink" style="width:44px;height:44px;border-radius:var(--radius-md);background:var(--bg-muted);display:flex;align-items:center;justify-content:center;">
+            <i class="ri-magic-line" aria-hidden="true" style="font-size:1.25rem;color:var(--text-tertiary);"></i>
+          </div>
+          <div class="u-flex-1" style="min-width:0;">
+            <div class="t-body-sm" style="font-weight:var(--weight-semibold);margin-bottom:var(--space-1);">Build a website with Sitejet</div>
+            <div class="t-body-xs t-muted">Create a professional website with Sitejet AI — no coding required.</div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm u-no-shrink" onclick="launchSitejetBuilder('${escapeHtml(d.domain)}')">
+            <i class="ri-magic-line" aria-hidden="true"></i> Try Sitejet AI
+          </button>
+        </div>
+      </div>` : ''}`;
+
+  } else if (tabId === 'dns') {
+    el.innerHTML = `
+      <div class="site-info u-mb-4">
+        <div class="u-flex-between u-mb-4">
+          <div class="site-info-title" style="margin-bottom:0;">DNS Records</div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="openCpanelPage('zone_editor/index.html')"><i class="ri-add-line" aria-hidden="true"></i> Add Record</button>
+        </div>
+        <div id="detail-dns-loading" class="u-flex-center u-gap-3 t-body-sm t-muted" style="padding: var(--space-3) 0;">
+          <div class="spinner"></div> Loading DNS records...
+        </div>
+        <div id="detail-dns-records"></div>
+      </div>`;
+    loadDetailDNS(d.domain);
+
+  } else if (tabId === 'ssl') {
+    let sslContent = `<div class="site-info-grid u-mb-5">
+        <div class="site-info-item">
+          <div class="site-info-label">Status</div>
+          <div class="site-info-value"><div class="ssl-status"><span class="ssl-dot ${d.ssl.status}"></span> ${{valid:'Valid',expiring:'Expiring',expired:'Expired',none:'Not Installed'}[d.ssl.status]}</div></div>
+        </div>
+        ${d.ssl.issuer ? `<div class="site-info-item"><div class="site-info-label">Issuer</div><div class="site-info-value">${escapeHtml(d.ssl.issuer)}</div></div>` : ''}
+        ${d.ssl.expires ? `<div class="site-info-item"><div class="site-info-label">Expires</div><div class="site-info-value">${d.ssl.expires}</div></div>` : ''}
+      </div>`;
+    if (d.ssl.status === 'none') {
+      sslContent += `<div class="u-p-4" style="background:var(--status-info-bg);border:1px solid var(--status-info-border);border-radius:var(--radius-md);">
+        <div class="row row-gap-sm u-mb-2"><i class="ri-information-line" aria-hidden="true" style="color:var(--status-info);"></i><span class="t-body-sm" style="font-weight:var(--weight-semibold);">No SSL certificate installed</span></div>
+        <p class="t-body-sm t-muted u-mb-3">AutoSSL will provision a free certificate once DNS resolves.</p>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="runAutoSSL()"><i class="ri-refresh-line" aria-hidden="true"></i> Run AutoSSL</button>
+      </div>`;
+    } else if (d.ssl.status === 'expired') {
+      sslContent += `<div class="u-p-4" style="background:var(--status-error-bg);border:1px solid var(--status-error-border);border-radius:var(--radius-md);">
+        <div class="row row-gap-sm u-mb-2"><i class="ri-error-warning-line" aria-hidden="true" style="color:var(--status-error);"></i><span class="t-body-sm" style="font-weight:var(--weight-semibold);">Certificate expired</span></div>
+        <p class="t-body-sm t-muted u-mb-3">Visitors will see a security warning.</p>
+        <button type="button" class="btn btn-primary btn-sm" onclick="runAutoSSL()"><i class="ri-refresh-line" aria-hidden="true"></i> Renew Certificate</button>
+      </div>`;
+    }
+    el.innerHTML = `${issueBanner}<div class="site-info">${sslContent}</div>`;
+
+  } else if (tabId === 'files') {
+    el.innerHTML = `<div class="site-info">
+      <div class="site-info-title">File Manager</div>
+      <p class="t-body-sm t-muted u-mb-4">Manage files in <code class="t-mono" style="background:var(--bg-muted);padding:2px 6px;border-radius:var(--radius-xs);">${escapeHtml(d.docroot)}</code></p>
+      <button type="button" onclick="showToast('File Manager not available in prototype mode', 'info');" class="btn btn-secondary btn-sm"><i class="ri-folder-open-line" aria-hidden="true"></i> Open File Manager</button>
+    </div>`;
+
+  } else if (tabId === 'backups') {
+    el.innerHTML = `<div class="site-info">
+      <div class="site-info-title">Backups</div>
+      <p class="t-body-sm t-muted u-mb-4">Create a full account backup or view existing backups.</p>
+      <div class="u-flex u-gap-2 u-mb-6">
+        <button type="button" class="btn btn-primary btn-sm" onclick="createBackup()"><i class="ri-download-line" aria-hidden="true"></i> Create Full Backup</button>
+      </div>
+      <div class="site-info-title">Available Backups</div>
+      <div id="backup-list"><div class="u-flex-center u-gap-3 t-body-sm t-muted" style="padding:var(--space-3) 0;"><div class="spinner"></div> Loading backups...</div></div>
+    </div>`;
+    loadBackupList();
+
+  } else if (tabId === 'email') {
+    // Show email accounts for this domain
+    const domainName = d.domain;
+    el.innerHTML = `<div class="site-info">
+      <div class="u-flex-between u-mb-4">
+        <div class="site-info-title" style="margin-bottom:0;">Email Accounts</div>
+        <button type="button" class="btn btn-primary btn-sm" onclick="window.location.href='email.html'"><i class="ri-add-line" aria-hidden="true"></i> Create Account</button>
+      </div>
+      <div id="domain-email-list"><div class="u-flex-center u-gap-3 t-body-sm t-muted" style="padding:var(--space-3) 0;"><div class="spinner"></div> Loading email accounts...</div></div>
+    </div>`;
+
+    // Load email accounts for this domain (mock data)
+    const loadDomainEmails = async () => {
+      const listEl = document.getElementById('domain-email-list');
+      if (!listEl) return;
+      let accounts = [];
+      // Mock data
+      accounts = [
+        { email: `info@${domainName}`, used: 45, quota: 500, isUnlimited: false },
+        { email: `admin@${domainName}`, used: 128, quota: 0, isUnlimited: true },
+        { email: `support@${domainName}`, used: 12, quota: 250, isUnlimited: false }
+      ];
+
+      if (!accounts.length) {
+        listEl.innerHTML = `<div class="u-text-center" style="padding:var(--space-6);border:1px dashed var(--border-default);border-radius:var(--radius-md);">
+          <div class="t-body-sm t-muted u-mb-3">No email accounts for this domain</div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="window.location.href='email.html'"><i class="ri-add-line" aria-hidden="true"></i> Create Account</button>
+        </div>`;
+        return;
+      }
+
+      const formatMB = (mb) => mb >= 1024 ? (mb / 1024).toFixed(1) + ' GB' : mb + ' MB';
+      listEl.innerHTML = accounts.map(a => {
+        const pct = a.isUnlimited ? 0 : (a.quota > 0 ? Math.min((a.used / a.quota) * 100, 100) : 0);
+        const barClass = pct >= 90 ? 'danger' : pct >= 75 ? 'warning' : 'success';
+        return `<div class="u-flex-center u-gap-4 u-p-4" style="border-bottom:1px solid var(--border-subtle);">
+          <div class="u-no-shrink" style="width:36px;height:36px;border-radius:var(--radius-md);background:var(--feature-bg);display:flex;align-items:center;justify-content:center;">
+            <i class="ri-mail-line" aria-hidden="true" style="color:var(--feature-color);font-size:1rem;"></i>
+          </div>
+          <div class="u-flex-1" style="min-width:0;">
+            <div class="t-body-sm" style="font-weight:var(--weight-medium);">${escapeHtml(a.email)}</div>
+            <div class="t-body-xs t-muted">${formatMB(a.used)} used${a.isUnlimited ? ' — Unlimited' : ' of ' + formatMB(a.quota)}</div>
+          </div>
+          <div class="u-flex u-gap-2 u-no-shrink">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="window.location.href='email.html#account=${encodeURIComponent(a.email)}'" title="Manage"><i class="ri-settings-3-line" aria-hidden="true"></i></button>
+          </div>
+        </div>`;
+      }).join('');
+    };
+    loadDomainEmails();
+
+  } else if (tabId === 'settings') {
+    const isAlias = d.type === 'alias';
+    const isMain = d.type === 'main';
+    // Aliases don't have their own vhost — they inherit from the main domain.
+    // They cannot change document root, PHP version, or HTTPS redirect.
+    // Addon/subdomain domains have their own vhost and can change PHP/HTTPS.
+    const hasOwnVhost = !isAlias;
+    let settingsHtml = '';
+
+    // Domain settings — always shown, but content varies by type
+    settingsHtml += `<div class="settings-section">
+      <div class="settings-section-title">Domain Settings</div>`;
+
+    if (isAlias) {
+      const parkedOn = domains.find(x => x.type === 'main');
+      settingsHtml += `
+        <div class="u-p-4 u-mb-4" style="background:var(--status-info-bg);border:1px solid var(--status-info-border);border-radius:var(--radius-md);">
+          <div class="row row-gap-sm u-mb-2"><i class="ri-information-line" aria-hidden="true" style="color:var(--status-info);"></i><span class="t-body-sm" style="font-weight:var(--weight-semibold);">Alias Domain</span></div>
+          <p class="t-body-sm t-muted">This domain is parked on <strong>${escapeHtml(parkedOn?.domain || 'the main domain')}</strong>. It shares the same document root, PHP version, and SSL settings. To change these, manage the main domain instead.</p>
+        </div>`;
+    }
+
+    settingsHtml += `<div class="settings-row">
+        <span class="settings-row-label"><i class="ri-folder-line" aria-hidden="true"></i> Document Root</span>
+        <span class="settings-row-value mono">${escapeHtml(d.docroot || (domains.find(x => x.type === 'main')?.docroot) || '')}</span>
+      </div>`;
+
+    // PHP version — only for domains with their own vhost (not aliases)
+    if (hasOwnVhost) {
+      const mockPhpVersions = ['8.3', '8.2', '8.1', '8.0', '7.4'];
+      const mockDefault = '8.2';
+      let phpOptions = `<option value="inherit"${!d.phpVersion ? ' selected' : ''}>Inherit (${esc(mockDefault)})</option>`;
+      for (var pi = 0; pi < mockPhpVersions.length; pi++) {
+        var pv = mockPhpVersions[pi];
+        var isSelected = d.phpVersion === pv;
+        var label = pv;
+        if (pv === mockDefault) label += ' (default)';
+        if (parseFloat(pv) < 8.1) label += ' [Outdated]';
+        phpOptions += `<option value="${esc(pv)}"${isSelected ? ' selected' : ''}>${esc(label)}</option>`;
+      }
+      settingsHtml += `<div class="settings-row">
+        <span class="settings-row-label"><i class="ri-code-s-slash-line" aria-hidden="true"></i> PHP Version</span>
+        <span class="settings-row-value">
+          <select class="form-select-sm" id="phpVersionSelect" onchange="changePHP('${esc(d.domain)}', this.value)" style="min-width:140px;">
+            ${phpOptions}
+          </select>
+        </span>
+      </div>`;
+    }
+
+    // HTTPS redirect — only for domains with their own vhost (not aliases or addons per Jupiter)
+    if (d.type === 'main' || d.type === 'subdomain') {
+      settingsHtml += `<div class="settings-row">
+        <span class="settings-row-label"><i class="ri-lock-line" aria-hidden="true"></i> Force HTTPS</span>
+        <span class="settings-row-value">
+          <input type="checkbox" class="toggle" ${d.httpsRedirect ? 'checked' : ''} onchange="toggleHTTPS('${d.domain}', this.checked)" role="switch">
+        </span>
+      </div>`;
+    } else if (d.type === 'addon') {
+      settingsHtml += `<div class="settings-row">
+        <span class="settings-row-label"><i class="ri-lock-line" aria-hidden="true"></i> Force HTTPS</span>
+        <span class="settings-row-value t-muted t-body-sm">Inherited from main domain</span>
+      </div>`;
+    }
+
+    settingsHtml += `</div>`;
+
+    // Redirects — only for domains with their own vhost
+    if (hasOwnVhost) {
+      settingsHtml += `<div class="settings-section">
+        <div class="settings-section-title">Redirects</div>
+        <div id="redirectsList"><div class="u-flex-center u-gap-3 t-body-sm t-muted" style="padding:var(--space-3) 0;"><div class="spinner"></div> Loading redirects...</div></div>
+        <button type="button" class="btn btn-secondary btn-sm u-mt-3" onclick="showAddRedirectForm('${d.domain}')"><i class="ri-add-line" aria-hidden="true"></i> Add Redirect</button>
+        <div id="addRedirectForm" class="u-mt-4 u-p-4" style="display:none; background:var(--bg-muted); border-radius:var(--radius-md);">
+          <div class="u-mb-3" style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-3);">
+            <div>
+              <label class="form-label t-caption">Source Path</label>
+              <input type="text" class="form-input" id="redirectSrc" placeholder="/" style="font-size:var(--text-sm);">
+            </div>
+            <div>
+              <label class="form-label t-caption">Destination URL</label>
+              <input type="text" class="form-input" id="redirectDest" placeholder="https://example.com/new-page" style="font-size:var(--text-sm);">
+            </div>
+          </div>
+          <div class="u-flex-center u-gap-2">
+            <select class="form-select-sm" id="redirectType" style="min-width:140px;">
+              <option value="permanent">301 (Permanent)</option>
+              <option value="temp">302 (Temporary)</option>
+            </select>
+            <button type="button" class="btn btn-primary btn-sm" onclick="handleAddRedirect('${d.domain}')"><i class="ri-check-line" aria-hidden="true"></i> Save</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('addRedirectForm').style.display='none'">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    // Website features — only for domains with their own vhost
+    if (hasOwnVhost) {
+      settingsHtml += `<div class="settings-section">
+        <div class="settings-section-title">Website Features</div>`;
+
+      if (features.includes('wordpress')) {
+        settingsHtml += `<div class="feature-card">
+          <div class="feature-card-icon wp"><i class="ri-wordpress-line" aria-hidden="true"></i></div>
+          <div class="feature-card-body"><div class="feature-card-title">WordPress</div><div class="feature-card-desc">WordPress 6.7 installed</div></div>
+          <div class="feature-card-action"><button type="button" class="btn btn-secondary btn-sm">Manage</button></div>
+        </div>`;
+      }
+      const settingsSjState = getSitejetState(d.domain);
+      if (settingsSjState === 'published') {
+        settingsHtml += `<div class="feature-card">
+          <div class="feature-card-icon sitejet"><i class="ri-layout-masonry-line" aria-hidden="true"></i></div>
+          <div class="feature-card-body"><div class="feature-card-title">Sitejet Builder</div><div class="feature-card-desc">Site built with Sitejet</div></div>
+          <div class="feature-card-action u-flex u-gap-2">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="handleSitejetRestorePoint('${escapeHtml(d.domain)}')" title="Create a restore point before editing"><i class="ri-history-line" aria-hidden="true"></i> Restore Point</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="launchSitejetBuilder('${escapeHtml(d.domain)}')"><i class="ri-edit-line" aria-hidden="true"></i> Edit Site</button>
+          </div>
+        </div>`;
+      } else if (settingsSjState === 'editing') {
+        settingsHtml += `<div class="feature-card">
+          <div class="feature-card-icon sitejet"><i class="ri-layout-masonry-line" aria-hidden="true"></i></div>
+          <div class="feature-card-body"><div class="feature-card-title">Sitejet Builder</div><div class="feature-card-desc">Draft — unpublished site in progress</div></div>
+          <div class="feature-card-action">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="launchSitejetBuilder('${escapeHtml(d.domain)}')"><i class="ri-draft-line" aria-hidden="true"></i> Continue Editing</button>
+          </div>
+        </div>`;
+      }
+      if (features.includes('git')) {
+        settingsHtml += `<div class="feature-card">
+          <div class="feature-card-icon git"><i class="ri-git-branch-line" aria-hidden="true"></i></div>
+          <div class="feature-card-body"><div class="feature-card-title">Git Version Control</div><div class="feature-card-desc">Repository deployed</div></div>
+          <div class="feature-card-action"><button type="button" class="btn btn-secondary btn-sm">View Repo</button></div>
+        </div>`;
+      }
+      if (!features.includes('wordpress') && settingsSjState !== 'published' && settingsSjState !== 'editing') {
+        settingsHtml += `<div class="u-text-center u-p-4" style="border:1px dashed var(--border-default);border-radius:var(--radius-md);">
+          <div class="t-body-sm t-muted u-mb-3">No website builder active</div>
+          <div class="u-flex u-gap-2" style="justify-content:center;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="modalWizard.open('add-website', { availableDomains: domains.map(function(d){ return d.domain; }).filter(Boolean) })"><i class="ri-add-circle-line" aria-hidden="true"></i> Add Website</button>
+          </div>
+        </div>`;
+      }
+      settingsHtml += `</div>`;
+    }
+
+    // Danger zone — not for main domain
+    if (!isMain) {
+      settingsHtml += `<div class="settings-section" style="border-bottom:none;">
+        <div class="settings-section-title" style="color:var(--status-error);">Danger Zone</div>
+        <button type="button" class="btn btn-danger btn-sm" onclick="handleRemoveDomain('${d.domain}', '${d.type}')">
+          <i class="ri-delete-bin-line" aria-hidden="true"></i> Remove Domain
+        </button>
+      </div>`;
+    }
+
+    el.innerHTML = issueBanner + settingsHtml;
+
+    // Enhance native selects into custom dropdowns
+    if (typeof MeridianSelect !== 'undefined') {
+      el.querySelectorAll('select.form-select-sm, select.form-select').forEach(function(sel) {
+        MeridianSelect.enhance(sel);
+      });
+    }
+
+    // Async-load data for settings sections
+    if (hasOwnVhost) loadRedirects(d.domain);
+  }
+}
+
+async function loadDetailDNS(domain) {
+  const loadingEl = document.getElementById('detail-dns-loading');
+  const recordsEl = document.getElementById('detail-dns-records');
+  if (!loadingEl || !recordsEl) return;
+
+  try {
+    const zoneDomain = Object.keys(MOCK_DNS).find(z => domain.endsWith(z)) || domain;
+    const records = MOCK_DNS[zoneDomain] || [
+      { type: 'A', name: domain + '.', ttl: 14400, value: '192.168.1.100' },
+      { type: 'CNAME', name: 'www.' + domain + '.', ttl: 14400, value: domain + '.' }
+    ];
+    loadingEl.style.display = 'none';
+    if (!records.length) { recordsEl.innerHTML = '<p class="t-body-sm t-muted">No DNS records found.</p>'; return; }
+    recordsEl.innerHTML = `<table class="dns-table">
+      <thead><tr><th>Type</th><th>Name</th><th>TTL</th><th>Value</th></tr></thead>
+      <tbody>${records.map(r => `<tr>
+        <td><span class="dns-type">${escapeHtml(r.type)}</span></td>
+        <td class="dns-name">${escapeHtml(r.name)}</td>
+        <td>${r.ttl}</td>
+        <td class="dns-value">${escapeHtml(r.value)}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  } catch (err) {
+    loadingEl.innerHTML = `<i class="ri-error-warning-line" aria-hidden="true" style="color:var(--status-error);"></i> Failed to load DNS: ${escapeHtml(err.message)}`;
+  }
+}
+
+async function changePHP(domain, version) {
+  const d = domains.find(x => x.domain === domain);
+  if (!d) return;
+
+  // version from the select may be "ea-php83" (raw) or "8.3" (display)
+  const displayVersion = version.replace(/^ea-php/, '').replace(/^(\d)(\d)$/, '$1.$2');
+
+  d.phpVersion = displayVersion;
+  showToast(`PHP version set to ${displayVersion} for ${domain}`);
+}
+
+function toggleHTTPS(domain, enabled) {
+  const d = domains.find(x => x.domain === domain);
+  if (!d) return;
+  d.httpsRedirect = enabled;
+  showToast(`HTTPS redirect ${enabled ? 'enabled' : 'disabled'} for ${domain}`);
+}
+
+function runAutoSSL() {
+  showToast('AutoSSL check started. Certificates will be provisioned automatically.');
+}
+
+function loadBackupList() {
+  const el = document.getElementById('backup-list');
+  if (!el) return;
+  renderBackupItems(el, [
+    { file: 'backup-2026-03-01.tar.gz', date: '2026-03-01', size: '245 MB' },
+    { file: 'backup-2026-02-15.tar.gz', date: '2026-02-15', size: '230 MB' }
+  ]);
+}
+
+function renderBackupItems(el, backups) {
+  if (!backups.length) {
+    el.innerHTML = '<p class="t-body-sm t-muted">No backups found.</p>';
+    return;
+  }
+  el.innerHTML = backups.map(b => {
+    const name = b.file || b.backupID || b;
+    const date = b.date || b.timestamp || '';
+    const size = b.size || '';
+    return `<div class="u-flex-between u-p-3 u-mb-2" style="border:1px solid var(--border-subtle);border-radius:var(--radius-md);">
+      <div>
+        <div class="t-body-sm" style="font-weight:var(--weight-medium);">${escapeHtml(String(name))}</div>
+        ${date ? `<div class="t-caption t-muted">${escapeHtml(String(date))}${size ? ' — ' + escapeHtml(String(size)) : ''}</div>` : ''}
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm"><i class="ri-download-2-line" aria-hidden="true"></i></button>
+    </div>`;
+  }).join('');
+}
+
+function createBackup() {
+  showToast('Full backup started. You will receive an email when it completes.');
+}
+
+async function loadRedirects(domain) {
+  const el = document.getElementById('redirectsList');
+  if (!el) return;
+
+  renderRedirectItems(el, [], domain);
+}
+
+function renderRedirectItems(el, redirects, domain) {
+  if (!redirects.length) {
+    el.innerHTML = '<p class="t-body-sm t-muted">No redirects configured.</p>';
+    return;
+  }
+  el.innerHTML = redirects.map(r => {
+    const src = r.sourceurl || r.src || '/';
+    const dest = r.desturl || r.targurl || '';
+    const type = r.statuscode || r.redirect || '301';
+    return `<div class="u-flex-between u-p-3 u-mb-2" style="border:1px solid var(--border-subtle);border-radius:var(--radius-md);">
+      <div class="u-flex-1" style="min-width:0;">
+        <div class="t-body-sm" style="font-weight:var(--weight-medium);">
+          <span class="badge badge-neutral">${escapeHtml(String(type))}</span>
+          <span class="mono" style="margin-inline-start:var(--space-2);">${escapeHtml(String(src))}</span>
+        </div>
+        <div class="t-caption t-muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">→ ${escapeHtml(String(dest))}</div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" style="color:var(--status-error);" onclick="handleDeleteRedirect('${escapeHtml(domain)}','${escapeHtml(String(src))}','${escapeHtml(String(type))}')"><i class="ri-delete-bin-line" aria-hidden="true"></i></button>
+    </div>`;
+  }).join('');
+}
+
+function showAddRedirectForm(domain) {
+  const form = document.getElementById('addRedirectForm');
+  if (form) form.style.display = 'block';
+}
+
+function handleAddRedirect(domain) {
+  const src = document.getElementById('redirectSrc').value.trim() || '/';
+  const dest = document.getElementById('redirectDest').value.trim();
+
+  if (!dest) { showToast('Please enter a destination URL.', 'error'); return; }
+
+  showToast(`Redirect added: ${src} → ${dest}`);
+  document.getElementById('addRedirectForm').style.display = 'none';
+  loadRedirects(domain);
+}
+
+async function handleDeleteRedirect(domain, src, type) {
+  const confirmed = await confirmAction({
+    title: 'Remove Redirect',
+    message: `Remove the redirect for <strong>${escapeHtml(src)}</strong>?`,
+    confirmText: 'Remove',
+    variant: 'warning'
+  });
+  if (!confirmed) return;
+  showToast('Redirect removed');
+  loadRedirects(domain);
+}
+
+// Load installed PHP versions into the settings dropdown
+function loadPhpVersionOptions(currentVersion) {
+  const sel = document.getElementById('phpVersionSelect');
+  if (!sel) return;
+  // Mock mode: show common versions
+  sel.innerHTML = ['8.1', '8.2', '8.3', '8.4'].map(v =>
+    `<option value="${v}" ${v === currentVersion ? 'selected' : ''}>${v}</option>`
+  ).join('');
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// INTERACTIONS
+// ═══════════════════════════════════════════════════════════════
+
+function toggleGroup(parentDomain) {
+  if (expandedGroups.has(parentDomain)) {
+    expandedGroups.delete(parentDomain);
+  } else {
+    expandedGroups.add(parentDomain);
+  }
+  renderDomains();
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ADD / REMOVE DOMAIN
+// ═══════════════════════════════════════════════════════════════
+
+
+async function handleRemoveDomain(domain, type) {
+  const confirmed = await confirmAction({
+    title: 'Remove Domain',
+    message: `Are you sure you want to remove <strong>${escapeHtml(domain)}</strong>? This will delete all associated files, email accounts, and DNS records. This action cannot be undone.`,
+    confirmText: 'Remove Domain',
+    variant: 'danger'
+  });
+  if (!confirmed) return;
+
+  // Mock: remove from in-memory list
+  domains = domains.filter(d => d.domain !== domain);
+
+  if (settingsDomain) closeSettings();
+  renderDomains();
+  showToast(`${domain} removed`);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// SITEJET BUILDER
+// ═══════════════════════════════════════════════════════════════
+
+function launchSitejetBuilder(domain) {
+  const sjState = getSitejetState(domain);
+  const messages = {
+    published: `Sitejet Builder would open the editor for ${domain}`,
+    editing: `Sitejet Builder would open to continue editing ${domain}`,
+    available: `Sitejet Builder would open "Try Sitejet AI" for ${domain}`
+  };
+  showToast(messages[sjState] || messages.available, 'info');
+}
+
+async function handleSitejetRestorePoint(domain) {
+  const confirmed = await confirmAction({
+    title: 'Create Restore Point',
+    message: `This will create a backup restore point for <strong>${escapeHtml(domain)}</strong> before you make changes in Sitejet Builder. You can use this to roll back if needed.`,
+    confirmText: 'Create Restore Point',
+    cancelText: 'Cancel',
+    variant: 'info'
+  });
+  if (!confirmed) return;
+  showToast(`Restore point created for ${domain}`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FILTER & SEARCH
+// ═══════════════════════════════════════════════════════════════
+
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    currentFilter = chip.dataset.filter;
+    renderDomains();
+  });
+});
+
+var domainSearchEl = document.getElementById('domainSearch');
+if (domainSearchEl) domainSearchEl.addEventListener('input', (e) => {
+  searchQuery = e.target.value;
+  renderDomains();
+});
+
+
+// ═══════════════════════════════════════════════════════════════
+// MODAL TRIGGERS
+// ═══════════════════════════════════════════════════════════════
+
+document.getElementById('addDomainBtn').addEventListener('click', function() {
+  modalWizard.open('add-website', {
+    availableDomains: domains.map(function(d) { return d.domain; }).filter(Boolean)
+  });
+});
+
+// Close detail on Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (settingsDomain) closeSettings();
+  }
+});
+
+
+// ═══════════════════════════════════════════════════════════════
+// CONFIRM DIALOG
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Show an in-page confirmation dialog. Returns a Promise that resolves to true (confirmed) or false (cancelled).
+ *
+ * @param {Object} opts
+ * @param {string} opts.title         - Dialog title
+ * @param {string} opts.message       - Description text (supports HTML)
+ * @param {string} [opts.confirmText] - Confirm button label (default "Confirm")
+ * @param {string} [opts.cancelText]  - Cancel button label (default "Cancel")
+ * @param {string} [opts.variant]     - "danger" | "warning" | "info" (default "danger")
+ * @param {string} [opts.icon]        - Remix icon class (auto-selected from variant if omitted)
+ */
+function confirmAction(opts = {}) {
+  return new Promise(resolve => {
+    const variant = opts.variant || 'danger';
+    const iconMap = { danger: 'ri-delete-bin-line', warning: 'ri-alert-line', info: 'ri-information-line' };
+    const icon = opts.icon || iconMap[variant] || iconMap.info;
+    const confirmText = opts.confirmText || 'Confirm';
+    const cancelText = opts.cancelText || 'Cancel';
+    const confirmBtnClass = variant === 'danger' ? 'btn-danger' : 'btn-primary';
+
+    const container = document.getElementById('confirmContainer');
+    container.innerHTML = `
+      <div class="confirm-overlay" id="confirmOverlay">
+        <div class="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMsg">
+          <div class="confirm-icon confirm-icon-${variant}">
+            <i class="${icon}" aria-hidden="true"></i>
+          </div>
+          <div class="confirm-title" id="confirmTitle">${opts.title || 'Are you sure?'}</div>
+          <div class="confirm-message" id="confirmMsg">${opts.message || ''}</div>
+          <div class="confirm-actions">
+            <button type="button" class="btn btn-secondary" id="confirmCancelBtn">${escapeHtml(cancelText)}</button>
+            <button type="button" class="btn ${confirmBtnClass}" id="confirmOkBtn">${escapeHtml(confirmText)}</button>
+          </div>
+        </div>
+      </div>`;
+
+    const overlay = document.getElementById('confirmOverlay');
+    const okBtn = document.getElementById('confirmOkBtn');
+    const cancelBtnEl = document.getElementById('confirmCancelBtn');
+
+    function cleanup(result) {
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+      resolve(result);
+    }
+
+    okBtn.addEventListener('click', () => cleanup(true));
+    cancelBtnEl.addEventListener('click', () => cleanup(false));
+    overlay.addEventListener('click', e => { if (e.target === overlay) cleanup(false); });
+
+    function onKey(e) {
+      if (e.key === 'Escape') cleanup(false);
+      if (e.key === 'Enter' && document.activeElement === okBtn) cleanup(true);
+    }
+    document.addEventListener('keydown', onKey);
+
+    // Focus the cancel button by default (safer for destructive actions)
+    requestAnimationFrame(() => cancelBtnEl.focus());
+  });
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════════
+
+// escapeHtml() provided globally by shell.js
+
+
+// ═══════════════════════════════════════════════════════════════
+// MODERN VIEW — Data List + Hierarchy + Tab Overview
+// ═══════════════════════════════════════════════════════════════
+
+var MOCK_WEBSITES = [
+  {
+    domain: 'example.com',
+    domainType: 'main',
+    appType: 'wordpress',
+    wpVersion: '6.7',
+    status: 'online',
+    docroot: '/home/user/public_html',
+    features: ['wordpress', 'autossl'],
+    ssl: { active: true, type: 'AutoSSL', issuer: "Let's Encrypt", expiry: '2026-05-22', daysLeft: 67, selfSigned: false, validationType: 'dv' },
+    autosslProblem: '',
+    phpVersion: '8.2',
+    phpOutdated: false,
+    httpsRedirect: true,
+    email: { count: 3, accounts: [
+      { address: 'info@example.com', used: '124 MB', status: 'Active' },
+      { address: 'support@example.com', used: '89 MB', status: 'Active' },
+      { address: 'jesse@example.com', used: '312 MB', status: 'Active' }
+    ]},
+    files: { used: '247 MB' },
+    database: { count: 1, engine: 'MySQL', size: '42 MB', name: 'example_wp', users: 1 },
+    dns: { records: 12 },
+    security: { waf: true, threats: 0, hotlink: false, dirPrivacy: true },
+    backup: { lastManual: '2026-03-13', autoEnabled: false },
+    overview: {
+      alerts: [
+        { type: 'info', icon: 'ri-lightbulb-line', title: 'Enable automatic backups', desc: 'Your last manual backup was 3 days ago', action: 'Set up' }
+      ],
+      stats: [
+        { label: 'Disk', value: '247 MB', detail: 'of 10 GB' },
+        { label: 'Email', value: '3', detail: '525 MB used' },
+        { label: 'SSL', value: 'Active', detail: 'Expires in 67d' }
+      ],
+      quickActions: [
+        { icon: 'ri-mail-add-line', label: 'Create Email' },
+        { icon: 'ri-upload-cloud-2-line', label: 'Upload Files' },
+        { icon: 'ri-archive-line', label: 'Create Backup' },
+        { icon: 'ri-earth-line', label: 'Edit DNS' }
+      ]
+    },
+    tabs: [
+      { id: 'overview', label: 'Overview', icon: 'ri-dashboard-line', dot: null },
+      { id: 'email', label: 'Email', icon: 'ri-mail-line', dot: null, count: 3 },
+      { id: 'ssl', label: 'SSL', icon: 'ri-lock-line', dot: null },
+      { id: 'dns', label: 'DNS', icon: 'ri-earth-line', dot: null },
+      { id: 'files', label: 'Files', icon: 'ri-folder-3-line', dot: null },
+      { id: 'security', label: 'Security', icon: 'ri-shield-check-line', dot: null }
+    ],
+    dnsRecords: [
+      { type: 'A', name: 'example.com.', value: '192.0.2.1', ttl: '14400' },
+      { type: 'CNAME', name: 'www', value: 'example.com.', ttl: '14400' },
+      { type: 'MX', name: 'example.com.', value: 'mail.example.com. (10)', ttl: '14400' },
+      { type: 'TXT', name: 'example.com.', value: 'v=spf1 +a +mx ~all', ttl: '14400' }
+    ],
+    filesList: [
+      { name: 'wp-admin/', icon: 'ri-folder-line', size: null },
+      { name: 'wp-content/', icon: 'ri-folder-line', size: null },
+      { name: 'wp-includes/', icon: 'ri-folder-line', size: null },
+      { name: 'index.php', icon: 'ri-file-code-line', size: '418 B' },
+      { name: 'wp-config.php', icon: 'ri-file-code-line', size: '3.2 KB' },
+      { name: '.htaccess', icon: 'ri-file-text-line', size: '627 B' }
+    ],
+    children: [
+      {
+        domain: 'blog.example.com',
+        domainType: 'subdomain',
+        appType: 'wordpress',
+        wpVersion: '6.7',
+        status: 'online',
+        docroot: '/home/user/public_html/blog',
+        features: ['wordpress'],
+        ssl: { active: true, type: 'AutoSSL', issuer: "Let's Encrypt", expiry: '2026-05-22', daysLeft: 67, selfSigned: false, validationType: 'dv' },
+        autosslProblem: '',
+        phpVersion: '8.2',
+        phpOutdated: false,
+        httpsRedirect: true,
+        email: { count: 0, accounts: [] },
+        files: { used: '89 MB' },
+        database: { count: 1, engine: 'MySQL', size: '28 MB', name: 'blog_wp', users: 1 },
+        dns: { records: 4 },
+        security: { waf: true, threats: 0, hotlink: false, dirPrivacy: false },
+        backup: { lastManual: null, autoEnabled: false },
+        overview: {
+          alerts: [],
+          stats: [
+            { label: 'Disk', value: '89 MB', detail: 'of 10 GB' },
+            { label: 'Email', value: '0', detail: 'No accounts' },
+            { label: 'SSL', value: 'Active', detail: 'Expires in 67d' }
+          ],
+          quickActions: [
+            { icon: 'ri-wordpress-line', label: 'Open WordPress' },
+            { icon: 'ri-mail-add-line', label: 'Create Email' },
+            { icon: 'ri-upload-cloud-2-line', label: 'Upload Files' }
+          ]
+        },
+        tabs: [
+          { id: 'overview', label: 'Overview', icon: 'ri-dashboard-line', dot: null },
+          { id: 'email', label: 'Email', icon: 'ri-mail-line', dot: null, count: 0 },
+          { id: 'ssl', label: 'SSL', icon: 'ri-lock-line', dot: null },
+          { id: 'dns', label: 'DNS', icon: 'ri-earth-line', dot: null },
+          { id: 'files', label: 'Files', icon: 'ri-folder-3-line', dot: null },
+          { id: 'security', label: 'Security', icon: 'ri-shield-check-line', dot: null }
+        ],
+        dnsRecords: [
+          { type: 'A', name: 'blog.example.com.', value: '192.0.2.1', ttl: '14400' },
+          { type: 'CNAME', name: 'www', value: 'blog.example.com.', ttl: '14400' }
+        ],
+        filesList: [
+          { name: 'wp-admin/', icon: 'ri-folder-line', size: null },
+          { name: 'wp-content/', icon: 'ri-folder-line', size: null },
+          { name: 'index.php', icon: 'ri-file-code-line', size: '418 B' }
+        ]
+      },
+      {
+        domain: 'api.example.com',
+        domainType: 'subdomain',
+        appType: 'none',
+        status: 'online',
+        docroot: '/home/user/public_html/api',
+        features: ['git'],
+        ssl: { active: true, type: 'AutoSSL', issuer: "Let's Encrypt", expiry: '2026-05-22', daysLeft: 67, selfSigned: false, validationType: 'dv' },
+        autosslProblem: '',
+        phpVersion: '7.4',
+        phpOutdated: true,
+        httpsRedirect: false,
+        email: { count: 0, accounts: [] },
+        files: { used: '12 MB' },
+        database: { count: 0, engine: null, size: null, name: null, users: 0 },
+        dns: { records: 3 },
+        security: { waf: false, threats: 0, hotlink: false, dirPrivacy: false },
+        backup: { lastManual: null, autoEnabled: false },
+        overview: {
+          alerts: [
+            { type: 'warn', icon: 'ri-shield-line', title: 'WAF is disabled', desc: 'Enable the Web Application Firewall for better protection', action: 'Enable WAF' }
+          ],
+          stats: [
+            { label: 'Disk', value: '12 MB', detail: 'of 10 GB' },
+            { label: 'Email', value: '0', detail: 'No accounts' },
+            { label: 'SSL', value: 'Active', detail: 'Expires in 67d' }
+          ],
+          quickActions: [
+            { icon: 'ri-git-branch-line', label: 'Git Pull' },
+            { icon: 'ri-upload-cloud-2-line', label: 'Upload Files' },
+            { icon: 'ri-shield-line', label: 'Enable WAF' }
+          ]
+        },
+        tabs: [
+          { id: 'overview', label: 'Overview', icon: 'ri-dashboard-line', dot: null },
+          { id: 'email', label: 'Email', icon: 'ri-mail-line', dot: null, count: 0 },
+          { id: 'ssl', label: 'SSL', icon: 'ri-lock-line', dot: null },
+          { id: 'dns', label: 'DNS', icon: 'ri-earth-line', dot: null },
+          { id: 'files', label: 'Files', icon: 'ri-folder-3-line', dot: null },
+          { id: 'security', label: 'Security', icon: 'ri-shield-check-line', dot: 'warn' }
+        ],
+        dnsRecords: [
+          { type: 'A', name: 'api.example.com.', value: '192.0.2.1', ttl: '14400' }
+        ],
+        filesList: [
+          { name: 'index.js', icon: 'ri-file-code-line', size: '2.1 KB' },
+          { name: 'package.json', icon: 'ri-file-code-line', size: '480 B' },
+          { name: '.htaccess', icon: 'ri-file-text-line', size: '312 B' }
+        ]
+      },
+      {
+        domain: 'olddomain.com',
+        domainType: 'alias',
+        parentDomain: 'example.com',
+        appType: 'none',
+        status: 'online',
+        docroot: '/home/user/public_html',
+        features: [],
+        ssl: { active: true, type: 'AutoSSL', issuer: "Let's Encrypt", expiry: '2025-12-01', daysLeft: -106, selfSigned: false, validationType: 'dv' },
+        autosslProblem: 'Domain does not resolve to any IPv4 addresses on this server',
+        phpVersion: '8.2',
+        phpOutdated: false,
+        httpsRedirect: false,
+        email: { count: 0, accounts: [] },
+        files: { used: '\u2014' },
+        database: { count: 0, engine: null, size: null, name: null, users: 0 },
+        dns: { records: 2 },
+        security: { waf: false, threats: 0, hotlink: false, dirPrivacy: false },
+        backup: { lastManual: null, autoEnabled: false },
+        overview: {
+          alerts: [
+            { type: 'error', icon: 'ri-shield-check-line', title: 'SSL certificate expired 106 days ago', desc: 'Visitors will see security warnings. Renew immediately.', action: 'Renew SSL' }
+          ],
+          stats: [
+            { label: 'Disk', value: '\u2014', detail: 'Alias' },
+            { label: 'Email', value: '0', detail: 'No accounts' },
+            { label: 'SSL', value: 'Expired', detail: '106 days ago' }
+          ],
+          quickActions: [
+            { icon: 'ri-refresh-line', label: 'Renew SSL' },
+            { icon: 'ri-earth-line', label: 'Edit DNS' }
+          ]
+        },
+        tabs: [
+          { id: 'overview', label: 'Overview', icon: 'ri-dashboard-line', dot: null },
+          { id: 'email', label: 'Email', icon: 'ri-mail-line', dot: null, count: 0 },
+          { id: 'ssl', label: 'SSL', icon: 'ri-lock-line', dot: 'error' },
+          { id: 'dns', label: 'DNS', icon: 'ri-earth-line', dot: null },
+          { id: 'files', label: 'Files', icon: 'ri-folder-3-line', dot: null },
+          { id: 'security', label: 'Security', icon: 'ri-shield-check-line', dot: null }
+        ],
+        dnsRecords: [
+          { type: 'A', name: 'olddomain.com.', value: '192.0.2.1', ttl: '14400' },
+          { type: 'CNAME', name: 'www', value: 'olddomain.com.', ttl: '14400' }
+        ],
+        filesList: []
+      }
+    ]
+  },
+  {
+    domain: 'shop.example.net',
+    domainType: 'addon',
+    appType: 'sitejet',
+    status: 'online',
+    docroot: '/home/user/shop.example.net',
+    features: ['sitejet', 'autossl'],
+    ssl: { active: true, type: 'AutoSSL', issuer: "Let's Encrypt", expiry: '2026-03-23', daysLeft: 7, selfSigned: false, validationType: 'dv' },
+    autosslProblem: '',
+    phpVersion: '8.3',
+    phpOutdated: false,
+    httpsRedirect: true,
+    email: { count: 1, accounts: [
+      { address: 'hello@shop.example.net', used: '45 MB', status: 'Active' }
+    ]},
+    files: { used: '89 MB' },
+    database: { count: 0, engine: null, size: null, name: null, users: 0 },
+    dns: { records: 8 },
+    security: { waf: false, threats: 0, hotlink: false, dirPrivacy: false },
+    backup: { lastManual: null, autoEnabled: false },
+    overview: {
+      alerts: [
+        { type: 'warn', icon: 'ri-error-warning-line', title: 'SSL certificate expires in 7 days', desc: 'Renew now to avoid security warnings', action: 'Renew SSL' }
+      ],
+      stats: [
+        { label: 'Disk', value: '89 MB', detail: 'of 10 GB' },
+        { label: 'Email', value: '1', detail: '45 MB used' },
+        { label: 'SSL', value: '7 days', detail: 'until expiry' }
+      ],
+      quickActions: [
+        { icon: 'ri-refresh-line', label: 'Renew SSL' },
+        { icon: 'ri-mail-add-line', label: 'Create Email' },
+        { icon: 'ri-earth-line', label: 'Edit DNS' }
+      ]
+    },
+    tabs: [
+      { id: 'overview', label: 'Overview', icon: 'ri-dashboard-line', dot: null },
+      { id: 'email', label: 'Email', icon: 'ri-mail-line', dot: null, count: 1 },
+      { id: 'ssl', label: 'SSL', icon: 'ri-lock-line', dot: 'warn' },
+      { id: 'dns', label: 'DNS', icon: 'ri-earth-line', dot: null },
+      { id: 'files', label: 'Files', icon: 'ri-folder-3-line', dot: null },
+      { id: 'security', label: 'Security', icon: 'ri-shield-check-line', dot: null }
+    ],
+    dnsRecords: [
+      { type: 'A', name: 'shop.example.net.', value: '192.0.2.5', ttl: '14400' },
+      { type: 'CNAME', name: 'www', value: 'shop.example.net.', ttl: '14400' },
+      { type: 'MX', name: 'shop.example.net.', value: 'mail.shop.example.net. (10)', ttl: '14400' }
+    ],
+    filesList: [
+      { name: 'index.html', icon: 'ri-file-code-line', size: '8.4 KB' },
+      { name: 'assets/', icon: 'ri-folder-line', size: null },
+      { name: 'styles/', icon: 'ri-folder-line', size: null },
+      { name: '.htaccess', icon: 'ri-file-text-line', size: '412 B' }
+    ],
+    children: [
+      {
+        domain: 'dev.shop.example.net',
+        domainType: 'subdomain',
+        appType: 'none',
+        status: 'inactive',
+        docroot: '/home/user/shop.example.net/dev',
+        features: [],
+        ssl: { active: false, type: null, issuer: null, expiry: null, daysLeft: null, selfSigned: false, validationType: '' },
+        autosslProblem: '',
+        phpVersion: '8.3',
+        phpOutdated: false,
+        httpsRedirect: false,
+        email: { count: 0, accounts: [] },
+        files: { used: '0 MB' },
+        database: { count: 0, engine: null, size: null, name: null, users: 0 },
+        dns: { records: 2 },
+        security: { waf: false, threats: 0, hotlink: false, dirPrivacy: false },
+        backup: { lastManual: null, autoEnabled: false },
+        overview: {
+          alerts: [
+            { type: 'info', icon: 'ri-rocket-line', title: 'Get started with dev.shop.example.net', desc: 'Install WordPress, use Sitejet, or upload your own files', action: 'Set Up' },
+            { type: 'warn', icon: 'ri-lock-line', title: 'No SSL certificate', desc: 'Visitors will see a security warning', action: 'Enable SSL' }
+          ],
+          stats: [
+            { label: 'Disk', value: '0 MB', detail: 'Empty' },
+            { label: 'Email', value: '0', detail: 'No accounts' },
+            { label: 'SSL', value: 'None', detail: 'Not configured' }
+          ],
+          quickActions: [
+            { icon: 'ri-wordpress-line', label: 'Install WordPress' },
+            { icon: 'ri-palette-line', label: 'Use Sitejet' },
+            { icon: 'ri-upload-cloud-2-line', label: 'Upload Files' }
+          ]
+        },
+        tabs: [
+          { id: 'overview', label: 'Overview', icon: 'ri-dashboard-line', dot: 'info' },
+          { id: 'email', label: 'Email', icon: 'ri-mail-line', dot: null, count: 0 },
+          { id: 'ssl', label: 'SSL', icon: 'ri-lock-line', dot: 'warn' },
+          { id: 'dns', label: 'DNS', icon: 'ri-earth-line', dot: null },
+          { id: 'files', label: 'Files', icon: 'ri-folder-3-line', dot: null },
+          { id: 'security', label: 'Security', icon: 'ri-shield-check-line', dot: 'warn' }
+        ],
+        dnsRecords: [
+          { type: 'A', name: 'dev.shop.example.net.', value: '192.0.2.5', ttl: '14400' }
+        ],
+        filesList: []
+      }
+    ]
+  },
+  {
+    domain: 'clientsite.org',
+    domainType: 'addon',
+    appType: 'wordpress',
+    wpVersion: '6.7',
+    status: 'online',
+    docroot: '/home/user/clientsite.org',
+    features: ['wordpress', 'git', 'autossl'],
+    ssl: { active: true, type: 'Sectigo', issuer: 'Sectigo', expiry: '2027-01-10', daysLeft: 300, selfSigned: false, validationType: 'ov' },
+    autosslProblem: '',
+    phpVersion: '8.3',
+    phpOutdated: false,
+    httpsRedirect: true,
+    email: { count: 2, accounts: [
+      { address: 'info@clientsite.org', used: '234 MB', status: 'Active' },
+      { address: 'admin@clientsite.org', used: '67 MB', status: 'Active' }
+    ]},
+    files: { used: '1.2 GB' },
+    database: { count: 2, engine: 'MySQL', size: '156 MB', name: 'client_wp', users: 2 },
+    dns: { records: 15 },
+    security: { waf: true, threats: 0, hotlink: true, dirPrivacy: true },
+    backup: { lastManual: '2026-03-15', autoEnabled: true },
+    overview: {
+      alerts: [],
+      stats: [
+        { label: 'Disk', value: '1.2 GB', detail: 'of 10 GB' },
+        { label: 'Email', value: '2', detail: '301 MB used' },
+        { label: 'SSL', value: 'Active', detail: 'Sectigo \u00b7 300d' }
+      ],
+      quickActions: [
+        { icon: 'ri-wordpress-line', label: 'Open WordPress' },
+        { icon: 'ri-mail-add-line', label: 'Create Email' },
+        { icon: 'ri-git-branch-line', label: 'Git Pull' }
+      ]
+    },
+    tabs: [
+      { id: 'overview', label: 'Overview', icon: 'ri-dashboard-line', dot: null },
+      { id: 'email', label: 'Email', icon: 'ri-mail-line', dot: null, count: 2 },
+      { id: 'ssl', label: 'SSL', icon: 'ri-lock-line', dot: null },
+      { id: 'dns', label: 'DNS', icon: 'ri-earth-line', dot: null },
+      { id: 'files', label: 'Files', icon: 'ri-folder-3-line', dot: null },
+      { id: 'security', label: 'Security', icon: 'ri-shield-check-line', dot: null }
+    ],
+    dnsRecords: [
+      { type: 'A', name: 'clientsite.org.', value: '192.0.2.1', ttl: '14400' },
+      { type: 'CNAME', name: 'www', value: 'clientsite.org.', ttl: '14400' },
+      { type: 'MX', name: 'clientsite.org.', value: 'mail.clientsite.org. (10)', ttl: '14400' },
+      { type: 'TXT', name: 'clientsite.org.', value: 'v=spf1 +a +mx ~all', ttl: '14400' }
+    ],
+    filesList: [
+      { name: 'wp-admin/', icon: 'ri-folder-line', size: null },
+      { name: 'wp-content/', icon: 'ri-folder-line', size: null },
+      { name: 'wp-includes/', icon: 'ri-folder-line', size: null },
+      { name: 'index.php', icon: 'ri-file-code-line', size: '418 B' },
+      { name: 'wp-config.php', icon: 'ri-file-code-line', size: '4.1 KB' },
+      { name: '.htaccess', icon: 'ri-file-text-line', size: '842 B' }
+    ],
+    children: []
+  }
+];
+
+/* ═══════ Modern View State ═══════ */
+var modernCurrentSite = null;
+var modernCurrentTab = 'overview';
+var modernExpandedGroups = {};
+var modernAllExpanded = false;
+var modernUserToggled = false;
+
+function modernToggleAllGroups() {
+  modernUserToggled = true;
+  modernAllExpanded = !modernAllExpanded;
+  for (var i = 0; i < MOCK_WEBSITES.length; i++) {
+    if (MOCK_WEBSITES[i].children && MOCK_WEBSITES[i].children.length > 0) {
+      modernExpandedGroups[MOCK_WEBSITES[i].domain] = modernAllExpanded;
+    }
+  }
+  var btn = document.getElementById('toggleAllGroups');
+  if (btn) {
+    var span = btn.querySelector('span');
+    var icon = btn.querySelector('i');
+    if (span) span.textContent = modernAllExpanded ? 'Minimize All' : 'Expand All';
+    if (icon) icon.className = modernAllExpanded ? 'ri-contract-up-down-line' : 'ri-expand-up-down-line';
+  }
+  var s = document.getElementById('modernSearch');
+  modernRenderList(s ? s.value : '');
+}
+
+/* ── Modern View Sorting ── */
+var modernSortField = 'domain';
+var modernSortDir = 'asc';
+
+function modernToggleSort(field) {
+  if (modernSortField === field) {
+    modernSortDir = modernSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    modernSortField = field;
+    modernSortDir = 'asc';
+  }
+  modernRenderList(document.getElementById('modernSearch') ? document.getElementById('modernSearch').value : '');
+}
+
+function modernSortIcon(field) {
+  if (modernSortField !== field) return '<i class="ri-arrow-up-down-line sort-icon" aria-hidden="true"></i>';
+  var icon = modernSortDir === 'asc' ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line';
+  return '<i class="' + icon + ' sort-icon active" aria-hidden="true"></i>';
+}
+
+function modernSortSites(sites) {
+  return sites.slice().sort(function(a, b) {
+    // Main domain always first
+    if (a.domainType === 'main' && b.domainType !== 'main') return -1;
+    if (b.domainType === 'main' && a.domainType !== 'main') return 1;
+
+    var va, vb;
+    if (modernSortField === 'domain') { va = a.domain; vb = b.domain; }
+    else if (modernSortField === 'ssl') {
+      va = a.ssl.daysLeft !== null ? a.ssl.daysLeft : -9999;
+      vb = b.ssl.daysLeft !== null ? b.ssl.daysLeft : -9999;
+    }
+    else if (modernSortField === 'status') {
+      va = modernGetAlerts(a).length; vb = modernGetAlerts(b).length;
+    }
+    else { va = a.domain; vb = b.domain; }
+    if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+    if (va < vb) return modernSortDir === 'asc' ? -1 : 1;
+    if (va > vb) return modernSortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+}
+
+/* ── Modern View Helpers ── */
+
+function modernGetSiteByDomain(domain) {
+  for (var i = 0; i < MOCK_WEBSITES.length; i++) {
+    if (MOCK_WEBSITES[i].domain === domain) return MOCK_WEBSITES[i];
+    var children = MOCK_WEBSITES[i].children || [];
+    for (var j = 0; j < children.length; j++) {
+      if (children[j].domain === domain) return children[j];
+    }
+  }
+  return null;
+}
+
+function modernGetAllDomains() {
+  var all = [];
+  for (var i = 0; i < MOCK_WEBSITES.length; i++) {
+    all.push(MOCK_WEBSITES[i]);
+    var children = MOCK_WEBSITES[i].children || [];
+    for (var j = 0; j < children.length; j++) {
+      all.push(children[j]);
+    }
+  }
+  return all;
+}
+
+function modernGetDomainTypeLabel(dt) {
+  var labels = { main: 'Main Domain', addon: 'Addon Domain', subdomain: 'Subdomain', alias: 'Alias' };
+  return labels[dt] || dt;
+}
+
+function modernGetDomainIcon(dt) {
+  var icons = { main: 'ri-global-line', addon: 'ri-add-circle-line', subdomain: 'ri-git-branch-line', alias: 'ri-links-line' };
+  return icons[dt] || 'ri-earth-line';
+}
+
+function modernGetAppTypeLabel(appType) {
+  var labels = { wordpress: 'WordPress', sitejet: 'Sitejet', static: 'Static', custom: 'Custom Code', none: 'No Content' };
+  return labels[appType] || appType;
+}
+
+function modernGetAlerts(site) {
+  var alerts = [];
+
+  // SSL: expired (critical)
+  if (site.ssl.daysLeft !== null && site.ssl.daysLeft <= 0)
+    alerts.push({ text: 'SSL expired', desc: 'Visitors see a security warning. Renew immediately.', cls: 'status-error', severity: 'error', icon: 'ri-lock-unlock-line', tab: 'ssl' });
+
+  // SSL: expiring within 30 days (warning — matches Jupiter's threshold)
+  else if (site.ssl.daysLeft !== null && site.ssl.daysLeft > 0 && site.ssl.daysLeft <= 30)
+    alerts.push({ text: 'SSL expires in ' + site.ssl.daysLeft + 'd', desc: 'Certificate will expire soon. AutoSSL should renew it automatically.', cls: 'status-warn', severity: 'warn', icon: 'ri-lock-line', tab: 'ssl' });
+
+  // SSL: self-signed certificate (warning)
+  if (site.ssl.selfSigned)
+    alerts.push({ text: 'Self-signed SSL', desc: 'Browsers will show a warning. Use a trusted certificate instead.', cls: 'status-warn', severity: 'warn', icon: 'ri-error-warning-line', tab: 'ssl' });
+
+  // SSL: no certificate at all (warning)
+  if (!site.ssl.active && site.ssl.daysLeft === null)
+    alerts.push({ text: 'No SSL', desc: 'No certificate installed. Run AutoSSL or install one manually.', cls: 'status-warn', severity: 'warn', icon: 'ri-lock-unlock-line', tab: 'ssl' });
+
+  // AutoSSL problem (warning)
+  if (site.autosslProblem)
+    alerts.push({ text: 'AutoSSL issue', desc: esc(site.autosslProblem), cls: 'status-warn', severity: 'warn', icon: 'ri-refresh-line', tab: 'ssl' });
+
+  // PHP outdated (warning)
+  if (site.phpOutdated && site.phpVersion)
+    alerts.push({ text: 'PHP ' + site.phpVersion + ' outdated', desc: 'This version is no longer supported. Update to a newer version.', cls: 'status-warn', severity: 'warn', icon: 'ri-code-s-slash-line', tab: 'settings' });
+
+  // No HTTPS redirect when SSL is active (info)
+  if (site.ssl.active && !site.httpsRedirect)
+    alerts.push({ text: 'HTTPS redirect off', desc: 'HTTP traffic is not redirected to HTTPS.', cls: 'status-muted', severity: 'muted', icon: 'ri-arrow-right-line', tab: 'settings' });
+
+  return alerts;
+}
+
+// Alert data stored in JS — no serialization into HTML attributes
+var _alertsByDomain = {};
+
+function modernRenderSummaryCell(site) {
+  var alerts = modernGetAlerts(site);
+  if (alerts.length === 0) return '<span class="status-ok" title="No issues detected"><i class="ri-checkbox-circle-line" aria-hidden="true"></i> Healthy</span>';
+
+  // Store alert data in JS, keyed by domain
+  _alertsByDomain[site.domain] = alerts.map(function(al) {
+    return { text: al.text, icon: al.icon, severity: al.severity };
+  });
+
+  var a = alerts[0];
+  var html = '<div class="status-cell">';
+  html += '<span class="' + a.cls + '">';
+  if (a.icon) html += '<i class="' + a.icon + '" aria-hidden="true" style="margin-right:2px;"></i> ';
+  html += esc(a.text) + '</span>';
+  if (alerts.length > 1) {
+    html += '<span class="alert-more">+' + (alerts.length - 1) + '</span>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function modernGetSSLBadge(site) {
+  var ssl = site.ssl;
+  if (!ssl.active) return '<div class="ssl-badge"><span class="ssl-dot none"></span> None</div>';
+  if (ssl.daysLeft <= 0) return '<div class="ssl-badge"><span class="ssl-dot expired"></span> Expired</div>';
+  if (ssl.daysLeft <= 30) return '<div class="ssl-badge"><span class="ssl-dot expiring"></span> ' + esc(String(ssl.daysLeft)) + 'd</div>';
+  return '<div class="ssl-badge"><span class="ssl-dot valid"></span> Valid</div>';
+}
+
+function modernRenderFeatureTags(features) {
+  if (!features || features.length === 0) return '';
+  var html = '<div class="feature-tags">';
+  for (var i = 0; i < features.length; i++) {
+    var f = features[i];
+    if (f === 'wordpress') {
+      html += '<span class="feature-tag feature-tag-wp"><i class="ri-wordpress-line" aria-hidden="true"></i> WP</span>';
+    } else if (f === 'sitejet') {
+      html += '<span class="feature-tag feature-tag-sitejet"><i class="ri-palette-line" aria-hidden="true"></i> Sitejet</span>';
+    } else if (f === 'git') {
+      html += '<span class="feature-tag feature-tag-git"><i class="ri-git-branch-line" aria-hidden="true"></i> Git</span>';
+    } else if (f === 'autossl') {
+      html += '<span class="feature-tag feature-tag-autossl"><i class="ri-lock-line" aria-hidden="true"></i> SSL</span>';
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+function modernGetCTA(site) {
+  if (site.appType === 'wordpress') return { label: 'Manage WordPress', icon: 'ri-wordpress-line' };
+  if (site.appType === 'sitejet') return { label: 'Open Sitejet', icon: 'ri-palette-line' };
+  if (site.appType === 'static' || site.appType === 'custom') return { label: 'Manage Files', icon: 'ri-folder-open-line' };
+  // appType is 'none' or null/undefined — no app installed
+  return { label: 'Add Website', icon: 'ri-add-circle-line' };
+}
+
+
+/* ═══════ Modern View: Render Website List ═══════ */
+
+function modernRenderList(filter) {
+  var list = document.getElementById('websiteList');
+  var allDomains = modernGetAllDomains();
+  var totalCount = allDomains.length;
+
+  // Filter
+  var filteredParents = MOCK_WEBSITES;
+  if (filter) {
+    var q = filter.toLowerCase();
+    filteredParents = [];
+    for (var i = 0; i < MOCK_WEBSITES.length; i++) {
+      var p = MOCK_WEBSITES[i];
+      var parentMatch = p.domain.toLowerCase().indexOf(q) !== -1;
+      var childMatches = [];
+      var children = p.children || [];
+      for (var j = 0; j < children.length; j++) {
+        if (children[j].domain.toLowerCase().indexOf(q) !== -1) childMatches.push(children[j]);
+      }
+      if (parentMatch || childMatches.length > 0) {
+        var clone = Object.assign({}, p);
+        clone.children = parentMatch ? (p.children || []) : childMatches;
+        filteredParents.push(clone);
+        if (childMatches.length > 0 && !parentMatch) modernExpandedGroups[p.domain] = true;
+      }
+    }
+  }
+
+  // Sort
+  filteredParents = modernSortSites(filteredParents);
+
+  // Count all shown
+  var shownCount = 0;
+  for (var i = 0; i < filteredParents.length; i++) {
+    shownCount += 1 + (filteredParents[i].children || []).length;
+  }
+
+  var html = '<div class="data-list-head" role="row">'
+    + '<div class="sortable" onclick="modernToggleSort(\'domain\')" role="columnheader" tabindex="0">Website ' + modernSortIcon('domain') + '</div>'
+    + '<div role="columnheader">Features</div>'
+    + '<div class="sortable" onclick="modernToggleSort(\'ssl\')" role="columnheader" tabindex="0">SSL ' + modernSortIcon('ssl') + '</div>'
+    + '<div class="sortable" onclick="modernToggleSort(\'status\')" role="columnheader" tabindex="0">Status ' + modernSortIcon('status') + '</div>'
+    + '<div role="columnheader"></div>'
+    + '</div>';
+
+  // Count total domains to pick display mode
+  var totalDomains = 0;
+  for (var i = 0; i < filteredParents.length; i++) {
+    totalDomains += 1 + (filteredParents[i].children || []).length;
+  }
+  var useTreeMode = !modernUserToggled && totalDomains <= 10;
+
+  for (var i = 0; i < filteredParents.length; i++) {
+    var s = filteredParents[i];
+    var children = s.children || [];
+    var hasChildren = children.length > 0;
+
+    html += modernRenderDomainRow(s, hasChildren, useTreeMode, false);
+
+    if (hasChildren) {
+      if (useTreeMode) {
+        html += '<div class="tree-children" role="rowgroup">';
+        for (var j = 0; j < children.length; j++) {
+          html += modernRenderDomainRow(children[j], false, true, true);
+        }
+        html += '</div>';
+      } else {
+        var isExpanded = !!modernExpandedGroups[s.domain];
+        html += '<div class="group-children' + (isExpanded ? ' open' : '') + '" data-parent="' + esc(s.domain) + '" role="rowgroup">';
+        for (var j = 0; j < children.length; j++) {
+          html += modernRenderDomainRow(children[j], false, false, true);
+        }
+        html += '</div>';
+      }
+    }
+  }
+  list.innerHTML = html;
+
+  modernBindListEvents(list);
+}
+
+function modernRenderDomainRow(site, hasChildren, isTreeMode, isChild) {
+  var dt = site.domainType;
+  var children = site.children || [];
+
+  var rowClass = 'data-list-row';
+  if (isChild && isTreeMode) rowClass += ' tree-row';
+  else if (isChild) rowClass += ' child-row';
+  var html = '<div class="' + rowClass + '" data-domain="' + esc(site.domain) + '" tabindex="0" role="row">';
+
+  // Cell 1: Website
+  html += '<div class="cell-name" role="cell">';
+  html += '<span class="domain-icon icon-' + esc(dt) + '"><i class="' + esc(modernGetDomainIcon(dt)) + '" aria-hidden="true"></i></span>';
+  html += '<span class="u-flex-col" style="min-width:0;">';
+  html += '<span class="domain-name-text">' + esc(site.domain) + '</span>';
+  html += '<span class="domain-type-label">' + esc(modernGetDomainTypeLabel(dt));
+  if (hasChildren && children.length > 0 && !isTreeMode) {
+    html += ' <span class="badge-toggle" data-toggle="' + esc(site.domain) + '">' + children.length + ' <i class="ri-arrow-down-s-line" aria-hidden="true"></i></span>';
+  }
+  html += '</span></span>';
+  html += '</div>';
+
+  // Cell 2: Features
+  html += '<div class="cell" role="cell">' + modernRenderFeatureTags(site.features) + '</div>';
+
+  // Cell 3: SSL
+  html += '<div class="cell" role="cell">' + modernGetSSLBadge(site) + '</div>';
+
+  // Cell 4: Status
+  html += '<div class="cell" role="cell">' + modernRenderSummaryCell(site) + '</div>';
+
+  // Cell 5: Chevron
+  html += '<div class="cell-action" role="cell"><i class="ri-arrow-right-s-line" aria-hidden="true"></i></div>';
+
+  html += '</div>';
+  return html;
+}
+
+/* ── Status tooltip — stores data in JS, uses event delegation ── */
+var StatusTooltip = (function() {
+  var el = null;
+  var timer = null;
+
+  function ensure() {
+    if (el) return;
+    el = document.createElement('div');
+    el.className = 'status-tooltip-popup';
+    document.body.appendChild(el);
+    el.addEventListener('mouseenter', function() { clearTimeout(timer); });
+    el.addEventListener('mouseleave', function() { hide(); });
+  }
+
+  function show(cell) {
+    // Walk up to the row to get the domain key
+    var row = cell.closest('[data-domain]');
+    if (!row) return;
+    var alerts = _alertsByDomain[row.dataset.domain];
+    if (!alerts || !alerts.length) return;
+
+    clearTimeout(timer);
+    ensure();
+
+    el.innerHTML = alerts.map(function(al) {
+      return '<div class="status-tooltip-item">'
+        + '<div class="status-tooltip-icon ' + (al.severity || 'warn') + '"><i class="' + al.icon + '" aria-hidden="true"></i></div>'
+        + '<div class="status-tooltip-text">' + esc(al.text) + '</div>'
+        + '</div>';
+    }).join('');
+
+    el.style.display = 'block';
+
+    // Position: prefer below cell, flip above if not enough room
+    var rect = cell.getBoundingClientRect();
+    var tipH = el.offsetHeight;
+    var tipW = el.offsetWidth;
+    var left = rect.right - tipW;
+    if (left < 8) left = 8;
+    var top = rect.bottom + 6;
+    if (top + tipH > window.innerHeight - 8) {
+      top = rect.top - tipH - 6;
+    }
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+  }
+
+  function hide() {
+    clearTimeout(timer);
+    timer = setTimeout(function() { if (el) el.style.display = 'none'; }, 120);
+  }
+
+  return { show: show, hide: hide };
+})();
+
+function modernBindListEvents(list) {
+  var rows = list.querySelectorAll('.data-list-row');
+  for (var j = 0; j < rows.length; j++) {
+    rows[j].addEventListener('click', function(e) {
+      if (e.target.closest('.status-cell')) return; // let tooltip hover work without navigating
+      var toggle = e.target.closest('.badge-toggle');
+      if (toggle) {
+        e.stopPropagation();
+        var parentDomain = toggle.getAttribute('data-toggle');
+        modernExpandedGroups[parentDomain] = !modernExpandedGroups[parentDomain];
+        toggle.classList.toggle('open');
+        var container = list.querySelector('.group-children[data-parent="' + parentDomain + '"]');
+        if (container) container.classList.toggle('open');
+        return;
+      }
+      openSettings(this.getAttribute('data-domain'));
+    });
+    rows[j].addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+    });
+  }
+
+  // Tooltip hover — delegated to status cells
+  var cells = list.querySelectorAll('.status-cell');
+  for (var k = 0; k < cells.length; k++) {
+    cells[k].addEventListener('mouseenter', function() { StatusTooltip.show(this); });
+    cells[k].addEventListener('mouseleave', function() { StatusTooltip.hide(); });
+  }
+}
+
+
+// ── Search wiring ──
+var modernSearchEl = document.getElementById('modernSearch');
+if (modernSearchEl) {
+  modernSearchEl.addEventListener('input', function() {
+    modernRenderList(this.value);
+  });
+}
+
+// ── Boot ──
+initMockData();
+modernRenderList('');
+
+window.addEventListener('wizard-complete', function() {
+  if (typeof showToast === 'function') showToast('Website created!', 'success');
+});
+
+// Set initial toggle label — if tree mode (≤10), items start expanded
+(function() {
+  var allDomains = modernGetAllDomains();
+  if (allDomains.length <= 10) {
+    modernAllExpanded = true;
+    // Pre-populate expanded state so first toggle click works correctly
+    var sites = MOCK_WEBSITES;
+    for (var i = 0; i < sites.length; i++) {
+      if (sites[i].children && sites[i].children.length > 0) {
+        modernExpandedGroups[sites[i].domain] = true;
+      }
+    }
+    var btn = document.getElementById('toggleAllGroups');
+    if (btn) {
+      var span = btn.querySelector('span');
+      var icon = btn.querySelector('i');
+      if (span) span.textContent = 'Minimize All';
+      if (icon) icon.className = 'ri-contract-up-down-line';
+    }
+  }
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,28 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ============================================================
+// MERIDIAN DESIGN TOKENS
+// Core token layer — consumed by Angular components, Stencil
+// web components, and legacy Template Toolkit pages.
+//
+// Usage in Angular:
+//   @use "@cpanel/meridian-styles/tokens" as *;
+//
+// Usage in Stencil:
+//   @import "@cpanel/meridian-styles/scss/tokens";
+//
+// All tokens are CSS custom properties so they work at runtime
+// across shadow DOM boundaries and theme switches.
+// ============================================================
+
+@forward "tokens/typography";
+@forward "tokens/spacing";
+@forward "tokens/radius";
+@forward "tokens/motion";
+@forward "tokens/z-index";
+@forward "tokens/layout";
+@forward "tokens/palette";
+@forward "tokens/themes";

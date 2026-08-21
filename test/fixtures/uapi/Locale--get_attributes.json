@@ -1,0 +1,13 @@
+{
+  "apiversion": 3,
+  "module": "Locale",
+  "func": "get_attributes",
+  "result": {
+    "status": 1,
+    "data": {"locale": "en", "direction": "ltr", "encoding": "utf-8"},
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

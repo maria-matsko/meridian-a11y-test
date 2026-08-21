@@ -1,0 +1,121 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ─────────────────────────────────────────────────────────────
+// Module Card — Tier 2 navigation cards for website sub-modules
+// (SSL, Email, Files, Databases, DNS, Security).
+// ─────────────────────────────────────────────────────────────
+
+.modules-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.module-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              background var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+}
+.module-card:hover {
+  border-color: var(--border-default);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-sm);
+}
+.module-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+.module-icon.icon-ssl      { background: rgba(45,212,191,0.08); color: var(--status-success); }
+.module-icon.icon-email    { background: rgba(56,189,248,0.08); color: var(--status-info); }
+.module-icon.icon-files    { background: var(--accent-subtle); color: var(--accent); }
+.module-icon.icon-database { background: var(--feature-bg); color: var(--feature-color); }
+.module-icon.icon-dns      { background: rgba(251,191,36,0.08); color: var(--status-warning); }
+.module-icon.icon-security { background: rgba(45,212,191,0.08); color: var(--status-success); }
+
+/* Dark mode: boost module icon backgrounds */
+[data-theme="dark"] .module-icon.icon-ssl      { background: rgba(45,212,191,0.18); }
+[data-theme="dark"] .module-icon.icon-email    { background: rgba(56,189,248,0.18); }
+[data-theme="dark"] .module-icon.icon-files    { background: rgba(249,115,22,0.18); }
+[data-theme="dark"] .module-icon.icon-database { background: rgba(139,92,246,0.20); }
+[data-theme="dark"] .module-icon.icon-dns      { background: rgba(251,191,36,0.18); }
+[data-theme="dark"] .module-icon.icon-security { background: rgba(45,212,191,0.18); }
+
+.module-info { flex: 1; min-width: 0; }
+.module-label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+.module-status {
+  font-size: var(--text-xs);
+  margin-top: 2px;
+}
+.module-status.status-ok      { color: var(--status-success); }
+.module-status.status-neutral { color: var(--text-secondary); }
+.module-status.status-warn    { color: var(--status-warning); }
+.module-status.status-error   { color: var(--status-error); }
+
+.module-chevron {
+  color: var(--text-disabled);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* Overview Hero (Tier 2) */
+.overview-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+.overview-info { flex: 1; }
+.overview-title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+}
+.overview-meta {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  margin-top: 2px;
+}
+.overview-actions { display: flex; gap: var(--space-2); }
+
+/* Module Detail Header (Tier 3) */
+.module-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+.module-header-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+}
+.module-header-info { flex: 1; }
+.module-header-title { font-size: var(--text-lg); font-weight: var(--weight-bold); }
+.module-header-meta  { color: var(--text-secondary); font-size: var(--text-sm); margin-top: 2px; }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .modules-grid { grid-template-columns: 1fr; }
+}

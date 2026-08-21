@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cPanel — Dashboard</title>
+  <script>
+    // Instant onboarding redirect — before body paints
+    (function(){
+      var u = (window.CPANEL && window.CPANEL.user) || '';
+      var k = u ? 'meridian-onboarding-complete:' + u : 'meridian-onboarding-complete';
+      var r = u ? 'meridian-onboarding-redirected:' + u : 'meridian-onboarding-redirected';
+      if (!localStorage.getItem(k) && !sessionStorage.getItem(r)) {
+        document.documentElement.style.visibility = 'hidden';
+        sessionStorage.setItem(r, '1');
+        window.location.replace('onboarding.html');
+      }
+    })();
+  </script>
+  <meta name="description" content="Meridian Design System — cPanel Dashboard Prototype">
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="stylesheet" href="meridian.css">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   PAGE-SPECIFIC: Dashboard
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Dashboard greeting */
+.dashboard-greeting { font-size: var(--text-xl); font-weight: var(--weight-bold); margin-bottom: var(--space-1); }
+.dashboard-greeting-sub { color: var(--text-secondary); font-size: var(--text-sm); }
+
+/* Health card (dashboard-specific) */
+.health-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-5) var(--space-6); margin-top: var(--space-6); }
+.health-title { font-size: var(--text-sm); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-wide); text-transform: uppercase; color: var(--text-tertiary); margin-bottom: var(--space-4); }
+.health-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-4); }
+.health-item { display: flex; align-items: center; gap: var(--space-3); }
+.health-item-icon { width: 36px; height: 36px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+.health-item-text { display: flex; flex-direction: column; }
+.health-item-label { font-size: var(--text-xs); color: var(--text-tertiary); }
+.health-item-value { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-primary); }
+
+/* Quick Actions grid */
+.quick-actions { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--space-3); margin-top: var(--space-6); }
+.quick-action {
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-2);
+  padding: var(--space-5) var(--space-4); background: var(--bg-surface);
+  border: 1px solid var(--border-subtle); border-radius: var(--radius-lg);
+  text-decoration: none; color: var(--text-primary); font-size: var(--text-sm);
+  font-weight: var(--weight-medium); cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+}
+.quick-action:hover { border-color: var(--border-default); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.quick-action i { font-size: 1.4rem; color: var(--text-brand); }
+
+/* Activity Timeline */
+.activity-section { margin-top: var(--space-6); }
+.activity-title { font-size: var(--text-sm); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-wide); text-transform: uppercase; color: var(--text-tertiary); margin-bottom: var(--space-4); }
+.activity-list { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; }
+.activity-item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-5); border-bottom: 1px solid var(--border-subtle); transition: background var(--duration-fast) var(--ease-out); }
+.activity-item:last-child { border-bottom: none; }
+.activity-item:hover { background: var(--bg-hover); }
+.activity-icon { width: 32px; height: 32px; border-radius: var(--radius-md); background: var(--bg-muted); display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--text-secondary); flex-shrink: 0; }
+.activity-text { flex: 1; }
+.activity-action { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--text-primary); }
+.activity-detail { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: 1px; }
+.activity-time { font-size: var(--text-xs); color: var(--text-tertiary); flex-shrink: 0; }
+
+/* Demo toggle */
+.demo-toggle { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); background: var(--bg-muted); border: 1px solid var(--border-subtle); border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--text-secondary); cursor: pointer; transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out); }
+.demo-toggle:hover { background: var(--bg-hover); border-color: var(--border-default); color: var(--text-primary); }
+.demo-toggle i { font-size: 0.9rem; }
+
+/* Metric bar color variants */
+.metric-bar-fill.good { background: var(--status-success); }
+.metric-bar-fill.moderate { background: var(--accent); }
+.metric-bar-fill.high { background: var(--status-warning); }
+.metric-bar-fill.critical { background: var(--status-error); }
+
+/* Responsive: Tablet */
+@media (max-width: 768px) {
+  .quick-actions { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--space-2); }
+  .quick-action { padding: var(--space-4) var(--space-3); }
+  .health-card { padding: var(--space-4); }
+  .health-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .activity-item { padding: var(--space-3) var(--space-4); }
+}
+
+/* Responsive: Phone */
+@media (max-width: 480px) {
+  .quick-actions { grid-template-columns: repeat(2, 1fr); }
+  .quick-action { padding: var(--space-3); font-size: var(--text-xs); }
+  .quick-action i { font-size: 1.2rem; }
+  .health-grid { grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+  .activity-time { display: none; }
+  .demo-toggle span { display: none; }
+}
+
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="sr-only">Skip to main content</a>
+
+<div class="layout-shell" id="layoutShell">
+
+  <meridian-header notification-badge></meridian-header>
+  <meridian-sidebar active="dashboard"></meridian-sidebar>
+
+  <!-- ════════════════════════════════════════════════════════
+       MAIN CONTENT
+       ════════════════════════════════════════════════════════ -->
+  <main class="layout-main" id="main-content">
+    <div class="main-content">
+
+      <!-- Page Header -->
+      <div class="page-header animate-in stagger-1">
+        <div class="page-header-left">
+          <h1 class="page-title" id="greetingTitle">Dashboard</h1>
+          <p class="page-subtitle" id="greetingSub">Here's your account overview</p>
+        </div>
+        <div class="page-header-right">
+          <div class="view-toggle" id="viewToggle">
+            <button class="view-toggle-btn active" data-view="modern">Modern</button>
+            <button class="view-toggle-btn" data-view="classic">Classic</button>
+          </div>
+          <button type="button" class="demo-toggle" id="onboardingLink" onclick="restartDashboardOnboarding()">
+            <i class="ri-rocket-line" aria-hidden="true"></i> Run Setup Again
+          </button>
+          <button type="button" class="demo-toggle" id="checklistRestoreBtn" onclick="restoreChecklist()" style="display: none;">
+            <i class="ri-list-check-2" aria-hidden="true"></i> Getting Started
+          </button>
+        </div>
+      </div>
+
+      <!-- Post-wizard onboarding checklist -->
+<div class="onboarding-checklist" id="onboardingChecklist" style="display: none;">
+  <div class="onboarding-checklist-header">
+    <div class="setup-progress">
+      <div class="setup-ring" role="progressbar" aria-valuenow="1" aria-valuemin="0" aria-valuemax="4" aria-label="Onboarding progress">
+        <svg width="36" height="36" viewBox="0 0 36 36">
+          <circle class="setup-ring-track" cx="18" cy="18" r="15" fill="none" stroke="var(--bg-muted)" stroke-width="3.5"/>
+          <circle class="setup-ring-fill" id="checklistRingFill" cx="18" cy="18" r="15" fill="none" stroke="var(--accent)" stroke-width="3.5" stroke-dasharray="94.25" stroke-dashoffset="70.69" stroke-linecap="round"/>
+        </svg>
+        <span class="setup-ring-label" id="checklistRingLabel">1/4</span>
+      </div>
+    </div>
+    <h3>Getting Started</h3>
+    <button type="button" class="onboarding-checklist-dismiss" onclick="dismissChecklist()">Dismiss</button>
+  </div>
+  <div class="checklist" id="checklistItems">
+    <div class="checklist-item" id="cl-website">
+      <div class="checklist-num"><i class="ri-checkbox-blank-circle-line" aria-hidden="true"></i></div>
+      <div class="checklist-content">
+        <div class="checklist-title">Set up your website</div>
+        <div class="checklist-desc">Choose a builder and create your site</div>
+      </div>
+    </div>
+    <div class="checklist-item" id="cl-email">
+      <div class="checklist-num"><i class="ri-checkbox-blank-circle-line" aria-hidden="true"></i></div>
+      <div class="checklist-content">
+        <div class="checklist-title">Create an email account</div>
+        <div class="checklist-desc">Get a professional email address</div>
+      </div>
+      <a href="email.html" class="checklist-action"><i class="ri-arrow-right-s-line"></i></a>
+    </div>
+    <div class="checklist-item" id="cl-ssl">
+      <div class="checklist-num"><i class="ri-checkbox-blank-circle-line" aria-hidden="true"></i></div>
+      <div class="checklist-content">
+        <div class="checklist-title">SSL certificate</div>
+        <div class="checklist-desc">Secure your site with HTTPS</div>
+      </div>
+    </div>
+    <div class="checklist-item" id="cl-explored">
+      <div class="checklist-num"><i class="ri-checkbox-blank-circle-line" aria-hidden="true"></i></div>
+      <div class="checklist-content">
+        <div class="checklist-title">Explore your dashboard</div>
+        <div class="checklist-desc">Discover what you can manage</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <!-- Active Dashboard Content (command center) -->
+      <div id="activeContent"></div>
+
+      <!-- Classic Grid (power user mode) -->
+      <div id="classicSearch" style="display:none; margin-bottom: var(--space-4);">
+        <input type="search" class="form-input" id="classicToolSearch" placeholder="Search all tools..." aria-label="Filter tools" style="max-width:400px;">
+      </div>
+      <div id="classicGrid" style="display:none; margin-bottom: var(--space-8);"></div>
+    </div>
+  </main>
+
+</div>
+
+<script src="components/shell.js"></script>
+<script>
+// First-login redirect now happens in <head> — see above
+
+// ══════════════════════════════════════════════════════════════
+// Dashboard — cPanel API Client (kept for userKey() and live use)
+// ══════════════════════════════════════════════════════════════
+
+// Minimal stub — prototype uses mock data only
+const CpanelAPI = {
+  userKey(name) { return name; },
+  isInsideCpanel() { return false; }
+};
+
+
+// ══════════════════════════════════════════════════════════════
+// Mock Data
+// ══════════════════════════════════════════════════════════════
+
+var MOCK_ACCOUNT = {
+  user: 'Jesse Asklund',
+  disk: { used: '4.2 GB', max: '10 GB', pct: 42 },
+  bandwidth: { used: '28.4 GB', max: '100 GB', pct: 28 },
+  health: { sslCerts: 4, sslExpiring: 1, waf: true, twoFactor: true, phpVersion: '8.3', lastBackup: 'Mar 15', cpanelVersion: 'v136' },
+  quickActions: [
+    { label: 'Create Email', icon: 'ri-mail-add-line', action: 'create-email' },
+    { label: 'Add Website', icon: 'ri-global-line', action: 'add-website' },
+    { label: 'Upload Files', icon: 'ri-upload-cloud-2-line', href: '#' },
+    { label: 'Create Backup', icon: 'ri-archive-line', href: '#' },
+    { label: 'View Performance', icon: 'ri-speed-line', href: 'performance.html' }
+  ],
+  recentActivity: [
+    { action: 'Email account created', detail: 'admin@shop.example.com', time: '2 hours ago', icon: 'ri-mail-add-line' },
+    { action: 'WordPress updated', detail: 'mystore.com \u2192 v6.7', time: '1 day ago', icon: 'ri-wordpress-line' },
+    { action: 'SSL renewed', detail: 'shop.example.com', time: '2 days ago', icon: 'ri-lock-line' },
+    { action: 'Backup created', detail: 'Full account backup', time: '3 days ago', icon: 'ri-archive-line' },
+    { action: 'Logged in', detail: '192.168.1.42', time: '3 days ago', icon: 'ri-login-box-line' }
+  ]
+};
+
+
+// ══════════════════════════════════════════════════════════════
+// Helpers
+// ══════════════════════════════════════════════════════════════
+
+function getGreeting() {
+  var h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function getBarClass(pct) {
+  if (pct < 50) return 'good';
+  if (pct < 75) return 'moderate';
+  if (pct < 90) return 'high';
+  return 'critical';
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// Quick Action Handlers
+// ══════════════════════════════════════════════════════════════
+
+var DASHBOARD_EMAIL_DOMAINS = ['example.com', 'shop.example.net', 'clientsite.org'];
+
+function handleQuickAction(action) {
+  if (action === 'create-email') {
+    createEmailModal.open({ domains: DASHBOARD_EMAIL_DOMAINS });
+  } else if (action === 'add-website') {
+    modalWizard.open('add-website');
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// Render Active Dashboard (Command Center)
+// ══════════════════════════════════════════════════════════════
+
+function renderActive() {
+  var container = document.getElementById('activeContent');
+  var a = MOCK_ACCOUNT;
+
+  var html = '';
+
+  // Usage gauges
+  html += '<div class="metrics-grid">';
+  html += '<div class="metric-card">'
+    + '<div class="metric-label">Disk Usage</div>'
+    + '<div class="metric-value">' + esc(a.disk.used) + ' <span class="t-body-sm t-dimmed">/ ' + esc(a.disk.max) + '</span></div>'
+    + '<div class="metric-detail">' + a.disk.pct + '% used</div>'
+    + '<div class="metric-bar"><div class="metric-bar-fill ' + getBarClass(a.disk.pct) + '" style="width:' + a.disk.pct + '%;"></div></div>'
+    + '</div>';
+  html += '<div class="metric-card">'
+    + '<div class="metric-label">Bandwidth</div>'
+    + '<div class="metric-value">' + esc(a.bandwidth.used) + ' <span class="t-body-sm t-dimmed">/ ' + esc(a.bandwidth.max) + '</span></div>'
+    + '<div class="metric-detail">' + a.bandwidth.pct + '% used</div>'
+    + '<div class="metric-bar"><div class="metric-bar-fill ' + getBarClass(a.bandwidth.pct) + '" style="width:' + a.bandwidth.pct + '%;"></div></div>'
+    + '</div>';
+  html += '</div>';
+
+  // Account Health
+  html += '<div class="health-card">'
+    + '<div class="health-title">Account Health</div>'
+    + '<div class="health-grid">';
+
+  var healthItems = [
+    { icon: 'ri-lock-line', bg: 'var(--status-success-bg)', color: 'var(--status-success)', label: 'SSL Certificates', value: a.health.sslCerts + ' certs, ' + a.health.sslExpiring + ' expiring' },
+    { icon: 'ri-shield-flash-line', bg: 'var(--status-success-bg)', color: 'var(--status-success)', label: 'WAF', value: a.health.waf ? 'Active' : 'Inactive' },
+    { icon: 'ri-smartphone-line', bg: 'var(--status-success-bg)', color: 'var(--status-success)', label: '2FA', value: a.health.twoFactor ? 'Enabled' : 'Disabled' },
+    { icon: 'ri-code-s-slash-line', bg: 'var(--status-info-bg)', color: 'var(--status-info)', label: 'PHP', value: a.health.phpVersion },
+    { icon: 'ri-archive-line', bg: 'var(--accent-subtle)', color: 'var(--text-brand)', label: 'Last Backup', value: a.health.lastBackup },
+    { icon: 'ri-server-line', bg: 'var(--feature-bg)', color: 'var(--feature-color)', label: 'cPanel', value: a.health.cpanelVersion }
+  ];
+
+  for (var i = 0; i < healthItems.length; i++) {
+    var h = healthItems[i];
+    html += '<div class="health-item">'
+      + '<div class="health-item-icon" style="background:' + h.bg + ';color:' + h.color + ';"><i class="' + h.icon + '" aria-hidden="true"></i></div>'
+      + '<div class="health-item-text">'
+      + '<span class="health-item-label">' + esc(h.label) + '</span>'
+      + '<span class="health-item-value">' + esc(h.value) + '</span>'
+      + '</div>'
+      + '</div>';
+  }
+  html += '</div></div>';
+
+  // Quick Actions
+  html += '<div class="quick-actions">';
+  for (var j = 0; j < a.quickActions.length; j++) {
+    var q = a.quickActions[j];
+    if (q.action) {
+      html += '<a class="quick-action" href="#" onclick="event.preventDefault(); handleQuickAction(\'' + esc(q.action) + '\')">';
+    } else {
+      html += '<a class="quick-action" href="' + esc(q.href) + '">';
+    }
+    html += '<i class="' + q.icon + '" aria-hidden="true"></i>'
+      + esc(q.label)
+      + '</a>';
+  }
+  html += '</div>';
+
+  // Recent Activity
+  html += '<div class="activity-section">'
+    + '<div class="activity-title">Recent Activity</div>'
+    + '<div class="activity-list">';
+  for (var k = 0; k < a.recentActivity.length; k++) {
+    var ev = a.recentActivity[k];
+    html += '<div class="activity-item">'
+      + '<div class="activity-icon"><i class="' + ev.icon + '" aria-hidden="true"></i></div>'
+      + '<div class="activity-text">'
+      + '<div class="activity-action">' + esc(ev.action) + '</div>'
+      + '<div class="activity-detail">' + esc(ev.detail) + '</div>'
+      + '</div>'
+      + '<span class="activity-time">' + esc(ev.time) + '</span>'
+      + '</div>';
+  }
+  html += '</div></div>';
+
+  container.innerHTML = html;
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// Dashboard Mode Management
+// ══════════════════════════════════════════════════════════════
+
+function setDashboardView(view) {
+  var active = document.getElementById('activeContent');
+  var classicSearch = document.getElementById('classicSearch');
+  var classicGrid = document.getElementById('classicGrid');
+  var viewToggle = document.getElementById('viewToggle');
+
+  localStorage.setItem(CpanelAPI.userKey('meridian-dashboard-mode'), view);
+
+  if (view === 'classic') {
+    active.style.display = 'none';
+    classicSearch.style.display = '';
+    classicGrid.style.display = '';
+    if (!classicGrid.dataset.rendered) renderClassicGrid();
+  } else {
+    active.style.display = '';
+    classicSearch.style.display = 'none';
+    classicGrid.style.display = 'none';
+    renderActive();
+  }
+
+  document.getElementById('greetingTitle').textContent = getGreeting() + ', ' + MOCK_ACCOUNT.user.split(' ')[0];
+  document.getElementById('greetingSub').textContent = "Here's your account overview";
+
+  viewToggle.querySelectorAll('.view-toggle-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.view === view);
+  });
+}
+
+document.getElementById('viewToggle').addEventListener('click', function(e) {
+  var btn = e.target.closest('.view-toggle-btn');
+  if (!btn) return;
+  setDashboardView(btn.dataset.view);
+});
+
+var savedView = localStorage.getItem(CpanelAPI.userKey('meridian-dashboard-mode')) || 'modern';
+setDashboardView(savedView);
+
+
+// ══════════════════════════════════════════════════════════════
+// Classic Grid
+// ══════════════════════════════════════════════════════════════
+
+function renderClassicGrid() {
+    var grid = document.getElementById('classicGrid');
+    if (!grid) return;
+    grid.dataset.rendered = 'true';
+    var TOOLS = [
+      { category: 'Websites & Domains', items: [
+        { name: 'Manage Websites', desc: 'View and manage all your domains', icon: 'ri-global-line', href: 'domains.html' },
+        { name: 'DNS Zone Editor', desc: 'Add and manage DNS records', icon: 'ri-dns-line', href: 'domains.html' },
+        { name: 'Redirects', desc: 'Set up URL redirects', icon: 'ri-links-line', href: 'domains.html' },
+        { name: 'Install WordPress', desc: 'One-click WordPress install', icon: 'ri-wordpress-line', href: 'domains.html' }
+      ]},
+      { category: 'Email', items: [
+        { name: 'Email Accounts', desc: 'Create and manage email accounts', icon: 'ri-mail-line', href: 'email.html' },
+        { name: 'Forwarders', desc: 'Forward email to another address', icon: 'ri-corner-up-right-line', href: 'email.html' },
+        { name: 'Autoresponders', desc: 'Set up automatic replies', icon: 'ri-reply-line', href: 'email.html' },
+        { name: 'Spam Filters', desc: 'Configure spam protection', icon: 'ri-spam-line', href: 'email.html' },
+        { name: 'Webmail', desc: 'Access webmail client', icon: 'ri-mail-open-line', href: 'email.html' }
+      ]},
+      { category: 'Files & Storage', items: [
+        { name: 'File Manager', desc: 'Browse, upload, edit files', icon: 'ri-folder-open-line', href: 'files.html' },
+        { name: 'Disk Usage', desc: 'Storage breakdown by directory', icon: 'ri-pie-chart-2-line', href: 'files.html' },
+        { name: 'FTP Accounts', desc: 'Create and manage FTP access', icon: 'ri-upload-cloud-2-line', href: 'files.html' },
+        { name: 'Backup / Restore', desc: 'Create, download, restore backups', icon: 'ri-archive-line', href: 'files.html' }
+      ]},
+      { category: 'Databases', items: [
+        { name: 'MySQL Databases', desc: 'Create and manage databases', icon: 'ri-database-2-line', href: 'databases.html' },
+        { name: 'MySQL Users', desc: 'Manage database user accounts', icon: 'ri-user-line', href: 'databases.html' },
+        { name: 'PostgreSQL', desc: 'PostgreSQL database management', icon: 'ri-database-line', href: 'databases.html' },
+        { name: 'phpMyAdmin', desc: 'Direct database administration', icon: 'ri-external-link-line', href: 'databases.html' },
+        { name: 'Remote MySQL', desc: 'Configure remote database access', icon: 'ri-link-line', href: 'databases.html' }
+      ]},
+      { category: 'Security', items: [
+        { name: 'SSL/TLS Certificates', desc: 'Manage SSL certificates', icon: 'ri-lock-line', href: 'security.html' },
+        { name: 'ModSecurity / WAF', desc: 'Web Application Firewall', icon: 'ri-shield-flash-line', href: 'security.html' },
+        { name: 'IP Blocker', desc: 'Block IP addresses', icon: 'ri-forbid-line', href: 'security.html' },
+        { name: 'SSH Access', desc: 'SSH key management', icon: 'ri-terminal-box-line', href: 'security.html' },
+        { name: 'Two-Factor Auth', desc: 'Enable 2FA for your account', icon: 'ri-smartphone-line', href: 'security.html' },
+        { name: 'API Tokens', desc: 'Manage API authentication tokens', icon: 'ri-key-line', href: 'security.html' }
+      ]},
+      { category: 'Developer Tools', items: [
+        { name: 'Cron Jobs', desc: 'Schedule automated tasks', icon: 'ri-time-line', href: '#' },
+        { name: 'Git Version Control', desc: 'Manage Git repositories', icon: 'ri-git-branch-line', href: '#' },
+        { name: 'Error Logs', desc: 'View and filter error logs', icon: 'ri-bug-line', href: '#' },
+        { name: 'MIME Types', desc: 'Configure file type handling', icon: 'ri-file-settings-line', href: '#' },
+        { name: 'Apache Handlers', desc: 'Configure server handlers', icon: 'ri-settings-4-line', href: '#' }
+      ]},
+      { category: 'Performance & Monitoring', items: [
+        { name: 'Resource Usage', desc: 'Disk, bandwidth, resource limits', icon: 'ri-bar-chart-line', href: 'performance.html' },
+        { name: 'Visitors / AWStats', desc: 'Website visitor analytics', icon: 'ri-line-chart-line', href: 'performance.html' },
+        { name: 'Error Logs', desc: 'Apache and PHP error logs', icon: 'ri-bug-line', href: 'performance.html' }
+      ]},
+      { category: 'Other', items: [
+        { name: 'Hotlink Protection', desc: 'Prevent direct linking to files', icon: 'ri-shield-cross-line', href: '#' },
+        { name: 'Raw Access Logs', desc: 'Download raw Apache logs', icon: 'ri-file-list-3-line', href: '#' }
+      ]}
+    ];
+
+    renderToolGrid('');
+
+    var searchInput = document.getElementById('classicToolSearch');
+    if (searchInput) {
+      searchInput.addEventListener('input', function() {
+        renderToolGrid(this.value);
+      });
+    }
+
+    function renderToolGrid(query) {
+      var q = (query || '').toLowerCase().trim();
+      var html = '';
+      var anyVisible = false;
+
+      for (var c = 0; c < TOOLS.length; c++) {
+        var cat = TOOLS[c];
+        var itemsHtml = '';
+        var visibleCount = 0;
+
+        for (var i = 0; i < cat.items.length; i++) {
+          var tool = cat.items[i];
+          if (q && tool.name.toLowerCase().indexOf(q) === -1 && tool.desc.toLowerCase().indexOf(q) === -1) continue;
+          visibleCount++;
+          itemsHtml += '<a class="tool-card" href="' + tool.href + '">'
+            + '<div class="tool-icon"><i class="' + tool.icon + '" aria-hidden="true"></i></div>'
+            + '<div class="tool-info">'
+            + '<div class="tool-name">' + esc(tool.name) + '</div>'
+            + '<div class="tool-desc">' + esc(tool.desc) + '</div>'
+            + '</div></a>';
+        }
+
+        if (visibleCount > 0) {
+          anyVisible = true;
+          html += '<div class="category-section">'
+            + '<div class="category-title">' + esc(cat.category) + '</div>'
+            + '<div class="tool-grid">' + itemsHtml + '</div>'
+            + '</div>';
+        }
+      }
+
+      if (!anyVisible) {
+        html = '<div class="empty-state">'
+          + '<i class="ri-search-line" aria-hidden="true"></i>'
+          + '<span class="empty-state-text">No tools match your search</span></div>';
+      }
+
+      grid.innerHTML = html;
+    }
+  }
+
+// ── Onboarding checklist ──
+function getChecklistState() {
+  try { return JSON.parse(localStorage.getItem('meridian-onboarding-milestones')) || {}; } catch(e) { return {}; }
+}
+
+function saveChecklistState(state) {
+  localStorage.setItem('meridian-onboarding-milestones', JSON.stringify(state));
+}
+
+function updateChecklistUI() {
+  var state = getChecklistState();
+  var milestones = ['website', 'email', 'ssl', 'explored'];
+  var completed = 0;
+  milestones.forEach(function(key) {
+    var el = document.getElementById('cl-' + key);
+    if (!el) return;
+    if (state[key]) {
+      completed++;
+      el.classList.add('checklist-item-completed');
+      el.querySelector('.checklist-num i').className = 'ri-checkbox-circle-fill';
+      el.querySelector('.checklist-num i').style.color = 'var(--status-success)';
+    }
+  });
+
+  var displayCompleted = Math.max(completed, 1);
+  var ring = document.getElementById('checklistRingFill');
+  var label = document.getElementById('checklistRingLabel');
+  var ringEl = ring ? ring.closest('.setup-ring') : null;
+  if (ring) ring.style.strokeDashoffset = (94.25 - (displayCompleted / 4) * 94.25).toFixed(2);
+  if (label) label.textContent = displayCompleted + '/4';
+  if (ringEl) ringEl.setAttribute('aria-valuenow', displayCompleted);
+}
+
+function showChecklistIfNeeded() {
+  if (localStorage.getItem('meridian-onboarding-complete') !== 'true') return;
+  if (localStorage.getItem('meridian-checklist-dismissed') === 'true') return;
+  if (!localStorage.getItem('meridian-onboarding-milestones')) return;
+  var el = document.getElementById('onboardingChecklist');
+  if (el) el.style.display = '';
+  var restoreBtn = document.getElementById('checklistRestoreBtn');
+  if (restoreBtn) restoreBtn.style.display = 'none';
+  updateChecklistUI();
+
+  var state = getChecklistState();
+  if (!state.explored) {
+    setTimeout(function() {
+      state.explored = true;
+      saveChecklistState(state);
+      updateChecklistUI();
+    }, 30000);
+  }
+}
+
+function dismissChecklist() {
+  localStorage.setItem('meridian-checklist-dismissed', 'true');
+  var el = document.getElementById('onboardingChecklist');
+  if (el) el.style.display = 'none';
+  var restoreBtn = document.getElementById('checklistRestoreBtn');
+  if (restoreBtn) restoreBtn.style.display = '';
+}
+
+function restoreChecklist() {
+  localStorage.removeItem('meridian-checklist-dismissed');
+  showChecklistIfNeeded();
+}
+
+function restartDashboardOnboarding() {
+  localStorage.removeItem('meridian-onboarding-complete');
+  window.location.href = 'onboarding.html';
+}
+
+showChecklistIfNeeded();
+
+window.addEventListener('wizard-complete', function() {
+  if (typeof showToast === 'function') showToast('Website created!', 'success');
+});
+</script>
+
+<script src="components/wizard-steps.js" defer></script>
+<script src="components/wizard-modal.js" defer></script>
+<script src="components/create-email-modal.js" defer></script>
+</body>
+</html>

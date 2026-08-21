@@ -1,0 +1,18 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// Layout tokens — structural dimensions for the shell.
+
+$sidebar-width: 260px;
+$sidebar-collapsed: 68px;
+$content-max: 1280px;
+$header-height: 60px;
+
+@mixin layout-tokens {
+  --sidebar-width: #{$sidebar-width};
+  --sidebar-collapsed: #{$sidebar-collapsed};
+  --content-max: #{$content-max};
+  --header-height: #{$header-height};
+}

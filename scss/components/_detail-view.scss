@@ -1,0 +1,156 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ─────────────────────────────────────────────────────────────
+// Detail View — back link, hero header with icon/title/badges,
+// tab bar, and animated container. Used across domain, email,
+// database, file, and security detail panels.
+// ─────────────────────────────────────────────────────────────
+
+// Back navigation link
+.detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-brand);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-1) 0;
+  margin-bottom: var(--space-5);
+  transition: opacity var(--duration-fast) var(--ease-out);
+
+  &:hover { opacity: 0.8; }
+  i { font-size: 1rem; }
+}
+
+// Animated container
+.detail-view {
+  animation: fadeIn var(--duration-normal) var(--ease-out) both;
+}
+
+// Hero header
+.detail-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.detail-hero-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.detail-hero-icon {
+  width: 48px;
+  height: 48px;
+  font-size: 1.4rem;
+  border-radius: var(--radius-lg);
+}
+
+.detail-hero-title {
+  font-family: var(--font-body);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: var(--space-1);
+}
+
+.detail-hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.detail-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+// Tab bar
+.detail-tabs-bar {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: var(--space-6);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+
+  .detail-tab {
+    padding: var(--space-3) var(--space-4);
+    min-height: 48px;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--text-tertiary);
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: inherit;
+    border-bottom: 3px solid transparent;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    transition: color var(--duration-fast) var(--ease-out),
+                background var(--duration-fast) var(--ease-out),
+                border-color var(--duration-fast) var(--ease-out);
+
+    &:hover {
+      color: var(--text-primary);
+      background: var(--bg-hover);
+    }
+    &.active {
+      color: var(--text-brand);
+      font-weight: var(--weight-semibold);
+      background: var(--accent-subtle);
+      border-bottom-color: var(--accent);
+    }
+    i { font-size: 1rem; }
+  }
+}
+
+// Storage / Progress Bars
+.storage-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.storage-bar {
+  width: 100%;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--bg-muted);
+  overflow: hidden;
+}
+
+.storage-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width var(--duration-normal) var(--ease-out);
+
+  &.success { background: var(--status-success); }
+  &.warning { background: var(--status-warning); }
+  &.danger  { background: var(--status-error); }
+}
+
+// Responsive
+@media (max-width: 1024px) {
+  .detail-hero { flex-direction: column; }
+}

@@ -1,0 +1,22 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  border: 1px solid;
+
+  i { font-size: 1.25rem; margin-top: 1px; flex-shrink: 0; }
+  div { color: var(--text-primary); }
+}
+
+.alert-info    { background: var(--status-info-bg);    border-color: var(--status-info-border);    color: var(--status-info); }
+.alert-success { background: var(--status-success-bg); border-color: var(--status-success-border); color: var(--status-success); }
+.alert-warning { background: var(--status-warning-bg); border-color: var(--status-warning-border); color: var(--status-warning); }
+.alert-error   { background: var(--status-error-bg);   border-color: var(--status-error-border);   color: var(--status-error); }

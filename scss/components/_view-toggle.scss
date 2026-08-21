@@ -1,0 +1,45 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ─────────────────────────────────────────────────────────────
+// View Toggle — segmented button group for switching between
+// list/grid/card views with animated transitions.
+// ─────────────────────────────────────────────────────────────
+
+.view-toggle {
+  display: flex;
+  background: var(--bg-muted);
+  border-radius: var(--radius-md);
+  padding: 2px;
+}
+.view-toggle-btn {
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  background: transparent;
+  color: var(--text-tertiary);
+  font-family: var(--font-body);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.view-toggle-btn.active {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* View Transitions */
+.view { display: none; }
+.view.active { display: block; animation: viewFadeIn var(--duration-normal) var(--ease-out); }
+
+@keyframes viewFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

@@ -1,0 +1,158 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// Base color palette — raw color scales.
+// These are NOT used directly in components; semantic tokens in _themes.scss
+// map palette values to contextual roles (--accent, --status-success, etc.).
+
+// ── Orange — cPanel brand anchor ──
+$orange-50: #fff7ed;
+$orange-100: #ffedd5;
+$orange-200: #fed7aa;
+$orange-300: #fdba74;
+$orange-400: #fb923c;
+$orange-500: #f97316;
+$orange-600: #ea580c;
+$orange-700: #c2410c;
+$orange-800: #9a3412;
+$orange-900: #7c2d12;
+
+// ── Slate — neutral foundation ──
+$slate-25: #fcfcfd;
+$slate-50: #f8fafc;
+$slate-100: #f1f5f9;
+$slate-200: #e2e8f0;
+$slate-300: #cbd5e1;
+$slate-400: #94a3b8;
+$slate-500: #64748b;
+$slate-600: #475569;
+$slate-700: #334155;
+$slate-800: #1e293b;
+$slate-850: #172033;
+$slate-900: #0f172a;
+$slate-950: #020617;
+
+// ── Teal — success / health ──
+$teal-50: #f0fdfa;
+$teal-100: #ccfbf1;
+$teal-200: #99f6e4;
+$teal-300: #5eead4;
+$teal-400: #2dd4bf;
+$teal-500: #14b8a6;
+$teal-600: #0d9488;
+$teal-700: #0f766e;
+
+// ── Rose — error / destructive ──
+$rose-50: #fff1f2;
+$rose-100: #ffe4e6;
+$rose-200: #fecdd3;
+$rose-300: #fda4af;
+$rose-400: #fb7185;
+$rose-500: #f43f5e;
+$rose-600: #e11d48;
+$rose-700: #be123c;
+
+// ── Amber — warning ──
+$amber-50: #fffbeb;
+$amber-100: #fef3c7;
+$amber-200: #fde68a;
+$amber-300: #fcd34d;
+$amber-400: #fbbf24;
+$amber-500: #f59e0b;
+$amber-600: #d97706;
+
+// ── Sky — info ──
+$sky-50: #f0f9ff;
+$sky-100: #e0f2fe;
+$sky-200: #bae6fd;
+$sky-300: #7dd3fc;
+$sky-400: #38bdf8;
+$sky-500: #0ea5e9;
+$sky-600: #0284c7;
+
+// ── Violet — accent / feature ──
+$violet-50: #f5f3ff;
+$violet-100: #ede9fe;
+$violet-200: #ddd6fe;
+$violet-300: #c4b5fd;
+$violet-400: #a78bfa;
+$violet-500: #8b5cf6;
+$violet-600: #7c3aed;
+
+@mixin palette-tokens {
+  // Orange
+  --orange-50: #{$orange-50};
+  --orange-100: #{$orange-100};
+  --orange-200: #{$orange-200};
+  --orange-300: #{$orange-300};
+  --orange-400: #{$orange-400};
+  --orange-500: #{$orange-500};
+  --orange-600: #{$orange-600};
+  --orange-700: #{$orange-700};
+  --orange-800: #{$orange-800};
+  --orange-900: #{$orange-900};
+
+  // Slate
+  --slate-25: #{$slate-25};
+  --slate-50: #{$slate-50};
+  --slate-100: #{$slate-100};
+  --slate-200: #{$slate-200};
+  --slate-300: #{$slate-300};
+  --slate-400: #{$slate-400};
+  --slate-500: #{$slate-500};
+  --slate-600: #{$slate-600};
+  --slate-700: #{$slate-700};
+  --slate-800: #{$slate-800};
+  --slate-850: #{$slate-850};
+  --slate-900: #{$slate-900};
+  --slate-950: #{$slate-950};
+
+  // Teal
+  --teal-50: #{$teal-50};
+  --teal-100: #{$teal-100};
+  --teal-200: #{$teal-200};
+  --teal-300: #{$teal-300};
+  --teal-400: #{$teal-400};
+  --teal-500: #{$teal-500};
+  --teal-600: #{$teal-600};
+  --teal-700: #{$teal-700};
+
+  // Rose
+  --rose-50: #{$rose-50};
+  --rose-100: #{$rose-100};
+  --rose-200: #{$rose-200};
+  --rose-300: #{$rose-300};
+  --rose-400: #{$rose-400};
+  --rose-500: #{$rose-500};
+  --rose-600: #{$rose-600};
+  --rose-700: #{$rose-700};
+
+  // Amber
+  --amber-50: #{$amber-50};
+  --amber-100: #{$amber-100};
+  --amber-200: #{$amber-200};
+  --amber-300: #{$amber-300};
+  --amber-400: #{$amber-400};
+  --amber-500: #{$amber-500};
+  --amber-600: #{$amber-600};
+
+  // Sky
+  --sky-50: #{$sky-50};
+  --sky-100: #{$sky-100};
+  --sky-200: #{$sky-200};
+  --sky-300: #{$sky-300};
+  --sky-400: #{$sky-400};
+  --sky-500: #{$sky-500};
+  --sky-600: #{$sky-600};
+
+  // Violet
+  --violet-50: #{$violet-50};
+  --violet-100: #{$violet-100};
+  --violet-200: #{$violet-200};
+  --violet-300: #{$violet-300};
+  --violet-400: #{$violet-400};
+  --violet-500: #{$violet-500};
+  --violet-600: #{$violet-600};
+}

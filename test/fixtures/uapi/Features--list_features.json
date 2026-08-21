@@ -1,0 +1,13 @@
+{
+  "apiversion": 3,
+  "module": "Features",
+  "func": "list_features",
+  "result": {
+    "status": 1,
+    "data": {"popaccts": 1, "subdomains": 1, "addondomains": 1, "mysql": 1, "postgres": 0, "ftpaccts": 1, "lists": 1, "autoresponders": 1, "forwarders": 1, "blockers": 1, "parkeddomains": 1, "ssl": 1, "sitejet": 0, "boxtrapper": 1, "changemx": 1, "emailauth": 1, "spamassassin": 1},
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

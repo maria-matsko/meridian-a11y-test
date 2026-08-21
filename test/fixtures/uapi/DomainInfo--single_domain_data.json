@@ -1,0 +1,13 @@
+{
+  "apiversion": 3,
+  "module": "DomainInfo",
+  "func": "single_domain_data",
+  "result": {
+    "status": 1,
+    "data": {"domain": "example.com", "documentroot": "/home/testuser/public_html", "ip": "192.168.1.100", "port": "443", "type": "main"},
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}

@@ -1,0 +1,1338 @@
+[% WRAPPER '_assets/master.html.tt'
+    page_title = t('Get Started')
+    page_id    = 'onboarding'
+    chromeless = 1
+%]
+
+<style>
+  /* Hide onboarding until fonts are loaded to prevent FOUT */
+  .onboarding { opacity: 0; }
+  .onboarding.fonts-ready { opacity: 1; transition: opacity 0.2s ease-out; }
+</style>
+<script>
+  /* Show onboarding as soon as fonts are ready (or after 1s timeout as fallback) */
+  (function() {
+    var el = null;
+    var show = function() { el = el || document.getElementById('onboarding'); if (el) el.classList.add('fonts-ready'); };
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(show);
+    }
+    setTimeout(show, 1000); // Fallback — never block longer than 1s
+  })();
+</script>
+
+<div class="onboarding" id="onboarding">
+
+  <!-- ── Persistent top bar ── -->
+  <div class="onboarding-topbar">
+    <button type="button" class="onboarding-back" id="onboardingBack" onclick="onboardingPrev()" style="visibility: hidden;">
+      <i class="ri-arrow-left-line" aria-hidden="true"></i> <span data-t>Back</span>
+    </button>
+    <button type="button" class="onboarding-theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Switch to light mode">
+      <i class="ri-sun-line" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <!-- ── Step 1: Welcome ── -->
+  <div class="onboarding-welcome active" id="step-welcome" data-step="welcome">
+    <div class="onboarding-glow" aria-hidden="true"></div>
+    <div class="onboarding-brand" aria-hidden="true">
+      <i class="ri-rocket-2-fill"></i>
+    </div>
+    <h1 data-t>Your website starts here</h1>
+    <p class="onboarding-subtitle" data-t>We'll walk you through setting up your domain, email, and website in just a few minutes.</p>
+    <button type="button" class="btn btn-primary btn-lg" style="border-radius: var(--radius-full);" onclick="showStep(_skipDomainSteps ? 'builder' : 'domain')">
+      <span data-t>Get Started</span> <i class="ri-arrow-right-line" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <!-- ── Step 2: Domain (type selection only) ── -->
+  <div class="onboarding-step has-illustration" id="step-domain" data-step="domain">
+    <div class="onboarding-illust" data-illust="globe" id="illust-domain"></div>
+    <div class="onboarding-content">
+    <div class="onboarding-progress"></div>
+    <h2 data-t>Which domain will you use?</h2>
+    <p class="onboarding-subtitle" data-t>Choose the domain visitors will use to reach your website.</p>
+
+    <div class="onboarding-choices cols-3" role="radiogroup" aria-label="Domain type">
+      <!-- Use primary domain -->
+      <div class="onboarding-choice" role="radio" aria-checked="false" tabindex="0"
+           onclick="selectDomain('primary', this)" onkeydown="choiceKeydown(event, () => selectDomain('primary', this))">
+        <div class="onboarding-choice-icon" style="background: var(--status-success-bg); color: var(--status-success);">
+          <i class="ri-check-double-line" aria-hidden="true"></i>
+        </div>
+        <div class="onboarding-choice-title" id="domainPrimaryLabel" data-t>Use example.com</div>
+        <div class="onboarding-choice-desc" data-t>Your account's primary domain — already configured</div>
+      </div>
+
+      <!-- Use a new domain -->
+      <div class="onboarding-choice" id="choiceExisting" role="radio" aria-checked="false" tabindex="0"
+           onclick="selectDomain('existing', this)" onkeydown="choiceKeydown(event, () => selectDomain('existing', this))">
+        <div class="onboarding-choice-icon" style="background: var(--accent-muted); color: var(--text-brand);">
+          <i class="ri-global-line" aria-hidden="true"></i>
+        </div>
+        <div class="onboarding-choice-title" data-t>Add another domain</div>
+        <div class="onboarding-choice-desc" id="choiceExistingDesc" data-t>Host an existing or new domain on this account</div>
+      </div>
+
+      <!-- Create a subdomain -->
+      <div class="onboarding-choice" id="choiceSubdomain" role="radio" aria-checked="false" tabindex="0"
+           onclick="selectDomain('subdomain', this)" onkeydown="choiceKeydown(event, () => selectDomain('subdomain', this))">
+        <div class="onboarding-choice-icon" style="background: var(--status-info-bg); color: var(--status-info);">
+          <i class="ri-link" aria-hidden="true"></i>
+        </div>
+        <div class="onboarding-choice-title" data-t>Create a subdomain</div>
+        <div class="onboarding-choice-desc" id="choiceSubdomainDesc" data-t>Use a subdomain of your primary domain</div>
+      </div>
+    </div>
+
+    <!-- Temp domain notice (hidden by default, shown when primary is a temp hostname) -->
+    <div id="tempDomainNotice" class="onboarding-ssl-warning" style="display: none; max-width: 700px; margin-bottom: var(--space-4);">
+      <i class="ri-error-warning-line" aria-hidden="true"></i>
+      <div>
+        <strong data-t>You're using a temporary domain.</strong>
+        <span data-t>Your account is set up with</span> <span id="tempDomainName">temp.cpanel.site</span><span data-t>, which is a temporary address. Choose a real domain below to make your website accessible to visitors.</span>
+      </div>
+    </div>
+
+    <div id="domainError" class="onboarding-error" style="display: none;">
+      <i class="ri-error-warning-line" aria-hidden="true"></i>
+      <span id="domainErrorText"></span>
+    </div>
+
+    <div class="onboarding-actions">
+      <button type="button" class="btn btn-primary btn-lg" id="domainContinue" onclick="confirmDomain()" disabled>
+        <span data-t>Continue</span> <i class="ri-arrow-right-line" aria-hidden="true"></i>
+      </button>
+    </div>
+    </div>
+  </div>
+
+  <!-- ── Step 2b: Domain Config (form based on type) ── -->
+  <div class="onboarding-step has-illustration" id="step-domain-config" data-step="domain-config">
+    <div class="onboarding-illust" data-illust="globe" id="illust-domain-config"></div>
+    <div class="onboarding-content">
+    <div class="onboarding-progress"></div>
+    <h2 id="domainConfigTitle" data-t>Enter your domain</h2>
+    <p class="onboarding-subtitle" id="domainConfigSubtitle" data-t>We'll configure hosting for this domain.</p>
+
+    <div style="width: 100%; max-width: 520px;">
+      <!-- Existing domain form -->
+      <div id="domainFormExisting">
+        <div class="form-group">
+          <label class="form-label" for="domainInput" data-t>Domain name</label>
+          <input type="text" id="domainInput" class="form-input" placeholder="yourdomain.com" oninput="validateDomainConfig()">
+        </div>
+        <button type="button" class="btn btn-secondary" style="margin-top: var(--space-3);" onclick="checkDns()">
+          <i class="ri-radar-line" aria-hidden="true"></i> <span data-t>Check DNS</span>
+        </button>
+        <div id="dnsStatus"></div>
+      </div>
+
+      <!-- Subdomain form -->
+      <div id="domainFormSubdomain" style="display: none;">
+        <div style="display: flex; align-items: flex-end; gap: var(--space-2);">
+          <div style="flex: 1;">
+            <label class="form-label" for="subdomainPrefix" data-t>Subdomain prefix</label>
+            <input type="text" id="subdomainPrefix" class="form-input" placeholder="mysite" oninput="updateSubdomainPreview(); validateDomainConfig()">
+          </div>
+          <div style="padding-bottom: var(--space-3); color: var(--text-tertiary); font-size: var(--text-lg); font-weight: var(--weight-light);">.</div>
+          <div style="flex: 1;">
+            <label class="form-label" data-t>Parent domain</label>
+            <input type="text" id="subdomainParent" class="form-input" value="example.com" readonly style="background: var(--bg-muted); color: var(--text-secondary);">
+          </div>
+        </div>
+        <div id="subdomainPreview" style="font-family: var(--font-mono); font-size: var(--text-sm); color: var(--text-brand); background: var(--accent-subtle); padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); margin-top: var(--space-3); display: inline-block;">mysite.example.com</div>
+      </div>
+    </div>
+
+    <div id="domainConfigError" class="onboarding-error" style="display: none;">
+      <i class="ri-error-warning-line" aria-hidden="true"></i>
+      <span id="domainConfigErrorText"></span>
+    </div>
+
+    <div class="onboarding-actions">
+      <button type="button" class="btn btn-primary btn-lg" id="domainConfigContinue" onclick="confirmDomainConfig()" disabled>
+        <span data-t>Continue</span> <i class="ri-arrow-right-line" aria-hidden="true"></i>
+      </button>
+    </div>
+    </div>
+  </div>
+
+  <!-- ── Step 3a: Email Choice ── -->
+  <div class="onboarding-step has-illustration" id="step-email-choice" data-step="email-choice">
+    <div class="onboarding-illust" data-illust="envelope" id="illust-email-choice"></div>
+    <div class="onboarding-content">
+    <div class="onboarding-progress"></div>
+    <h2 data-t>Want to create an email address?</h2>
+    <p class="onboarding-subtitle"><span data-t>Set up a professional email like you@</span><span id="emailDomainHint">yourdomain.com</span></p>
+
+    <div class="onboarding-choices cols-2" role="radiogroup" aria-label="Email choice" style="max-width: 500px;">
+      <div class="onboarding-choice" role="radio" aria-checked="false" tabindex="0"
+           onclick="selectEmailChoice('yes', this)" onkeydown="choiceKeydown(event, () => selectEmailChoice('yes', this))">
+        <div class="onboarding-choice-icon" style="background: var(--status-success-bg); color: var(--status-success);">
+          <i class="ri-mail-check-line" aria-hidden="true"></i>
+        </div>
+        <div class="onboarding-choice-title" data-t>Yes, create an email</div>
+      </div>
+      <div class="onboarding-choice" role="radio" aria-checked="false" tabindex="0"
+           onclick="selectEmailChoice('no', this)" onkeydown="choiceKeydown(event, () => selectEmailChoice('no', this))">
+        <div class="onboarding-choice-icon" style="background: var(--bg-muted); color: var(--text-tertiary);">
+          <i class="ri-skip-forward-line" aria-hidden="true"></i>
+        </div>
+        <div class="onboarding-choice-title" data-t>Skip — I'll add email later</div>
+      </div>
+    </div>
+
+    <!-- Coming soon: premium email upsell -->
+    <div style="max-width: 500px; margin-top: var(--space-6);">
+      <div class="onboarding-choice" style="opacity: 0.5; cursor: not-allowed; pointer-events: none; display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4); text-align: start;">
+        <div class="onboarding-choice-icon" style="background: var(--bg-muted); color: var(--text-tertiary); width: 36px; height: 36px; font-size: 1.1rem; margin: 0; flex-shrink: 0;">
+          <i class="ri-vip-crown-line" aria-hidden="true"></i>
+        </div>
+        <div style="flex: 1;">
+          <div class="onboarding-choice-title" style="font-size: var(--text-sm);" data-t>Upgrade to Business Email</div>
+          <div class="onboarding-choice-desc" style="font-size: var(--text-xs);" data-t>Professional email with calendar, contacts, and collaboration tools</div>
+        </div>
+        <span class="badge badge-neutral" style="flex-shrink: 0;" data-t>Coming Soon</span>
+      </div>
+    </div>
+
+    </div>
+  </div>
+
+  <!-- ── Step 3b: Email Form ── -->
+  <div class="onboarding-step has-illustration" id="step-email-form" data-step="email-form">
+    <div class="onboarding-illust" data-illust="envelope" id="illust-email-form"></div>
+    <div class="onboarding-content">
+    <div class="onboarding-progress"></div>
+    <h2 data-t>Create your first email address</h2>
+    <p class="onboarding-subtitle" data-t>Set up a professional email for your domain.</p>
+
+    <div class="onboarding-email-form">
+      <div class="onboarding-email-row">
+        <div class="input-wrap">
+          <label class="form-label" for="emailUser" data-t>Email address</label>
+          <input type="text" id="emailUser" class="form-input" placeholder="hello" oninput="validateEmail()">
+        </div>
+        <div class="onboarding-email-at">@</div>
+        <div class="input-wrap">
+          <label class="form-label" data-t>Domain</label>
+          <input type="text" id="emailDomain" class="form-input" readonly style="background: var(--bg-muted); color: var(--text-secondary);">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="emailPassword" data-t>Password</label>
+        <div style="display: flex; gap: var(--space-2); align-items: flex-start;">
+          <div style="flex: 1;">
+            <input type="password" id="emailPassword" class="form-input" placeholder="Choose a strong password" oninput="validateEmail(); updatePasswordStrength()">
+            <div class="password-strength" style="margin-top: var(--space-2);">
+              <div class="password-strength-bar"><div class="password-strength-fill" id="emailStrengthFill"></div></div>
+              <span class="password-strength-label" id="emailStrengthLabel"></span>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary" id="generatePasswordBtn" onclick="generateOnboardingPassword()" style="margin-top: 0; white-space: nowrap;">
+            <i class="ri-key-line" aria-hidden="true"></i> <span data-t>Generate</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="emailError" class="onboarding-error" style="display: none;">
+        <i class="ri-error-warning-line" aria-hidden="true"></i>
+        <span id="emailErrorText"></span>
+      </div>
+    </div>
+
+    <div class="onboarding-actions">
+      <button type="button" class="btn btn-primary btn-lg" id="emailContinue" onclick="confirmEmail()" disabled>
+        <span data-t>Create & Continue</span> <i class="ri-arrow-right-line" aria-hidden="true"></i>
+      </button>
+    </div>
+    </div>
+  </div>
+
+  <!-- ── Step 4: Builder ── -->
+  <div class="onboarding-step has-illustration" id="step-builder" data-step="builder">
+    <div class="onboarding-illust" data-illust="browser" id="illust-builder"></div>
+    <div class="onboarding-content">
+    <div class="onboarding-progress"></div>
+    <h2 data-t>How do you want to build?</h2>
+    <p class="onboarding-subtitle" data-t>Pick a tool to create your website.</p>
+
+    <div class="onboarding-choices cols-3" role="radiogroup" aria-label="Website builder">
+      <!-- Sitejet -->
+      <div class="onboarding-choice" role="radio" aria-checked="false" tabindex="0" data-builder="sitejet"
+           onclick="selectBuilder('sitejet', this)" onkeydown="choiceKeydown(event, () => selectBuilder('sitejet', this))">
+        <div class="onboarding-choice-icon" style="background: var(--accent-muted); color: var(--text-brand);">
+          <i class="ri-layout-masonry-line" aria-hidden="true"></i>
+        </div>
+        <div class="onboarding-choice-title" data-t>Sitejet Builder</div>
+        <div class="onboarding-choice-desc" data-t>Drag-and-drop visual builder</div>
+        <div class="onboarding-choice-features">
+          <div class="onboarding-choice-feature"><i class="ri-checkbox-circle-fill" style="color: var(--text-brand);" aria-hidden="true"></i> <span data-t>150+ professional templates</span></div>
+          <div class="onboarding-choice-feature"><i class="ri-checkbox-circle-fill" style="color: var(--text-brand);" aria-hidden="true"></i> <span data-t>Drag-and-drop editor</span></div>
+          <div class="onboarding-choice-feature"><i class="ri-checkbox-circle-fill" style="color: var(--text-brand);" aria-hidden="true"></i> <span data-t>No coding required</span></div>
+        </div>
+      </div>
+
+      <!-- WordPress -->
+      <div class="onboarding-choice" role="radio" aria-checked="false" tabindex="0" data-builder="wordpress"
+           onclick="selectBuilder('wordpress', this)" onkeydown="choiceKeydown(event, () => selectBuilder('wordpress', this))">
+        <div class="onboarding-choice-icon" style="background: var(--status-info-bg); color: var(--status-info);">
+          <i class="ri-wordpress-line" aria-hidden="true"></i>
+        </div>
+        <div class="onboarding-choice-title" data-t>WordPress</div>
+        <div class="onboarding-choice-desc" data-t>The world's most popular CMS</div>
+        <div class="onboarding-choice-features">
+          <div class="onboarding-choice-feature"><i class="ri-checkbox-circle-fill" style="color: var(--status-info);" aria-hidden="true"></i> <span data-t>Thousands of plugins</span></div>
+          <div class="onboarding-choice-feature"><i class="ri-checkbox-circle-fill" style="color: var(--status-info);" aria-hidden="true"></i> <span data-t>Massive theme library</span></div>
+          <div class="onboarding-choice-feature"><i class="ri-checkbox-circle-fill" style="color: var(--status-info);" aria-hidden="true"></i> <span data-t>Huge community</span></div>
+        </div>
+      </div>
+
+      <!-- From scratch -->
+      <div class="onboarding-choice" role="radio" aria-checked="false" tabindex="0" data-builder="custom"
+           onclick="selectBuilder('custom', this)" onkeydown="choiceKeydown(event, () => selectBuilder('custom', this))">
+        <div class="onboarding-choice-icon" style="background: var(--bg-muted); color: var(--text-tertiary);">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </div>
+        <div class="onboarding-choice-title" data-t>Custom Code</div>
+        <div class="onboarding-choice-desc" data-t>Build with your own code</div>
+        <div class="onboarding-choice-features">
+          <div class="onboarding-choice-feature"><i class="ri-checkbox-circle-fill" style="color: var(--text-tertiary);" aria-hidden="true"></i> <span data-t>Upload your own files</span></div>
+          <div class="onboarding-choice-feature"><i class="ri-checkbox-circle-fill" style="color: var(--text-tertiary);" aria-hidden="true"></i> <span data-t>Custom code</span></div>
+          <div class="onboarding-choice-feature"><i class="ri-checkbox-circle-fill" style="color: var(--text-tertiary);" aria-hidden="true"></i> <span data-t>Your code, your way</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="onboarding-actions">
+      <button type="button" class="btn btn-primary btn-lg" id="builderContinue" onclick="showStep(_skipEmailSteps ? 'review' : 'email-choice')" disabled>
+        <span data-t>Continue</span> <i class="ri-arrow-right-line" aria-hidden="true"></i>
+      </button>
+    </div>
+    </div>
+  </div>
+
+  <!-- ── Step 5: Review ── -->
+  <div class="onboarding-step has-illustration" id="step-review" data-step="review">
+    <div class="onboarding-illust" data-illust="rocket" id="illust-review"></div>
+    <div class="onboarding-content">
+    <div class="onboarding-progress"></div>
+    <h2 data-t>Ready to launch</h2>
+    <p class="onboarding-subtitle" data-t>Here's what we'll set up for you.</p>
+
+    <div class="onboarding-summary" id="reviewSummary">
+      <!-- Populated by buildSummary() -->
+    </div>
+
+    <div id="launchError" class="onboarding-error" style="display: none;">
+      <i class="ri-error-warning-line" aria-hidden="true"></i>
+      <span id="launchErrorText"></span>
+    </div>
+
+    <div class="onboarding-actions">
+      <button type="button" class="btn btn-primary btn-lg" id="launchBtn" onclick="launchSite()">
+        <span data-t>Launch My Website</span> <i class="ri-rocket-2-line" aria-hidden="true"></i>
+      </button>
+    </div>
+    </div>
+  </div>
+
+  <!-- ── Step 6: What's Next ── -->
+  <div class="onboarding-success" id="step-success" data-step="success">
+    <div class="onboarding-success-icon" aria-hidden="true">
+      <i class="ri-check-double-line"></i>
+    </div>
+    <h2 data-t>You're live!</h2>
+    <p class="onboarding-subtitle" id="successSubtitle" data-t>Your website is set up and ready to go.</p>
+
+    <div id="successPrimaryCta">
+      <!-- Populated by JS based on builder choice -->
+    </div>
+
+    <div id="sslWarning" class="onboarding-ssl-warning" style="display: none;">
+      <i class="ri-time-line" aria-hidden="true"></i>
+      <span data-t>SSL is still being configured — this can take a few minutes. We'll keep trying in the background.</span>
+    </div>
+
+    <div class="onboarding-next-options" id="nextOptions">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   ONBOARDING — Full-screen wizard JS (Meridian live version)
+   ═══════════════════════════════════════════════════════════════ */
+
+// ── Live detection & constants ──
+const isLive = typeof CpanelAPI !== 'undefined' && CpanelAPI.isInsideCpanel();
+const TEMP_DOMAIN_PATTERN = /\.(cpanel\.site|cprapid\.com|wp2\.host|wpsquared\.site)$/i;
+
+// ── HTML escape (inline — shell.js is not loaded in chromeless mode) ──
+function esc(str) {
+  if (str == null) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// ── Redirect if onboarding already complete ──
+(async function checkOnboardingComplete() {
+  if (!isLive) return;
+  try {
+    const prefs = await CpanelAPI.getPersonalization(['meridian_onboarding_complete']);
+    const complete = prefs?.meridian_onboarding_complete?.value === '1';
+    const lsComplete = localStorage.getItem(CpanelAPI.userKey('meridian-onboarding-complete')) === 'true';
+    if (complete || lsComplete) {
+      localStorage.setItem(CpanelAPI.userKey('meridian-onboarding-complete'), 'true');
+      window.location.href = '../index/';
+      return;
+    }
+  } catch (e) {
+    if (localStorage.getItem(CpanelAPI.userKey('meridian-onboarding-complete')) === 'true') {
+      window.location.href = '../index/';
+      return;
+    }
+  }
+})();
+
+// ── Theme toggle ──
+function toggleTheme() {
+  const html = document.documentElement;
+  const next = html.dataset.theme === 'light' ? 'dark' : 'light';
+  html.dataset.theme = next;
+  localStorage.setItem('meridian-theme', next);
+  updateThemeToggle();
+}
+
+function updateThemeToggle() {
+  const btn = document.getElementById('themeToggle');
+  if (!btn) return;
+  const isLight = document.documentElement.dataset.theme === 'light';
+  btn.querySelector('i').className = isLight ? 'ri-moon-line' : 'ri-sun-line';
+  btn.setAttribute('aria-label', isLight ? t('Switch to dark mode') : t('Switch to light mode'));
+}
+updateThemeToggle();
+
+// ── State ──
+const onboardingState = {
+  currentStep: 'welcome',
+  domainType: null,     // 'primary' | 'existing' | 'subdomain'
+  domain: '',
+  primaryDomain: '',    // cached from API
+  emailChoice: null,    // 'yes' | 'no'
+  emailSkipped: false,
+  emailUser: '',
+  emailPassword: '',
+  builder: null,        // 'sitejet' | 'wordpress' | 'custom'
+  _domainsLoaded: false,
+  _buildersGated: false,
+  _requiredStrength: 65, // default; fetched from PasswdStrength::get_required_strength
+};
+
+const STEP_ORDER = ['welcome', 'domain', 'domain-config', 'builder', 'email-choice', 'email-form', 'review', 'success'];
+
+// ── Smart detection — skip domain/email steps based on account state ──
+var _skipDomainSteps = false;
+var _skipEmailSteps = false;
+
+// ── Illustrations ──
+// Source: wizard-steps.js WIZARD_ILLUSTRATIONS — keep in sync
+var WIZARD_ILLUSTRATIONS = {
+  globe: '<svg viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="70" cy="70" r="50" stroke="var(--accent)" stroke-opacity="0.2" stroke-width="1.5" fill="var(--accent)" fill-opacity="0.03"/><circle cx="70" cy="70" r="30" stroke="var(--accent)" stroke-opacity="0.12" stroke-width="1"/><path d="M70 20V120" stroke="var(--accent)" stroke-opacity="0.15" stroke-width="1"/><path d="M20 70H120" stroke="var(--accent)" stroke-opacity="0.15" stroke-width="1"/><ellipse cx="70" cy="70" rx="50" ry="20" stroke="var(--accent)" stroke-opacity="0.12" stroke-width="1"/><ellipse cx="70" cy="70" rx="30" ry="50" stroke="var(--accent)" stroke-opacity="0.1" stroke-width="1"/><circle cx="70" cy="70" r="4" fill="var(--accent)" fill-opacity="0.35"/></svg>',
+  browser: '<svg viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="28" width="100" height="84" rx="8" fill="var(--accent)" fill-opacity="0.04" stroke="var(--accent)" stroke-opacity="0.2" stroke-width="1.5"/><rect x="20" y="28" width="100" height="18" rx="8" fill="var(--accent)" fill-opacity="0.08"/><circle cx="33" cy="37" r="3" fill="var(--accent)" fill-opacity="0.25"/><circle cx="43" cy="37" r="3" fill="var(--accent)" fill-opacity="0.25"/><circle cx="53" cy="37" r="3" fill="var(--accent)" fill-opacity="0.25"/><rect x="30" y="54" width="36" height="4" rx="2" fill="var(--accent)" fill-opacity="0.2"/><rect x="30" y="63" width="24" height="3" rx="1.5" fill="var(--accent)" fill-opacity="0.12"/><rect x="30" y="74" width="80" height="28" rx="4" fill="var(--accent)" fill-opacity="0.04" stroke="var(--accent)" stroke-opacity="0.1" stroke-width="1"/></svg>',
+  envelope: '<svg viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="38" width="100" height="64" rx="8" fill="var(--accent)" fill-opacity="0.04" stroke="var(--accent)" stroke-opacity="0.2" stroke-width="1.5"/><path d="M22 40L70 75L118 40" stroke="var(--accent)" stroke-opacity="0.25" stroke-width="1.5"/><path d="M22 100L55 72" stroke="var(--accent)" stroke-opacity="0.12" stroke-width="1"/><path d="M118 100L85 72" stroke="var(--accent)" stroke-opacity="0.12" stroke-width="1"/><circle cx="70" cy="65" r="5" fill="var(--accent)" fill-opacity="0.25"/></svg>',
+  rocket: '<svg viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="70" cy="70" r="50" fill="var(--accent)" fill-opacity="0.03" stroke="var(--accent)" stroke-opacity="0.12" stroke-width="1"/><path d="M70 30C70 30 85 50 85 75C85 100 70 110 70 110C70 110 55 100 55 75C55 50 70 30 70 30Z" fill="var(--accent)" fill-opacity="0.08" stroke="var(--accent)" stroke-opacity="0.25" stroke-width="1.5"/><circle cx="70" cy="68" r="6" fill="var(--accent)" fill-opacity="0.2" stroke="var(--accent)" stroke-opacity="0.3" stroke-width="1"/><path d="M62 95L55 105" stroke="var(--accent)" stroke-opacity="0.15" stroke-width="1.5"/><path d="M78 95L85 105" stroke="var(--accent)" stroke-opacity="0.15" stroke-width="1.5"/><path d="M66 108C66 108 70 118 70 118C70 118 74 108 74 108" stroke="var(--accent)" stroke-opacity="0.2" stroke-width="1.5"/></svg>',
+};
+
+var STEP_ILLUST_MAP = {
+  'domain': 'globe', 'domain-config': 'globe',
+  'builder': 'browser',
+  'email-choice': 'envelope', 'email-form': 'envelope',
+  'review': 'rocket',
+};
+
+// Inject SVG illustrations
+Object.keys(STEP_ILLUST_MAP).forEach(function(stepId) {
+  var el = document.getElementById('illust-' + stepId);
+  if (el) el.innerHTML = WIZARD_ILLUSTRATIONS[STEP_ILLUST_MAP[stepId]];
+});
+
+// Inject skip link into each step's content area and welcome
+var skipHtml = '<div class="onboarding-skip-wrap"><a href="../index/" onclick="markOnboardingComplete()" class="onboarding-skip-link"><i class="ri-skip-forward-line" aria-hidden="true"></i> ' + t('Skip to dashboard') + '</a></div>';
+document.querySelectorAll('.onboarding-content, .onboarding-welcome').forEach(function(el) {
+  el.insertAdjacentHTML('beforeend', skipHtml);
+});
+
+// ── Chunked progress bar ──
+var CHUNK_LABELS_KEYS = ['Account', 'Setup', 'Build', 'Launch'];
+var CHUNK_STEPS_FULL = { 1: ['welcome','domain','domain-config'], 2: ['builder','email-choice','email-form'], 3: ['review','success'] };
+var CHUNK_STEPS_NO_DOMAIN = { 1: ['welcome'], 2: ['builder','email-choice','email-form'], 3: ['review','success'] };
+var CHUNK_STEPS_NO_EMAIL = { 1: ['welcome','domain','domain-config'], 2: ['builder'], 3: ['review','success'] };
+var CHUNK_STEPS_MINIMAL = { 1: ['welcome'], 2: ['builder'], 3: ['review','success'] };
+
+function getChunkConfig() {
+  if (!_skipDomainSteps && !_skipEmailSteps) return CHUNK_STEPS_FULL;
+  if (_skipDomainSteps && !_skipEmailSteps) return CHUNK_STEPS_NO_DOMAIN;
+  if (!_skipDomainSteps && _skipEmailSteps) return CHUNK_STEPS_NO_EMAIL;
+  return CHUNK_STEPS_MINIMAL;
+}
+
+function renderProgressHtml(chunks, currentIdx) {
+  var totalSteps = 1;
+  for (var c = 1; c <= 3; c++) totalSteps += (chunks[c] || []).length;
+
+  var completed = 1;
+  for (var c = 1; c <= 3; c++) {
+    var chunkSteps = chunks[c] || [];
+    for (var s = 0; s < chunkSteps.length; s++) {
+      if (STEP_ORDER.indexOf(chunkSteps[s]) < currentIdx) completed++;
+    }
+  }
+
+  var percent = Math.round((completed / totalSteps) * 100);
+
+  var html = '<div class="onboarding-progress-header">' +
+    '<span class="onboarding-progress-percent">' + percent + '%</span>' +
+    '</div><div class="onboarding-progress-bar">';
+
+  html += '<div class="onboarding-progress-chunk"><div class="onboarding-progress-fill" style="transform:scaleX(1)"></div></div>';
+
+  for (var c = 1; c <= 3; c++) {
+    var chunkSteps = chunks[c] || [];
+    var chunkFill = 0;
+    for (var s = 0; s < chunkSteps.length; s++) {
+      if (STEP_ORDER.indexOf(chunkSteps[s]) < currentIdx) chunkFill++;
+      else if (STEP_ORDER.indexOf(chunkSteps[s]) === currentIdx) chunkFill += 0.5;
+    }
+    var fill = chunkSteps.length > 0 ? chunkFill / chunkSteps.length : 0;
+    html += '<div class="onboarding-progress-chunk"><div class="onboarding-progress-fill" style="transform:scaleX(' + fill.toFixed(2) + ')"></div></div>';
+  }
+
+  html += '</div><div class="onboarding-progress-labels">';
+  for (var i = 0; i < CHUNK_LABELS_KEYS.length; i++) {
+    var cls = 'onboarding-progress-label';
+    if (i === 0) {
+      html += '<span class="' + cls + ' done"><i class="ri-check-line" aria-hidden="true"></i> ' + t(CHUNK_LABELS_KEYS[i]) + '</span>';
+    } else {
+      var cs = chunks[i] || [];
+      var allDone = cs.length > 0 && cs.every(function(s) { return STEP_ORDER.indexOf(s) < currentIdx; });
+      var isActive = cs.some(function(s) { return STEP_ORDER.indexOf(s) === currentIdx; });
+      if (allDone) cls += ' done';
+      else if (isActive) cls += ' active';
+      html += '<span class="' + cls + '">' + (allDone ? '<i class="ri-check-line" aria-hidden="true"></i> ' : '') + t(CHUNK_LABELS_KEYS[i]) + '</span>';
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+function updateProgressBar(stepId) {
+  var chunks = getChunkConfig();
+  var currentIdx = STEP_ORDER.indexOf(stepId);
+  document.querySelectorAll('.onboarding-progress').forEach(function(bar) {
+    bar.innerHTML = renderProgressHtml(chunks, currentIdx);
+  });
+}
+
+// Source: wizard-steps.js spawnConfetti() — keep in sync
+function spawnConfetti(container) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var colors = ['#f97316', '#2dd4bf', '#8b5cf6', '#f43f5e', '#fbbf24', '#38bdf8'];
+  for (var i = 0; i < 45; i++) {
+    var particle = document.createElement('div');
+    particle.className = 'confetti-particle';
+    var size = 4 + Math.random() * 6;
+    particle.style.width = size + 'px';
+    particle.style.height = size + 'px';
+    particle.style.left = Math.random() * 100 + '%';
+    particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    particle.style.setProperty('--confetti-duration', (1.5 + Math.random() * 1.5) + 's');
+    particle.style.setProperty('--confetti-delay', (Math.random() * 2) + 's');
+    if (Math.random() > 0.5) particle.style.borderRadius = '50%';
+    else particle.style.borderRadius = '2px';
+    particle.addEventListener('animationend', function() { this.remove(); });
+    container.appendChild(particle);
+  }
+}
+
+(async function detectAccountState() {
+  if (!isLive) return;
+  try {
+    // Load features first so hasFeature() works synchronously
+    await CpanelAPI.loadFeatures();
+
+    // Check if email (popaccts) feature is available
+    if (!CpanelAPI.hasFeature('popaccts')) {
+      _skipEmailSteps = true;
+      onboardingState.emailSkipped = true;
+    }
+
+    // Check domain state
+    const domainData = await CpanelAPI.getDomainList();
+    const primary = domainData.main_domain || '';
+    if (primary && !TEMP_DOMAIN_PATTERN.test(primary)) {
+      _skipDomainSteps = true;
+      onboardingState.primaryDomain = primary;
+      onboardingState.domainType = 'primary';
+      onboardingState.domain = primary;
+      onboardingState._domainsLoaded = true;
+    }
+  } catch (e) {
+    console.warn('Account state detection failed, showing full flow:', e);
+  }
+})();
+
+// ── Mark onboarding complete ──
+async function markOnboardingComplete() {
+  localStorage.setItem(CpanelAPI.userKey('meridian-onboarding-complete'), 'true');
+  var milestones = { website: !!onboardingState.builder, ssl: true };
+  if (onboardingState.emailUser && !onboardingState.emailSkipped) milestones.email = true;
+  localStorage.setItem(CpanelAPI.userKey('meridian-onboarding-milestones'), JSON.stringify(milestones));
+  if (isLive) {
+    try {
+      await CpanelAPI.setPersonalization({ meridian_onboarding_complete: '1' });
+    } catch (e) {
+      console.warn('Failed to save onboarding preference:', e);
+    }
+  }
+}
+
+// ── Stepper mapping (dynamic based on which steps are active) ──
+// ── Navigation ──
+let _prevStepIdx = 0; // track direction for animation
+var _prevIllustId = null;
+
+async function showStep(stepId) {
+  const newIdx = STEP_ORDER.indexOf(stepId);
+  const goingBack = newIdx < _prevStepIdx;
+  const direction = goingBack ? 'backward' : 'forward';
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Exit animation on current step (only for steps with .onboarding-content)
+  const currentEl = document.querySelector('.onboarding-welcome.active, .onboarding-step.active, .onboarding-success.active');
+  if (currentEl && _prevStepIdx >= 0 && !reducedMotion) {
+    var contentEl = currentEl.querySelector('.onboarding-content');
+    if (contentEl) {
+      currentEl.classList.add('exiting-' + direction);
+      await new Promise(function(resolve) {
+        var done = false;
+        function finish() { if (!done) { done = true; resolve(); } }
+        currentEl.addEventListener('animationend', function handler(e) {
+          if (e.target !== contentEl) return;
+          currentEl.removeEventListener('animationend', handler);
+          finish();
+        });
+        setTimeout(finish, 400);
+      });
+    }
+  }
+
+  // Hide all steps
+  document.querySelectorAll('.onboarding-welcome, .onboarding-step, .onboarding-success').forEach(function(el) {
+    el.classList.remove('active', 'exiting-forward', 'exiting-backward', 'entering-forward', 'entering-backward');
+  });
+
+  // Show target
+  const target = document.getElementById('step-' + stepId);
+  if (target) {
+    target.classList.add('active');
+    var targetContent = target.querySelector('.onboarding-content');
+    // Only animate steps that have .onboarding-content (not welcome/success)
+    if (targetContent && !reducedMotion) {
+      target.classList.add('entering-' + direction);
+      targetContent.addEventListener('animationend', function handler(e) {
+        if (e.target !== targetContent) return;
+        target.classList.remove('entering-forward', 'entering-backward');
+        targetContent.removeEventListener('animationend', handler);
+      });
+    }
+  }
+
+  _prevStepIdx = newIdx;
+  onboardingState.currentStep = stepId;
+
+  // Update progress bar
+  updateProgressBar(stepId);
+
+  // Illustration crossfade
+  var illustEl = target ? target.querySelector('.onboarding-illust') : null;
+  if (illustEl) {
+    var newIllustId = illustEl.dataset.illust;
+    if (_prevIllustId && _prevIllustId !== newIllustId && !reducedMotion) {
+      illustEl.classList.add('illust-entering');
+      illustEl.addEventListener('animationend', function() {
+        illustEl.classList.remove('illust-entering');
+      }, { once: true });
+    }
+    _prevIllustId = newIllustId;
+  }
+
+  // Confetti on success
+  if (stepId === 'success') {
+    var successEl = document.querySelector('.onboarding-success');
+    if (successEl) spawnConfetti(successEl);
+  }
+
+  // Step-specific initialization
+  if (stepId === 'domain') {
+    if (isLive && !onboardingState._domainsLoaded) {
+      onboardingState._domainsLoaded = true;
+      try {
+        const domainData = await CpanelAPI.getDomainList();
+        const primary = domainData.main_domain || 'example.com';
+        onboardingState.primaryDomain = primary;
+        document.getElementById('domainPrimaryLabel').textContent = t('Use ') + primary;
+        onboardingState.domain = primary;
+        const parentInput = document.getElementById('subdomainParent');
+        if (parentInput) parentInput.value = primary;
+        if (TEMP_DOMAIN_PATTERN.test(primary)) {
+          document.getElementById('tempDomainNotice').style.display = '';
+          document.getElementById('tempDomainName').textContent = primary;
+        }
+
+        // Check addon domain / subdomain limits and disable choices at capacity
+        var addonCount = Array.isArray(domainData.addon_domains) ? domainData.addon_domains.length : 0;
+        var subCount = Array.isArray(domainData.sub_domains) ? domainData.sub_domains.length : 0;
+        try {
+          var usages = await CpanelAPI.call('StatsBar', 'get_stats', {
+            display: 'addondomains|subdomains'
+          });
+          var items = usages.data || [];
+          for (var i = 0; i < items.length; i++) {
+            var item = items[i];
+            var max = item.max !== undefined && item.max !== null && item.max !== '' ? Number(item.max) : null;
+            if (max !== null) {
+              var count = Number(item.count) || 0;
+              if (item.id === 'addondomains' && count >= max) {
+                disableDomainChoice('choiceExisting', 'choiceExistingDesc', t('Addon domain limit reached ({0}/{1})', count, max));
+              }
+              if (item.id === 'subdomains' && count >= max) {
+                disableDomainChoice('choiceSubdomain', 'choiceSubdomainDesc', t('Subdomain limit reached ({0}/{1})', count, max));
+              }
+            }
+          }
+        } catch (e) {
+          // StatsBar unavailable — fall through; launchSite() will catch the error
+          console.warn('Could not check domain limits:', e);
+        }
+      } catch (e) { console.warn('Failed to load domains:', e); }
+    }
+  }
+
+  if (stepId === 'domain-config') {
+    initDomainConfig();
+  }
+  if (stepId === 'email-choice') {
+    const hint = document.getElementById('emailDomainHint');
+    if (hint) hint.textContent = onboardingState.domain || 'yourdomain.com';
+  }
+  if (stepId === 'email-form') {
+    const domainEl = document.getElementById('emailDomain');
+    if (domainEl) domainEl.value = onboardingState.domain || 'example.com';
+    // Fetch server's required password strength for email (pop) accounts
+    if (isLive) {
+      CpanelAPI.call('PasswdStrength', 'get_required_strength', { app: 'pop' })
+        .then(function(r) {
+          var s = Number(r.data?.strength ?? r.data ?? 65);
+          onboardingState._requiredStrength = s;
+          validateEmail(); // re-validate with real threshold
+        })
+        .catch(function() { /* keep default 65 */ });
+    }
+  }
+  if (stepId === 'builder') {
+    if (isLive && !onboardingState._buildersGated) {
+      onboardingState._buildersGated = true;
+      if (!CpanelAPI.hasFeature('sitejet')) {
+        disableBuilderCard('sitejet');
+      }
+      if (!CpanelAPI.hasFeature('wordpress') && !CpanelAPI.hasFeature('wptoolkit')) {
+        disableBuilderCard('wordpress');
+      }
+    }
+  }
+  if (stepId === 'review') {
+    buildSummary();
+  }
+
+  // Update back button visibility
+  const back = document.getElementById('onboardingBack');
+  if (back) {
+    const idx = STEP_ORDER.indexOf(stepId);
+    back.style.visibility = (idx > 0 && stepId !== 'success') ? 'visible' : 'hidden';
+  }
+
+  // Update stepper
+  // Stepper removed — progress bar in .onboarding-content handles this now
+
+  // Focus heading for a11y
+  if (target) {
+    const heading = target.querySelector('h1, h2');
+    if (heading) {
+      heading.setAttribute('tabindex', '-1');
+      heading.style.outline = 'none';
+      heading.focus({ preventScroll: true });
+    }
+  }
+}
+
+function onboardingPrev() {
+  const current = onboardingState.currentStep;
+
+  if (current === 'domain') {
+    showStep('welcome');
+  } else if (current === 'domain-config') {
+    showStep('domain');
+  } else if (current === 'builder') {
+    if (_skipDomainSteps) {
+      showStep('welcome');
+    } else if (onboardingState.domainType === 'primary') {
+      showStep('domain');
+    } else {
+      showStep('domain-config');
+    }
+  } else if (current === 'email-choice') {
+    showStep('builder');
+  } else if (current === 'email-form') {
+    showStep('email-choice');
+  } else if (current === 'review') {
+    if (_skipEmailSteps) {
+      showStep('builder');
+    } else if (onboardingState.emailSkipped) {
+      showStep('email-choice');
+    } else {
+      showStep('email-form');
+    }
+  } else {
+    const idx = STEP_ORDER.indexOf(current);
+    if (idx > 0) showStep(STEP_ORDER[idx - 1]);
+  }
+}
+
+// ── Stepper ──
+// ── Disable a domain choice card when limit is reached ──
+function disableDomainChoice(cardId, descId, reason) {
+  var card = document.getElementById(cardId);
+  if (!card) return;
+  card.style.opacity = '0.5';
+  card.style.pointerEvents = 'none';
+  card.setAttribute('aria-disabled', 'true');
+  card.removeAttribute('tabindex');
+  var desc = document.getElementById(descId);
+  if (desc) {
+    desc.textContent = reason;
+    desc.style.color = 'var(--status-error)';
+  }
+}
+
+// ── Keyboard handler for choice cards ──
+function choiceKeydown(e, fn) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    fn();
+  }
+}
+
+// ── Domain step (type selection) ──
+function selectDomain(type, el) {
+  onboardingState.domainType = type;
+
+  const group = document.querySelector('#step-domain .onboarding-choices');
+  group.querySelectorAll('.onboarding-choice').forEach(c => {
+    c.classList.remove('selected');
+    c.setAttribute('aria-checked', 'false');
+  });
+  el.classList.add('selected');
+  el.setAttribute('aria-checked', 'true');
+  el.closest('.onboarding-choices').classList.add('has-selection');
+
+  if (type === 'primary') {
+    onboardingState.domain = onboardingState.primaryDomain || 'example.com';
+  }
+
+  document.getElementById('domainContinue').disabled = false;
+}
+
+function confirmDomain() {
+  if (onboardingState.domainType === 'primary') {
+    showStep('builder');
+  } else {
+    showStep('domain-config');
+  }
+}
+
+// ── Domain Config step ──
+function initDomainConfig() {
+  const existingForm = document.getElementById('domainFormExisting');
+  const subdomainForm = document.getElementById('domainFormSubdomain');
+  const titleEl = document.getElementById('domainConfigTitle');
+  const subtitleEl = document.getElementById('domainConfigSubtitle');
+  const parentDomain = onboardingState.primaryDomain || 'example.com';
+
+  if (onboardingState.domainType === 'subdomain') {
+    existingForm.style.display = 'none';
+    subdomainForm.style.display = 'block';
+    titleEl.textContent = t('Create your subdomain');
+    subtitleEl.textContent = t('Choose a prefix for your subdomain under') + ' ' + parentDomain + '.';
+    const parentInput = document.getElementById('subdomainParent');
+    if (parentInput) parentInput.value = parentDomain;
+    updateSubdomainPreview();
+  } else {
+    existingForm.style.display = 'block';
+    subdomainForm.style.display = 'none';
+    titleEl.textContent = t('Enter your domain');
+    subtitleEl.textContent = t('We\'ll configure hosting for this domain.');
+  }
+
+  validateDomainConfig();
+}
+
+function validateDomainConfig() {
+  const type = onboardingState.domainType;
+  const btn = document.getElementById('domainConfigContinue');
+  const errorEl = document.getElementById('domainConfigError');
+  const parentDomain = onboardingState.primaryDomain || 'example.com';
+
+  if (type === 'existing') {
+    const input = document.getElementById('domainInput');
+    const val = (input?.value || '').trim();
+    const valid = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/.test(val);
+    btn.disabled = !valid;
+    onboardingState.domain = val;
+    errorEl.style.display = (val && !valid) ? 'flex' : 'none';
+    document.getElementById('domainConfigErrorText').textContent = t('Please enter a valid domain name (e.g., yourdomain.com)');
+  } else if (type === 'subdomain') {
+    const prefix = document.getElementById('subdomainPrefix');
+    const val = (prefix?.value || '').trim();
+    const valid = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/.test(val);
+    btn.disabled = !valid;
+    onboardingState.domain = val ? val + '.' + parentDomain : '';
+    errorEl.style.display = (val && !valid) ? 'flex' : 'none';
+    document.getElementById('domainConfigErrorText').textContent = t('Subdomain can only contain letters, numbers, and hyphens');
+  } else {
+    btn.disabled = true;
+    errorEl.style.display = 'none';
+  }
+}
+
+function updateSubdomainPreview() {
+  const prefix = (document.getElementById('subdomainPrefix')?.value || '').trim();
+  const preview = document.getElementById('subdomainPreview');
+  const parentDomain = onboardingState.primaryDomain || 'example.com';
+  if (preview) {
+    preview.textContent = (prefix || 'mysite') + '.' + parentDomain;
+  }
+}
+
+function confirmDomainConfig() {
+  showStep('builder');
+}
+
+// ── DNS Check ──
+async function checkDns() {
+  const domain = (document.getElementById('domainInput')?.value || '').trim();
+  if (!domain) return;
+  const statusEl = document.getElementById('dnsStatus');
+  if (!statusEl) return;
+
+  statusEl.innerHTML = '<div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-lg); margin-top: var(--space-4); background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-secondary);"><i class="ri-loader-4-line" style="animation: spin 1s linear infinite;" aria-hidden="true"></i><div>Checking DNS for <strong>' + esc(domain) + '</strong>...</div></div>';
+
+  if (isLive) {
+    let isResolved = false;
+    let nameservers = [];
+    try {
+      const result = await CpanelAPI.call('DomainInfo', 'single_domain_data', { domain });
+      isResolved = !!(result.data);
+    } catch (e) { isResolved = false; }
+
+    if (!isResolved) {
+      try {
+        const domains = await CpanelAPI.getDomainList();
+        const mainDomain = domains.main_domain || domain;
+        const zoneResult = await CpanelAPI.call('DNS', 'parse_zone', { zone: mainDomain });
+        const records = zoneResult.data || [];
+        nameservers = records
+          .filter(r => r.record_type === 'NS')
+          .map(r => {
+            if (r.data_b64 && r.data_b64.length) return atob(r.data_b64[0]).replace(/\.$/, '');
+            return (r.nsdname || '').replace(/\.$/, '');
+          })
+          .filter(ns => ns.length > 0);
+      } catch (e) { nameservers = []; }
+    }
+
+    if (isResolved) {
+      statusEl.innerHTML = '<div style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-lg); margin-top: var(--space-4); background: var(--status-success-bg); border: 1px solid var(--status-success-border); color: var(--status-success);"><i class="ri-checkbox-circle-fill" aria-hidden="true"></i><div><strong>DNS looks good!</strong> This domain is pointing to this server.</div></div>';
+    } else {
+      const nsHtml = nameservers.length > 0
+        ? nameservers.map(ns => '<code style="font-size: var(--text-xs); color: var(--text-brand);">' + esc(ns) + '</code>').join(' and ')
+        : '<code style="font-size: var(--text-xs); color: var(--text-brand);">ns1.webhost.com</code> and <code style="font-size: var(--text-xs); color: var(--text-brand);">ns2.webhost.com</code>';
+      statusEl.innerHTML = '<div style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-lg); margin-top: var(--space-4); background: var(--status-warning-bg); border: 1px solid var(--status-warning-border); color: var(--text-primary);"><i class="ri-error-warning-line" style="color: var(--status-warning);" aria-hidden="true"></i><div><strong>DNS not pointing here yet.</strong> Update your nameservers to ' + nsHtml + ' at your domain registrar. This can take up to 48 hours to propagate.</div></div>';
+    }
+    document.getElementById('domainConfigContinue').disabled = false;
+  } else {
+    // Mock delay + random result
+    await new Promise(r => setTimeout(r, 1000));
+    const isResolved = Math.random() > 0.4;
+    if (isResolved) {
+      statusEl.innerHTML = '<div style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-lg); margin-top: var(--space-4); background: var(--status-success-bg); border: 1px solid var(--status-success-border); color: var(--status-success);"><i class="ri-checkbox-circle-fill" aria-hidden="true"></i><div><strong>DNS looks good!</strong> This domain is pointing to this server.</div></div>';
+    } else {
+      statusEl.innerHTML = '<div style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-lg); margin-top: var(--space-4); background: var(--status-warning-bg); border: 1px solid var(--status-warning-border); color: var(--text-primary);"><i class="ri-error-warning-line" style="color: var(--status-warning);" aria-hidden="true"></i><div><strong>DNS not pointing here yet.</strong> Update your nameservers to <code style="font-size: var(--text-xs); color: var(--text-brand);">ns1.webhost.com</code> and <code style="font-size: var(--text-xs); color: var(--text-brand);">ns2.webhost.com</code> at your domain registrar. This can take up to 48 hours to propagate.</div></div>';
+    }
+    document.getElementById('domainConfigContinue').disabled = false;
+  }
+}
+
+// ── Email Choice step ──
+function selectEmailChoice(choice, el) {
+  onboardingState.emailChoice = choice;
+
+  const group = document.querySelector('#step-email-choice .onboarding-choices');
+  group.querySelectorAll('.onboarding-choice').forEach(c => {
+    c.classList.remove('selected');
+    c.setAttribute('aria-checked', 'false');
+  });
+  el.classList.add('selected');
+  el.setAttribute('aria-checked', 'true');
+  el.closest('.onboarding-choices').classList.add('has-selection');
+
+  if (choice === 'no') {
+    onboardingState.emailSkipped = true;
+    onboardingState.emailUser = '';
+    onboardingState.emailPassword = '';
+    // Auto-advance after brief pause
+    setTimeout(function() { showStep('review'); }, 400);
+  } else {
+    onboardingState.emailSkipped = false;
+    showStep('email-form');
+  }
+}
+
+// ── Email Form step ──
+// Approximate cPanel's entropy-based password strength (0–100).
+// cPanel counts distinct char types, computes entropy bits, and maps to 0–100
+// with a threshold of 70 bits = 100 strength. This is a JS approximation.
+function estimatePasswordStrength(val) {
+  if (!val || val.length < 4) return val.length > 0 ? 1 : 0;
+  // Count symbol pool sizes for each character class present
+  var pool = 0;
+  if (/[0-9]/.test(val)) pool += 10;
+  if (/[a-f]/.test(val)) pool += 6;
+  if (/[g-z]/.test(val)) pool += 20;
+  if (/[A-F]/.test(val)) pool += 6;
+  if (/[G-Z]/.test(val)) pool += 20;
+  if (/[^a-zA-Z0-9\s]/.test(val)) pool += 22;
+  if (/\s/.test(val)) pool += 1;
+  if (pool === 0) pool = 26; // fallback
+  // Count distinct characters
+  var distinct = new Set(val).size;
+  // Entropy approximation: distinct_chars * log2(pool_size)
+  var entropy = distinct * (Math.log(pool) / Math.LN2);
+  var THRESHOLD = 70;
+  if (entropy > THRESHOLD) return 100;
+  return Math.min(100, Math.round(100 * (entropy / THRESHOLD)));
+}
+
+function validateEmail() {
+  const user = (document.getElementById('emailUser')?.value || '').trim();
+  const pass = document.getElementById('emailPassword')?.value || '';
+  const btn = document.getElementById('emailContinue');
+  const strength = estimatePasswordStrength(pass);
+  const required = onboardingState._requiredStrength || 65;
+  const passStrong = pass.length >= 8 && strength >= required;
+  const valid = /^[a-zA-Z0-9._%+-]+$/.test(user) && passStrong;
+  btn.disabled = !valid;
+  onboardingState.emailUser = user;
+  onboardingState.emailPassword = pass;
+}
+
+function updatePasswordStrength() {
+  const val = document.getElementById('emailPassword')?.value || '';
+  const fill = document.getElementById('emailStrengthFill');
+  const label = document.getElementById('emailStrengthLabel');
+  if (!fill || !label) return;
+
+  const strength = estimatePasswordStrength(val);
+  const required = onboardingState._requiredStrength || 65;
+  const pct = Math.min(100, strength);
+
+  var color, text;
+  if (!val) {
+    color = 'var(--border-default)'; text = '';
+  } else if (strength < required * 0.5) {
+    color = 'var(--status-error)'; text = t('Weak — add uppercase, numbers, and symbols');
+  } else if (strength < required) {
+    color = 'var(--status-warning)'; text = t('Fair — needs more complexity');
+  } else if (strength < 80) {
+    color = 'var(--status-success)'; text = t('Good');
+  } else {
+    color = 'var(--status-success)'; text = t('Strong');
+  }
+
+  fill.style.width = pct + '%';
+  fill.style.background = color;
+  label.textContent = text;
+  label.style.color = color;
+}
+
+// ── Generate password for onboarding email ──
+function generateOnboardingPassword() {
+  if (typeof generatePassword === 'function') {
+    // Use shell.js generator if available
+    var pw = generatePassword();
+  } else {
+    // Fallback generator
+    var chars = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*';
+    var pw = '';
+    for (var i = 0; i < 16; i++) pw += chars[Math.floor(Math.random() * chars.length)];
+  }
+  var input = document.getElementById('emailPassword');
+  if (input) {
+    input.type = 'text';
+    input.value = pw;
+  }
+  validateEmail();
+  updatePasswordStrength();
+}
+
+function confirmEmail() {
+  // Just save the email details — actual creation happens at launch
+  // (domain may not exist yet if user chose "Use a new domain" or subdomain)
+  onboardingState.emailSkipped = false;
+  onboardingState.emailPassword = document.getElementById('emailPassword')?.value || '';
+  showStep('review');
+}
+
+// ── Builder step ──
+function selectBuilder(type, el) {
+  onboardingState.builder = type;
+
+  const group = document.querySelector('#step-builder .onboarding-choices');
+  group.querySelectorAll('.onboarding-choice').forEach(c => {
+    c.classList.remove('selected');
+    c.setAttribute('aria-checked', 'false');
+  });
+  el.classList.add('selected');
+  el.setAttribute('aria-checked', 'true');
+  el.closest('.onboarding-choices').classList.add('has-selection');
+
+  document.getElementById('builderContinue').disabled = false;
+}
+
+function disableBuilderCard(builder) {
+  const card = document.querySelector('[data-builder="' + builder + '"]');
+  if (card) {
+    card.style.opacity = '0.5';
+    card.style.pointerEvents = 'none';
+    card.setAttribute('aria-disabled', 'true');
+    // Add "Not available" badge
+    const badge = document.createElement('span');
+    badge.className = 'badge badge-neutral';
+    badge.style.cssText = 'position: absolute; top: var(--space-3); inset-inline-end: var(--space-3);';
+    badge.textContent = t('Not Available');
+    badge.setAttribute('data-t', '');
+    card.appendChild(badge);
+    // Remove "Recommended" badge if present
+    const recommended = card.querySelector('.badge-accent');
+    if (recommended) recommended.remove();
+  }
+}
+
+// ── Summary (Review step) ──
+function buildSummary() {
+  const container = document.getElementById('reviewSummary');
+  if (!container) return;
+
+  const domain = onboardingState.domain || 'example.com';
+  const builderLabels = { sitejet: 'Sitejet Builder', wordpress: 'WordPress', custom: t('Custom Code') };
+  const builderIcons = { sitejet: 'ri-layout-masonry-line', wordpress: 'ri-wordpress-line', custom: 'ri-code-s-slash-line' };
+
+  let html = '';
+
+  // Domain
+  html += '<div class="onboarding-summary-card">'
+    + '<div class="onboarding-summary-icon" style="background: var(--accent-muted); color: var(--text-brand);"><i class="ri-global-line" aria-hidden="true"></i></div>'
+    + '<div class="onboarding-summary-content">'
+    + '<div class="onboarding-summary-label" data-t>Domain</div>'
+    + '<div class="onboarding-summary-value">' + esc(domain) + '</div>'
+    + '</div>'
+    + (_skipDomainSteps ? '' : '<button type="button" class="onboarding-summary-edit" aria-label="Edit domain" onclick="showStep(\'domain\')" data-t>Edit</button>')
+    + '</div>';
+
+  // Builder
+  html += '<div class="onboarding-summary-card">'
+    + '<div class="onboarding-summary-icon" style="background: var(--bg-muted); color: var(--text-secondary);"><i class="' + (builderIcons[onboardingState.builder] || 'ri-code-line') + '" aria-hidden="true"></i></div>'
+    + '<div class="onboarding-summary-content">'
+    + '<div class="onboarding-summary-label" data-t>Builder</div>'
+    + '<div class="onboarding-summary-value">' + esc(builderLabels[onboardingState.builder] || t('Not selected')) + '</div>'
+    + '</div>'
+    + '<button type="button" class="onboarding-summary-edit" aria-label="Edit builder" onclick="showStep(\'builder\')" data-t>Edit</button>'
+    + '</div>';
+
+  // Email (only shown if email feature is available)
+  if (!_skipEmailSteps) {
+    html += '<div class="onboarding-summary-card">'
+      + '<div class="onboarding-summary-icon" style="background: var(--status-info-bg); color: var(--status-info);"><i class="ri-mail-line" aria-hidden="true"></i></div>'
+      + '<div class="onboarding-summary-content">'
+      + '<div class="onboarding-summary-label" data-t>Email</div>'
+      + '<div class="onboarding-summary-value' + (onboardingState.emailSkipped ? ' skipped' : '') + '">'
+      + (onboardingState.emailSkipped ? '<span data-t>Skipped</span>' : esc(onboardingState.emailUser + '@' + domain))
+      + '</div>'
+      + '</div>'
+      + '<button type="button" class="onboarding-summary-edit" aria-label="Edit email" onclick="showStep(\'email-choice\')" data-t>Edit</button>'
+      + '</div>';
+  }
+
+  container.innerHTML = html;
+}
+
+// ── Launch (Review → Success) ──
+function showLaunchError(msg) {
+  const el = document.getElementById('launchError');
+  document.getElementById('launchErrorText').textContent = msg;
+  el.style.display = 'flex';
+}
+
+function hideLaunchError() {
+  document.getElementById('launchError').style.display = 'none';
+}
+
+function resetLaunchBtn() {
+  const btn = document.getElementById('launchBtn');
+  btn.classList.remove('loading');
+  btn.disabled = false;
+  btn.innerHTML = '<span data-t>Launch My Website</span> <i class="ri-rocket-2-line" aria-hidden="true"></i>';
+}
+
+async function launchSite() {
+  const btn = document.getElementById('launchBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ri-loader-4-line btn-spinner" aria-hidden="true"></i> ' + t('Launching...');
+  hideLaunchError();
+
+  if (isLive) {
+    // ── Domain creation (hard gate — everything else depends on the domain) ──
+    if (onboardingState.domainType === 'existing') {
+      try {
+        await CpanelAPI.addAddonDomain(onboardingState.domain);
+      } catch (e) {
+        showLaunchError(t('Failed to add domain: ') + e.message);
+        resetLaunchBtn();
+        return;
+      }
+    } else if (onboardingState.domainType === 'subdomain') {
+      const parts = onboardingState.domain.split('.');
+      const prefix = parts[0];
+      const parent = parts.slice(1).join('.');
+      try {
+        await CpanelAPI.call2('SubDomain', 'addsubdomain', { domain: prefix, rootdomain: parent, dir: onboardingState.domain });
+      } catch (e) {
+        showLaunchError(t('Failed to create subdomain: ') + e.message);
+        resetLaunchBtn();
+        return;
+      }
+    }
+
+    // ── Email creation (after domain is provisioned) ──
+    if (!onboardingState.emailSkipped && onboardingState.emailUser) {
+      try {
+        await CpanelAPI.createEmailAccount(
+          onboardingState.emailUser,
+          onboardingState.domain,
+          onboardingState.emailPassword,
+          500
+        );
+      } catch (e) {
+        // If server rejects the password, hard stop so user can fix it
+        if (e.message && e.message.indexOf('strength') !== -1) {
+          showLaunchError(t('Password is too weak. Please go back and choose a stronger password.'));
+          resetLaunchBtn();
+          return;
+        }
+        // Other email errors are non-blocking — user can create it later
+        console.warn('Email creation failed:', e);
+      }
+    }
+
+    // ── App install ──
+    if (onboardingState.builder === 'wordpress') {
+      try {
+        const wpResult = await CpanelAPI.wpInstall({ domain: onboardingState.domain, title: 'My Website', admin: { login: 'admin', password: 'auto' } });
+        onboardingState._wpAdminUrl = wpResult?.data?.adminUrl || 'https://' + onboardingState.domain + '/wp-admin/';
+      } catch (e) { console.warn('WP:', e); }
+    } else if (onboardingState.builder === 'sitejet') {
+      try {
+        await CpanelAPI.sitejetCreateWebsite(onboardingState.domain);
+        try {
+          const ssoData = await CpanelAPI.sitejetGetSsoLink(onboardingState.domain);
+          onboardingState._sitejetSsoUrl = ssoData?.url || ssoData;
+        } catch (ssoErr) { console.warn('Sitejet SSO:', ssoErr); }
+      } catch (e) { console.warn('Sitejet:', e); }
+    }
+
+    // SSL
+    try { await CpanelAPI.call('SSL', 'start_autossl_check'); } catch (e) { /* non-blocking */ }
+
+    // Mark complete
+    await markOnboardingComplete();
+  } else {
+    // Simulate deploy
+    await new Promise(r => setTimeout(r, 2000));
+    markOnboardingComplete();
+  }
+
+  // Build success screen
+  const domain = onboardingState.domain || 'example.com';
+  document.getElementById('successSubtitle').textContent = domain + ' ' + t('is set up and ready to go.');
+
+  // Primary CTA
+  const ctaContainer = document.getElementById('successPrimaryCta');
+  const builderCtas = {
+    sitejet: { label: 'Open Sitejet Builder', icon: 'ri-layout-masonry-line' },
+    wordpress: { label: 'Go to WordPress Admin', icon: 'ri-wordpress-line' },
+    custom: { label: 'Open File Manager', icon: 'ri-folder-open-line' }
+  };
+  const cta = builderCtas[onboardingState.builder] || builderCtas.custom;
+  // Wire up real URLs for builder CTAs
+  let ctaOnclick = 'markOnboardingComplete()';
+  if (onboardingState.builder === 'sitejet' && onboardingState._sitejetSsoUrl) {
+    ctaOnclick = "markOnboardingComplete(); window.open('" + onboardingState._sitejetSsoUrl.replace(/'/g, "\\'") + "', '_blank')";
+  } else if (onboardingState.builder === 'wordpress' && onboardingState._wpAdminUrl) {
+    ctaOnclick = "markOnboardingComplete(); window.open('" + onboardingState._wpAdminUrl.replace(/'/g, "\\'") + "', '_blank')";
+  }
+
+  ctaContainer.innerHTML = '<button type="button" class="btn btn-primary btn-lg" onclick="' + esc(ctaOnclick) + '">'
+    + '<i class="' + cta.icon + '" aria-hidden="true"></i> <span data-t>' + cta.label + '</span>'
+    + '</button>';
+
+  // Secondary options
+  const optionsContainer = document.getElementById('nextOptions');
+  let optionsHtml = '<a href="../index/" class="onboarding-next-option" onclick="markOnboardingComplete()">'
+    + '<i class="ri-dashboard-line" aria-hidden="true"></i> <span data-t>Go to Dashboard</span>'
+    + '</a>';
+
+  if (onboardingState.emailSkipped) {
+    optionsHtml += '<a href="../email/" class="onboarding-next-option" onclick="markOnboardingComplete()">'
+      + '<i class="ri-mail-add-line" aria-hidden="true"></i> <span data-t>Add an email</span>'
+      + '</a>';
+  }
+
+  optionsHtml += '<a href="../websites/" class="onboarding-next-option" onclick="markOnboardingComplete()">'
+    + '<i class="ri-global-line" aria-hidden="true"></i> <span data-t>Manage your domain</span>'
+    + '</a>';
+
+  optionsContainer.innerHTML = optionsHtml;
+
+  // Transition to success
+  showStep('success');
+}
+</script>
+
+[% END %]

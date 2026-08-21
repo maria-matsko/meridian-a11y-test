@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cPanel — Profile</title>
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="stylesheet" href="meridian.css">
+
+<style>
+/* ===================================================================
+   PROFILE PAGE — SPECIFIC STYLES
+   =================================================================== */
+
+/* Profile header */
+.profile-header {
+  display: flex; align-items: center; gap: var(--space-6);
+  padding: var(--space-6);
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
+}
+.profile-avatar {
+  width: 72px; height: 72px; border-radius: var(--radius-full);
+  background: var(--accent-muted); color: var(--text-brand);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.75rem; font-weight: var(--weight-bold);
+  flex-shrink: 0; letter-spacing: var(--tracking-tight);
+}
+.profile-info { flex: 1; min-width: 0; }
+.profile-name { font-size: var(--text-xl); font-weight: var(--weight-bold); margin-bottom: var(--space-1); }
+.profile-meta { display: flex; flex-wrap: wrap; gap: var(--space-4); font-size: var(--text-sm); color: var(--text-secondary); }
+.profile-meta-item { display: flex; align-items: center; gap: var(--space-2); }
+.profile-meta-item i { color: var(--text-tertiary); font-size: 1rem; }
+
+/* Section cards */
+.settings-card {
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); margin-bottom: var(--space-5);
+  overflow: hidden;
+}
+.settings-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.settings-card-title {
+  display: flex; align-items: center; gap: var(--space-3);
+  font-weight: var(--weight-semibold); font-size: var(--text-sm);
+  margin: 0;
+}
+.settings-card-title i { color: var(--text-tertiary); font-size: 1.1rem; }
+.settings-card-body { padding: var(--space-5); }
+
+/* Form fields */
+.form-row { margin-bottom: var(--space-5); }
+.form-row:last-child { margin-bottom: 0; }
+.form-label {
+  display: block; font-size: var(--text-sm); font-weight: var(--weight-medium);
+  color: var(--text-secondary); margin-bottom: var(--space-2);
+}
+.form-input {
+  width: 100%; padding: var(--space-3) var(--space-4);
+  background: var(--bg-muted); border: 1px solid var(--border-default);
+  border-radius: var(--radius-md); color: var(--text-primary);
+  font-family: inherit; font-size: var(--text-sm);
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+.form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-muted); }
+.form-input::placeholder { color: var(--text-tertiary); }
+
+/* 2FA verification code input */
+#tfaVerifyCode {
+  text-align: center;
+  font-size: var(--text-lg);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  letter-spacing: 0.3em;
+}
+#tfaVerifyCode::placeholder { font-family: var(--font-sans, 'Plus Jakarta Sans', sans-serif); font-size: var(--text-sm); letter-spacing: normal; }
+
+.form-input-group {
+  display: flex; align-items: center;
+  background: var(--bg-muted); border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+.form-input-group:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-muted); }
+.form-input-group .form-input { border: none; background: none; }
+.form-input-group .form-input:focus { box-shadow: none; }
+.form-input-group .btn { flex-shrink: 0; margin-inline-end: var(--space-2); }
+.form-hint { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: var(--space-1); }
+
+/* Centered single-column layout */
+.profile-settings { max-width: 860px; margin: 0 auto; }
+.profile-section { margin-bottom: var(--space-8); }
+.profile-section-title {
+  font-size: var(--text-xs); font-weight: var(--weight-semibold);
+  text-transform: uppercase; letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary); margin: 0 0 var(--space-3) 0;
+  padding-left: var(--space-1);
+}
+
+/* Notification categories (collapsible) */
+.notif-category {
+  border-bottom: 1px solid var(--border-subtle);
+}
+.notif-category:last-child { border-bottom: none; }
+.notif-category summary {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-3) 0;
+  font-size: var(--text-sm); font-weight: var(--weight-semibold);
+  color: var(--text-primary); cursor: pointer; list-style: none;
+  user-select: none;
+}
+.notif-category summary::-webkit-details-marker { display: none; }
+.notif-category summary .notif-cat-icon {
+  display: flex; align-items: center; gap: var(--space-2);
+}
+.notif-category summary .notif-cat-icon i { color: var(--text-tertiary); font-size: 1rem; }
+.notif-category summary .notif-cat-chevron {
+  font-size: 1rem; color: var(--text-tertiary);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+.notif-category[open] summary .notif-cat-chevron { transform: rotate(90deg); }
+.notif-category-body { padding-bottom: var(--space-3); }
+
+/* Notification toggle rows — min 44px row height for touch targets */
+.notif-toggle-row {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-2) 0 var(--space-2) var(--space-5);
+  min-height: 44px;
+}
+.notif-toggle-row > div:first-child { flex: 1; min-width: 0; }
+.notif-toggle-label { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--text-primary); }
+.notif-toggle-desc { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: var(--space-1); }
+
+/* 2FA setup flow */
+.tfa-actions { display: flex; gap: var(--space-2); }
+.tfa-qr-container {
+  display: flex; flex-direction: column; align-items: center;
+  gap: var(--space-4); margin-bottom: var(--space-4);
+}
+.tfa-qr-code {
+  background: var(--bg-surface); padding: var(--space-4);
+  border-radius: var(--radius-md); display: inline-block;
+}
+.tfa-manual-entry { width: 100%; max-width: 360px; }
+.tfa-manual-entry summary {
+  cursor: pointer; font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.tfa-secret-box {
+  margin-top: var(--space-2); padding: var(--space-3);
+  border-radius: var(--radius-md); background: var(--bg-muted);
+  font-family: var(--font-mono);
+}
+.tfa-secret-label { font-size: var(--text-xs); color: var(--text-secondary); margin-bottom: var(--space-1); }
+.tfa-secret-value { font-size: var(--text-sm); letter-spacing: 0.1em; word-break: break-all; user-select: all; }
+
+/* Card subsection divider */
+.card-subsection {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-4); margin-top: var(--space-4);
+}
+
+/* Card footer (consistent button placement) */
+.settings-card-footer {
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-muted);
+}
+
+/* Footer action */
+.profile-footer-action {
+  text-align: center; padding: var(--space-6) 0;
+  color: var(--text-tertiary); font-size: var(--text-sm);
+}
+
+/* Password strength */
+.pw-strength { display: flex; gap: var(--space-1); margin-top: var(--space-2); }
+.pw-strength-bar { height: 3px; flex: 1; border-radius: var(--radius-full); background: var(--bg-muted); }
+.pw-strength-bar.filled { background: var(--status-error); }
+.pw-strength-bar.filled.medium { background: var(--status-warning); }
+.pw-strength-bar.filled.strong { background: var(--status-success); }
+.pw-strength-label { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: var(--space-1); }
+
+/* Language select */
+.form-select {
+  width: 100%; padding: var(--space-3) var(--space-4);
+  background: var(--bg-muted); border: 1px solid var(--border-default);
+  border-radius: var(--radius-md); color: var(--text-primary);
+  font-family: inherit; font-size: var(--text-sm);
+  cursor: pointer; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238090a5' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  padding-right: 36px;
+}
+.form-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-muted); }
+
+/* Option cards (Appearance section) */
+.option-cards {
+  display: flex; gap: var(--space-3);
+}
+.option-card {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: var(--space-2);
+  padding: var(--space-4) var(--space-3);
+  background: var(--bg-muted); border: 1px solid var(--border-default);
+  border-radius: var(--radius-md); cursor: pointer;
+  font-family: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+.option-card i { font-size: 1.25rem; }
+.option-card:hover { border-color: var(--border-default); background: var(--bg-hover); color: var(--text-primary); }
+.option-card.active {
+  border-color: var(--accent); background: var(--accent-subtle);
+  color: var(--text-brand); box-shadow: 0 0 0 3px var(--accent-muted);
+}
+.option-card.active i { color: var(--accent); }
+.option-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Focus styles for interactive elements */
+.toggle-switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-full); }
+.notif-category summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
+
+/* ─── Responsive ─── */
+
+/* Tablet and below */
+@media (max-width: 768px) {
+  .profile-header { flex-direction: column; text-align: center; gap: var(--space-4); padding: var(--space-5); }
+  .profile-avatar { width: 60px; height: 60px; font-size: 1.5rem; }
+  .profile-meta { justify-content: center; }
+  .settings-card-header { padding: var(--space-3) var(--space-4); }
+  .settings-card-body { padding: var(--space-4); }
+  .settings-card-footer { padding: var(--space-3) var(--space-4); }
+  .notif-toggle-row { padding-left: var(--space-3); }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .profile-settings { max-width: 100%; }
+  .profile-name { font-size: var(--text-lg); }
+  .profile-meta { flex-direction: column; gap: var(--space-2); }
+  .option-cards { flex-direction: column; }
+  .option-card { flex-direction: row; justify-content: center; padding: var(--space-3); }
+  .tfa-actions { flex-direction: column; }
+  .tfa-actions .btn { width: 100%; justify-content: center; }
+  .notif-toggle-row { padding-left: var(--space-2); gap: var(--space-3); }
+  .notif-toggle-desc { display: none; }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="sr-only">Skip to main content</a>
+
+<div class="layout-shell" id="layoutShell">
+
+  <!-- Header -->
+  <meridian-header></meridian-header>
+
+  <!-- Sidebar -->
+  <meridian-sidebar active="profile"></meridian-sidebar>
+
+  <!-- Main Content -->
+  <main class="layout-main" id="main-content">
+    <div class="main-content">
+
+      <div class="profile-settings" id="pageContent">
+
+        <h1 class="sr-only">Profile Settings</h1>
+
+        <!-- Profile header card -->
+        <div class="profile-header animate-in stagger-1" id="profileHeader">
+          <div class="profile-avatar" id="profileAvatar">JA</div>
+          <div class="profile-info">
+            <div class="profile-name" id="profileName">Jesse Asklund</div>
+            <div class="profile-meta">
+              <div class="profile-meta-item"><i class="ri-mail-line" aria-hidden="true"></i> <span id="profileEmail">jesse@example.com</span></div>
+              <div class="profile-meta-item"><i class="ri-global-line" aria-hidden="true"></i> <span id="profileDomain">example.com</span></div>
+              <div class="profile-meta-item"><i class="ri-translate-2" aria-hidden="true"></i> <span id="profileLocale">English</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Account & Security ═══ -->
+        <div class="profile-section">
+          <h2 class="profile-section-title">Account &amp; Security</h2>
+
+          <!-- Contact Information -->
+          <div class="settings-card animate-in stagger-2">
+            <div class="settings-card-header">
+              <h3 class="settings-card-title"><i class="ri-mail-line" aria-hidden="true"></i> Contact Information</h3>
+            </div>
+            <div class="settings-card-body">
+              <div class="form-row">
+                <label class="form-label" for="contactEmail">Primary Contact Email</label>
+                <input type="email" class="form-input" id="contactEmail" placeholder="you@example.com">
+                <div class="form-hint">Used for account notifications and password resets</div>
+              </div>
+              <div class="form-row">
+                <label class="form-label" for="contactEmail2">Secondary Contact Email</label>
+                <input type="email" class="form-input" id="contactEmail2" placeholder="backup@example.com">
+                <div class="form-hint">Optional backup email for notifications</div>
+              </div>
+              <div class="form-row" id="contactPasswordRow" style="display: none;">
+                <label class="form-label" for="contactPassword">Confirm Password</label>
+                <div class="form-input-group">
+                  <input type="password" class="form-input" id="contactPassword" placeholder="Enter current password" autocomplete="current-password">
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="togglePwVisibility('contactPassword', this)" aria-label="Toggle confirm password visibility"><i class="ri-eye-line" aria-hidden="true"></i></button>
+                </div>
+                <div class="form-hint">Required to update contact information</div>
+              </div>
+            </div>
+            <div class="settings-card-footer">
+              <button type="button" class="btn btn-primary btn-sm" id="saveContactBtn" onclick="saveContactInfo()" disabled>Save Contact Info</button>
+            </div>
+          </div>
+
+          <!-- Change Password -->
+          <div class="settings-card animate-in stagger-2">
+            <div class="settings-card-header">
+              <h3 class="settings-card-title"><i class="ri-lock-password-line" aria-hidden="true"></i> Change Password</h3>
+            </div>
+            <div class="settings-card-body">
+              <div class="form-row">
+                <label class="form-label" for="currentPw">Current Password</label>
+                <div class="form-input-group">
+                  <input type="password" class="form-input" id="currentPw" placeholder="Enter current password" autocomplete="current-password">
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="togglePwVisibility('currentPw', this)" aria-label="Toggle current password visibility"><i class="ri-eye-line" aria-hidden="true"></i></button>
+                </div>
+              </div>
+              <div class="form-row">
+                <label class="form-label" for="newPw">New Password</label>
+                <div class="form-input-group">
+                  <input type="password" class="form-input" id="newPw" placeholder="Enter new password" autocomplete="new-password" oninput="updatePwStrength()">
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="togglePwVisibility('newPw', this)" aria-label="Toggle new password visibility"><i class="ri-eye-line" aria-hidden="true"></i></button>
+                </div>
+                <div class="pw-strength" id="pwStrength">
+                  <div class="pw-strength-bar"></div>
+                  <div class="pw-strength-bar"></div>
+                  <div class="pw-strength-bar"></div>
+                  <div class="pw-strength-bar"></div>
+                  <div class="pw-strength-bar"></div>
+                </div>
+                <div class="pw-strength-label" id="pwStrengthLabel"></div>
+              </div>
+            </div>
+            <div class="settings-card-footer">
+              <button type="button" class="btn btn-primary btn-sm" onclick="changePassword()">Update Password</button>
+            </div>
+          </div>
+
+          <!-- Two-Factor Authentication -->
+          <div class="settings-card animate-in stagger-3" id="tfaCard">
+            <div class="settings-card-header">
+              <h3 class="settings-card-title"><i class="ri-shield-keyhole-line" aria-hidden="true"></i> Two-Factor Authentication</h3>
+              <span class="badge badge-warning" id="tfaBadge">Disabled</span>
+            </div>
+            <div class="settings-card-body">
+              <!-- Status view -->
+              <div id="tfaStatus">
+                <div id="tfaDisabledView">
+                  <div class="alert alert-warning" style="margin-bottom: var(--space-4);">
+                    <i class="ri-error-warning-line" aria-hidden="true"></i>
+                    <div>Your account is not protected by two-factor authentication. Enable it to add an extra layer of security.</div>
+                  </div>
+                  <button type="button" class="btn btn-primary btn-sm" onclick="startTfaSetup()">
+                    <i class="ri-shield-check-line" aria-hidden="true"></i> Set Up 2FA
+                  </button>
+                </div>
+                <div id="tfaEnabledView" style="display: none;">
+                  <div class="alert alert-success" style="margin-bottom: var(--space-4);">
+                    <i class="ri-shield-check-fill" aria-hidden="true"></i>
+                    <div>Two-factor authentication is enabled. Your account requires a verification code on each login.</div>
+                  </div>
+                  <div class="tfa-actions">
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="startTfaSetup(true)">
+                      <i class="ri-refresh-line" aria-hidden="true"></i> Reconfigure
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="confirmRemoveTfa()">
+                      <i class="ri-shield-cross-line" aria-hidden="true"></i> Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Setup flow (hidden by default) -->
+              <div id="tfaSetupFlow" style="display: none;">
+                <div id="tfaReconfigureWarning" style="display: none; margin-bottom: var(--space-4);">
+                  <div class="alert alert-warning">
+                    <i class="ri-error-warning-line" aria-hidden="true"></i>
+                    <div>This will replace your current 2FA configuration. Any existing setup will no longer produce valid codes.</div>
+                  </div>
+                </div>
+                <p class="t-body-sm t-muted" style="margin-bottom: var(--space-4);">Scan this QR code with your authenticator app (Google Authenticator, Authy, 1Password, etc.)</p>
+                <div class="tfa-qr-container">
+                  <div id="tfaQrCode" class="tfa-qr-code"></div>
+                  <details class="tfa-manual-entry">
+                    <summary>Can't scan? Enter manually</summary>
+                    <div class="tfa-secret-box">
+                      <div class="tfa-secret-label">Secret Key</div>
+                      <div id="tfaSecretDisplay" class="tfa-secret-value"></div>
+                    </div>
+                  </details>
+                </div>
+                <div class="form-row" style="max-width: 280px;">
+                  <label class="form-label" for="tfaVerifyCode">Verification Code</label>
+                  <input type="text" class="form-input" id="tfaVerifyCode" placeholder="Enter 6-digit code" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code">
+                </div>
+                <div class="tfa-actions" style="margin-top: var(--space-4);">
+                  <button type="button" class="btn btn-primary btn-sm" id="tfaVerifyBtn" onclick="verifyTfa()" disabled>
+                    <i class="ri-check-line" aria-hidden="true"></i> Verify &amp; Enable
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="cancelTfaSetup()">Cancel</button>
+                </div>
+              </div>
+
+              <!-- Remove confirmation -->
+              <div id="tfaRemoveConfirm" style="display: none;">
+                <div class="alert alert-error" style="margin-bottom: var(--space-4);">
+                  <i class="ri-error-warning-fill" aria-hidden="true"></i>
+                  <div>Are you sure? Removing 2FA will make your account less secure. You'll only need your password to log in.</div>
+                </div>
+                <div class="tfa-actions">
+                  <button type="button" class="btn btn-danger btn-sm" onclick="removeTfa()">
+                    <i class="ri-shield-cross-line" aria-hidden="true"></i> Yes, Remove 2FA
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="cancelRemoveTfa()">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Preferences ═══ -->
+        <div class="profile-section">
+          <h2 class="profile-section-title">Preferences</h2>
+
+          <!-- Appearance & Language -->
+          <div class="settings-card animate-in stagger-4">
+            <div class="settings-card-header">
+              <h3 class="settings-card-title"><i class="ri-palette-line" aria-hidden="true"></i> Appearance &amp; Language</h3>
+            </div>
+            <div class="settings-card-body">
+              <div class="form-row">
+                <label class="form-label">Theme</label>
+                <div class="option-cards" id="themeOptions">
+                  <button class="option-card" data-value="dark" onclick="setThemePref('dark')" aria-label="Dark theme">
+                    <i class="ri-moon-line" aria-hidden="true"></i>
+                    <span>Dark</span>
+                  </button>
+                  <button class="option-card" data-value="light" onclick="setThemePref('light')" aria-label="Light theme">
+                    <i class="ri-sun-line" aria-hidden="true"></i>
+                    <span>Light</span>
+                  </button>
+                </div>
+              </div>
+              <div class="form-row">
+                <label class="form-label">Dashboard Layout</label>
+                <div class="option-cards" id="layoutOptions">
+                  <button class="option-card" data-value="modern" onclick="setDashLayoutPref('modern')" aria-label="Modern dashboard layout">
+                    <i class="ri-layout-grid-line" aria-hidden="true"></i>
+                    <span>Modern</span>
+                  </button>
+                  <button class="option-card" data-value="classic" onclick="setDashLayoutPref('classic')" aria-label="Classic dashboard layout">
+                    <i class="ri-grid-fill" aria-hidden="true"></i>
+                    <span>Classic</span>
+                  </button>
+                </div>
+                <div class="form-hint">Modern shows task-oriented cards. Classic shows the traditional icon grid.</div>
+              </div>
+              <div class="card-subsection">
+                <div class="form-row">
+                  <label class="form-label" for="localeSelect">Interface Language</label>
+                  <select class="form-select" id="localeSelect" onchange="changeLocale()">
+                    <option value="en" selected>English</option>
+                  </select>
+                  <div class="form-hint">Changes the language for the entire cPanel interface</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notifications -->
+          <div class="settings-card animate-in stagger-5">
+            <div class="settings-card-header">
+              <h3 class="settings-card-title"><i class="ri-notification-3-line" aria-hidden="true"></i> Notifications</h3>
+            </div>
+            <div class="settings-card-body">
+
+              <details class="notif-category" open>
+                <summary>
+                  <span class="notif-cat-icon"><i class="ri-shield-keyhole-line" aria-hidden="true"></i> Account Security</span>
+                  <i class="ri-arrow-right-s-line notif-cat-chevron" aria-hidden="true"></i>
+                </summary>
+                <div class="notif-category-body">
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">Login notifications</div><div class="notif-toggle-desc">Email when someone logs in to your account</div></div><div class="toggle-switch on" data-pref="notify_account_login" role="switch" aria-checked="true" aria-label="Login notifications" tabindex="0"></div></div>
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">Password change alerts</div><div class="notif-toggle-desc">Email when your password is changed</div></div><div class="toggle-switch on" data-pref="notify_password_change" role="switch" aria-checked="true" aria-label="Password change alerts" tabindex="0"></div></div>
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">2FA change alerts</div><div class="notif-toggle-desc">Email when two-factor auth settings change</div></div><div class="toggle-switch on" data-pref="notify_twofactorauth_change" role="switch" aria-checked="true" aria-label="2FA change alerts" tabindex="0"></div></div>
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">Contact address changes</div><div class="notif-toggle-desc">Email when contact email is updated</div></div><div class="toggle-switch on" data-pref="notify_contact_address_change" role="switch" aria-checked="true" aria-label="Contact address changes" tabindex="0"></div></div>
+                </div>
+              </details>
+
+              <details class="notif-category" open>
+                <summary>
+                  <span class="notif-cat-icon"><i class="ri-bar-chart-box-line" aria-hidden="true"></i> Resource Alerts</span>
+                  <i class="ri-arrow-right-s-line notif-cat-chevron" aria-hidden="true"></i>
+                </summary>
+                <div class="notif-category-body">
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">Disk usage warnings</div><div class="notif-toggle-desc">Email when disk space exceeds limit</div></div><div class="toggle-switch on" data-pref="notify_disk_limit" role="switch" aria-checked="true" aria-label="Disk usage warnings" tabindex="0"></div></div>
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">Bandwidth warnings</div><div class="notif-toggle-desc">Email when bandwidth exceeds limit</div></div><div class="toggle-switch" data-pref="notify_bandwidth_limit" role="switch" aria-checked="false" aria-label="Bandwidth warnings" tabindex="0"></div></div>
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">Email quota warnings</div><div class="notif-toggle-desc">Email when a mailbox exceeds its quota</div></div><div class="toggle-switch" data-pref="notify_email_quota_limit" role="switch" aria-checked="false" aria-label="Email quota warnings" tabindex="0"></div></div>
+                </div>
+              </details>
+
+              <details class="notif-category">
+                <summary>
+                  <span class="notif-cat-icon"><i class="ri-lock-line" aria-hidden="true"></i> SSL &amp; Certificates</span>
+                  <i class="ri-arrow-right-s-line notif-cat-chevron" aria-hidden="true"></i>
+                </summary>
+                <div class="notif-category-body">
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">SSL expiry warnings</div><div class="notif-toggle-desc">Email when a certificate is about to expire</div></div><div class="toggle-switch" data-pref="notify_ssl_expiry" role="switch" aria-checked="false" aria-label="SSL expiry warnings" tabindex="0"></div></div>
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">AutoSSL failure alerts</div><div class="notif-toggle-desc">Email when AutoSSL fails to renew</div></div><div class="toggle-switch on" data-pref="notify_autossl_expiry" role="switch" aria-checked="true" aria-label="AutoSSL failure alerts" tabindex="0"></div></div>
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">AutoSSL success</div><div class="notif-toggle-desc">Email when certificates are renewed</div></div><div class="toggle-switch" data-pref="notify_autossl_renewal" role="switch" aria-checked="false" aria-label="AutoSSL success" tabindex="0"></div></div>
+                </div>
+              </details>
+
+              <details class="notif-category">
+                <summary>
+                  <span class="notif-cat-icon"><i class="ri-mail-send-line" aria-hidden="true"></i> Email Delivery</span>
+                  <i class="ri-arrow-right-s-line notif-cat-chevron" aria-hidden="true"></i>
+                </summary>
+                <div class="notif-category-body">
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">Mail routing changes</div><div class="notif-toggle-desc">Email when MX records or routing is modified</div></div><div class="toggle-switch" data-pref="notify_mail_routing" role="switch" aria-checked="false" aria-label="Mail routing changes" tabindex="0"></div></div>
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">Delivery failures</div><div class="notif-toggle-desc">Email when outbound delivery errors spike</div></div><div class="toggle-switch" data-pref="notify_mail_delivery_failure" role="switch" aria-checked="false" aria-label="Delivery failures" tabindex="0"></div></div>
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">SPF/DKIM issues</div><div class="notif-toggle-desc">Email about email authentication problems</div></div><div class="toggle-switch" data-pref="notify_mail_auth" role="switch" aria-checked="false" aria-label="SPF/DKIM issues" tabindex="0"></div></div>
+                </div>
+              </details>
+
+              <details class="notif-category">
+                <summary>
+                  <span class="notif-cat-icon"><i class="ri-server-line" aria-hidden="true"></i> System</span>
+                  <i class="ri-arrow-right-s-line notif-cat-chevron" aria-hidden="true"></i>
+                </summary>
+                <div class="notif-category-body">
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">Backup success/failure</div><div class="notif-toggle-desc">Email about backup job results</div></div><div class="toggle-switch on" data-pref="notify_backup" role="switch" aria-checked="true" aria-label="Backup success/failure" tabindex="0"></div></div>
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">cPanel updates</div><div class="notif-toggle-desc">Email when the server software is updated</div></div><div class="toggle-switch" data-pref="notify_cpanel_update" role="switch" aria-checked="false" aria-label="cPanel updates" tabindex="0"></div></div>
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">PHP version changes</div><div class="notif-toggle-desc">Email when PHP version is updated or deprecated</div></div><div class="toggle-switch" data-pref="notify_php_version" role="switch" aria-checked="false" aria-label="PHP version changes" tabindex="0"></div></div>
+                  <div class="notif-toggle-row"><div><div class="notif-toggle-label">WordPress updates</div><div class="notif-toggle-desc">Email about available WordPress core/plugin updates</div></div><div class="toggle-switch" data-pref="notify_wordpress_update" role="switch" aria-checked="false" aria-label="WordPress updates" tabindex="0"></div></div>
+                </div>
+              </details>
+
+              <div class="card-subsection">
+                <div class="form-row">
+                  <label class="form-label" for="notifPosition">Toast Position</label>
+                  <select class="form-select" id="notifPosition" onchange="saveNotifPosition()">
+                    <option value="bottomCenter" selected>Bottom Center</option>
+                    <option value="topRight">Top Right</option>
+                    <option value="topLeft">Top Left</option>
+                    <option value="topCenter">Top Center</option>
+                    <option value="bottomRight">Bottom Right</option>
+                    <option value="bottomLeft">Bottom Left</option>
+                  </select>
+                  <div class="form-hint">Where system notifications appear on screen</div>
+                </div>
+                <div class="form-row">
+                  <label class="form-label" for="pushbulletToken">Pushbullet Token</label>
+                  <div class="form-input-group">
+                    <input type="password" class="form-input" id="pushbulletToken" placeholder="Access token for push notifications" autocomplete="off">
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="togglePwVisibility('pushbulletToken', this)" aria-label="Toggle Pushbullet token visibility"><i class="ri-eye-line" aria-hidden="true"></i></button>
+                  </div>
+                  <div class="form-hint">Optional — get push notifications on your phone via Pushbullet</div>
+                </div>
+              </div>
+
+            </div>
+            <div class="settings-card-footer">
+              <button type="button" class="btn btn-primary btn-sm" onclick="saveNotificationPrefs()">Save Preferences</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer action -->
+        <div class="profile-footer-action">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="restartOnboarding()">
+            <i class="ri-rocket-line" aria-hidden="true"></i> Restart Setup Wizard
+          </button>
+          <div class="form-hint" style="margin-top: var(--space-2);">Run the guided setup again to configure your domain, email, and website.</div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<script src="components/shell.js"></script>
+
+<script>
+// Minimal stub — prototype uses mock data only
+const CpanelAPI = {
+  userKey(name) { return name; },
+  isInsideCpanel() { return false; }
+};
+
+// Toggle switch click + keyboard handler
+document.addEventListener('click', function(e) {
+  var toggle = e.target.closest('.toggle-switch');
+  if (!toggle) return;
+  toggle.classList.toggle('on');
+  toggle.setAttribute('aria-checked', toggle.classList.contains('on'));
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key !== ' ' && e.key !== 'Enter') return;
+  var toggle = e.target.closest('.toggle-switch');
+  if (!toggle) return;
+  e.preventDefault();
+  toggle.click();
+});
+
+
+// ===================================================================
+// STATE
+// ===================================================================
+
+let originalEmails = { primary: '', secondary: '' };
+let currentLocale = 'en';
+
+
+// ===================================================================
+// UTILITIES
+// ===================================================================
+
+function togglePwVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isPassword = input.type === 'password';
+  input.type = isPassword ? 'text' : 'password';
+  btn.innerHTML = isPassword ? '<i class="ri-eye-off-line" aria-hidden="true"></i>' : '<i class="ri-eye-line" aria-hidden="true"></i>';
+}
+
+
+// ===================================================================
+// CONTACT INFO
+// ===================================================================
+
+function setupContactForm() {
+  const email1 = document.getElementById('contactEmail');
+  const email2 = document.getElementById('contactEmail2');
+  const pwRow = document.getElementById('contactPasswordRow');
+  const saveBtn = document.getElementById('saveContactBtn');
+
+  function checkChanges() {
+    const changed = email1.value !== originalEmails.primary || email2.value !== originalEmails.secondary;
+    pwRow.style.display = changed ? '' : 'none';
+    saveBtn.disabled = !changed;
+  }
+
+  email1.addEventListener('input', checkChanges);
+  email2.addEventListener('input', checkChanges);
+}
+
+function saveContactInfo() {
+  const email1 = document.getElementById('contactEmail').value.trim();
+  const email2 = document.getElementById('contactEmail2').value.trim();
+  const password = document.getElementById('contactPassword').value;
+
+  if (!email1) { showToast('Primary email is required', 'error'); return; }
+  if (!password) { showToast('Password is required to update contact info', 'error'); return; }
+
+  const newAddresses = [email1];
+  if (email2) newAddresses.push(email2);
+  const oldAddresses = [originalEmails.primary];
+  if (originalEmails.secondary) oldAddresses.push(originalEmails.secondary);
+
+  originalEmails = { primary: email1, secondary: email2 };
+  document.getElementById('contactPassword').value = '';
+  document.getElementById('contactPasswordRow').style.display = 'none';
+  document.getElementById('saveContactBtn').disabled = true;
+  document.getElementById('profileEmail').textContent = email1;
+  showToast('Contact information updated');
+}
+
+
+// ===================================================================
+// NOTIFICATIONS
+// ===================================================================
+
+function saveNotificationPrefs() {
+  const prefs = {};
+  document.querySelectorAll('[data-pref]').forEach(function(toggle) {
+    prefs[toggle.dataset.pref] = toggle.classList.contains('on') ? 1 : 0;
+  });
+
+  showToast('Notification preferences saved');
+}
+
+
+// ===================================================================
+// PASSWORD
+// ===================================================================
+
+function updatePwStrength() {
+  const pw = document.getElementById('newPw').value;
+  const bars = document.querySelectorAll('#pwStrength .pw-strength-bar');
+  const label = document.getElementById('pwStrengthLabel');
+
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+  if (/\d/.test(pw)) score++;
+  if (/[^a-zA-Z0-9]/.test(pw)) score++;
+
+  const strengths = ['', 'Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
+  const strengthClass = score <= 1 ? '' : score <= 2 ? 'medium' : 'strong';
+
+  bars.forEach((bar, i) => {
+    if (i < score) {
+      bar.className = `pw-strength-bar filled ${strengthClass}`;
+    } else {
+      bar.className = 'pw-strength-bar';
+    }
+  });
+
+  label.textContent = pw ? (strengths[score] || '') : '';
+}
+
+function changePassword() {
+  const current = document.getElementById('currentPw').value;
+  const newPw = document.getElementById('newPw').value;
+
+  if (!current || !newPw) { showToast('Both fields are required', 'error'); return; }
+  if (current === newPw) { showToast('New password must be different', 'error'); return; }
+  if (newPw.length < 8) { showToast('Password must be at least 8 characters', 'error'); return; }
+
+  document.getElementById('currentPw').value = '';
+  document.getElementById('newPw').value = '';
+  updatePwStrength();
+  showToast('Password updated successfully');
+}
+
+
+// ===================================================================
+// TWO-FACTOR AUTHENTICATION
+// ===================================================================
+
+let _tfaSecret = null;
+let _tfaEnabled = false;
+
+function loadTfaStatus() {
+  const badge = document.getElementById('tfaBadge');
+  const disabledView = document.getElementById('tfaDisabledView');
+  const enabledView = document.getElementById('tfaEnabledView');
+
+  if (_tfaEnabled) {
+    badge.textContent = 'Enabled';
+    badge.className = 'badge badge-success';
+    disabledView.style.display = 'none';
+    enabledView.style.display = '';
+  } else {
+    badge.textContent = 'Disabled';
+    badge.className = 'badge badge-warning';
+    disabledView.style.display = '';
+    enabledView.style.display = 'none';
+  }
+}
+
+function startTfaSetup(reconfigure) {
+  const statusEl = document.getElementById('tfaStatus');
+  const setupEl = document.getElementById('tfaSetupFlow');
+  const removeEl = document.getElementById('tfaRemoveConfirm');
+  const reconfigWarn = document.getElementById('tfaReconfigureWarning');
+  const qrEl = document.getElementById('tfaQrCode');
+  const secretEl = document.getElementById('tfaSecretDisplay');
+  const verifyInput = document.getElementById('tfaVerifyCode');
+  const verifyBtn = document.getElementById('tfaVerifyBtn');
+
+  statusEl.style.display = 'none';
+  removeEl.style.display = 'none';
+  setupEl.style.display = '';
+  reconfigWarn.style.display = reconfigure ? '' : 'none';
+  verifyInput.value = '';
+  verifyBtn.disabled = true;
+
+  _tfaSecret = 'S3I4WUY7MTHRMMWN';
+  secretEl.textContent = _tfaSecret;
+  var otpauthUrl = 'otpauth://totp/cPanel:demo@example.com?secret=' + _tfaSecret + '&issuer=cPanel';
+  qrEl.innerHTML = '<span class="t-body-sm t-muted">Loading QR code...</span>';
+
+  // Lazy-load QRCode.js only when 2FA setup is opened
+  function renderQr() {
+    qrEl.innerHTML = '';
+    var isDark = document.documentElement.dataset.theme === 'dark';
+    new QRCode(qrEl, { text: otpauthUrl, width: 200, height: 200, colorDark: isDark ? '#e2e8f0' : '#000000', colorLight: isDark ? '#1e293b' : '#ffffff' });
+  }
+  if (window.QRCode) {
+    renderQr();
+  } else {
+    var script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+    script.onload = renderQr;
+    script.onerror = function() { qrEl.innerHTML = '<span class="t-body-sm t-muted">Use the secret key below to set up manually.</span>'; };
+    document.head.appendChild(script);
+  }
+
+  // Enable verify button when 6 digits entered
+  verifyInput.oninput = function() {
+    verifyBtn.disabled = !/^\d{6}$/.test(this.value);
+  };
+  verifyInput.focus();
+}
+
+function cancelTfaSetup() {
+  document.getElementById('tfaStatus').style.display = '';
+  document.getElementById('tfaSetupFlow').style.display = 'none';
+  document.getElementById('tfaRemoveConfirm').style.display = 'none';
+  _tfaSecret = null;
+}
+
+function verifyTfa() {
+  const code = document.getElementById('tfaVerifyCode').value.trim();
+  if (!/^\d{6}$/.test(code)) { showToast('Enter a valid 6-digit code', 'error'); return; }
+
+  _tfaEnabled = true;
+  showToast('Two-factor authentication enabled');
+
+  _tfaSecret = null;
+  document.getElementById('tfaSetupFlow').style.display = 'none';
+  document.getElementById('tfaStatus').style.display = '';
+  loadTfaStatus();
+}
+
+function confirmRemoveTfa() {
+  document.getElementById('tfaStatus').style.display = 'none';
+  document.getElementById('tfaRemoveConfirm').style.display = '';
+}
+
+function cancelRemoveTfa() {
+  document.getElementById('tfaRemoveConfirm').style.display = 'none';
+  document.getElementById('tfaStatus').style.display = '';
+}
+
+function removeTfa() {
+  _tfaEnabled = false;
+  showToast('Two-factor authentication removed');
+
+  document.getElementById('tfaRemoveConfirm').style.display = 'none';
+  document.getElementById('tfaStatus').style.display = '';
+  loadTfaStatus();
+}
+
+
+// ===================================================================
+// LANGUAGE
+// ===================================================================
+
+function loadLocales() {
+  const select = document.getElementById('localeSelect');
+
+  // Mock locales
+  const mockLocales = [
+    { locale: 'en', name: 'English' },
+    { locale: 'es', name: 'Spanish', local_name: 'Espa\u00f1ol' },
+    { locale: 'fr', name: 'French', local_name: 'Fran\u00e7ais' },
+    { locale: 'de', name: 'German', local_name: 'Deutsch' },
+    { locale: 'pt_br', name: 'Portuguese (Brazil)', local_name: 'Portugu\u00eas' },
+    { locale: 'ja', name: 'Japanese', local_name: '\u65e5\u672c\u8a9e' },
+    { locale: 'zh_tw', name: 'Chinese (Traditional)', local_name: '\u4e2d\u6587' },
+    { locale: 'ar', name: 'Arabic', local_name: '\u0627\u0644\u0639\u0631\u0628\u064a\u0629' },
+    { locale: 'ko', name: 'Korean', local_name: '\ud55c\uad6d\uc5b4' },
+    { locale: 'ru', name: 'Russian', local_name: '\u0420\u0443\u0441\u0441\u043a\u0438\u0439' },
+  ];
+  select.innerHTML = mockLocales
+    .map(l => `<option value="${l.locale}" ${l.locale === currentLocale ? 'selected' : ''}>${l.name}${l.local_name && l.local_name !== l.name ? ` (${l.local_name})` : ''}</option>`)
+    .join('');
+}
+
+function changeLocale() {
+  const locale = document.getElementById('localeSelect').value;
+  if (locale === currentLocale) return;
+
+  currentLocale = locale;
+  const opt = document.getElementById('localeSelect').selectedOptions[0];
+  document.getElementById('profileLocale').textContent = opt ? opt.textContent : locale;
+  showToast('Language updated');
+}
+
+
+// ===================================================================
+// PUSHBULLET
+// ===================================================================
+
+function savePushbulletToken() {
+  const token = document.getElementById('pushbulletToken').value.trim();
+
+  showToast(token ? 'Pushbullet token saved' : 'Pushbullet token cleared');
+}
+
+
+// ===================================================================
+// NOTIFICATION POSITION
+// ===================================================================
+
+function saveNotifPosition() {
+  const position = document.getElementById('notifPosition').value;
+  localStorage.setItem(CpanelAPI.userKey('meridian-toast-position'), position);
+
+  showToast('Notification position updated');
+}
+
+
+// ===================================================================
+// APPEARANCE
+// ===================================================================
+
+function loadAppearancePrefs() {
+  const theme = localStorage.getItem('meridian-theme') || 'light';
+  const dashLayout = localStorage.getItem(CpanelAPI.userKey('meridian-dashboard-mode')) || 'modern';
+  document.querySelectorAll('#themeOptions .option-card').forEach(function(c) {
+    c.classList.toggle('active', c.dataset.value === theme);
+  });
+  document.querySelectorAll('#layoutOptions .option-card').forEach(function(c) {
+    c.classList.toggle('active', c.dataset.value === dashLayout);
+  });
+}
+
+function setThemePref(val) {
+  localStorage.setItem('meridian-theme', val);
+  document.documentElement.dataset.theme = val;
+  var icon = document.querySelector('#headerThemeToggle i');
+  if (icon) icon.className = val === 'light' ? 'ri-moon-line' : 'ri-sun-line';
+  document.querySelectorAll('#themeOptions .option-card').forEach(function(c) {
+    c.classList.toggle('active', c.dataset.value === val);
+  });
+  showToast('Theme updated');
+}
+
+function setDashLayoutPref(val) {
+  localStorage.setItem(CpanelAPI.userKey('meridian-dashboard-mode'), val);
+  localStorage.setItem(CpanelAPI.userKey('meridian-onboarding-complete'), 'true');
+  document.querySelectorAll('#layoutOptions .option-card').forEach(function(c) {
+    c.classList.toggle('active', c.dataset.value === val);
+  });
+  showToast('Dashboard layout updated');
+}
+
+function restartOnboarding() {
+  localStorage.removeItem('meridian-onboarding-complete');
+  window.location.href = 'onboarding.html';
+}
+
+
+
+function loadMockData() {
+  document.getElementById('contactEmail').value = 'jesse@example.com';
+  document.getElementById('contactEmail2').value = '';
+  originalEmails = { primary: 'jesse@example.com', secondary: '' };
+  // Restore toast position from localStorage
+  const savedPos = localStorage.getItem(CpanelAPI.userKey('meridian-toast-position'));
+  if (savedPos) document.getElementById('notifPosition').value = savedPos;
+  loadLocales();
+}
+
+
+// ===================================================================
+// INIT
+// ===================================================================
+
+function init() {
+  loadMockData();
+  setupContactForm();
+  loadAppearancePrefs();
+  loadTfaStatus();
+  if (window.initAnimations) window.initAnimations();
+}
+
+init();
+</script>
+
+</body>
+</html>

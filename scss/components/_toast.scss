@@ -1,0 +1,83 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ── Toast ──
+// Fixed-position notification that appears briefly at the bottom center.
+// Auto-injected by shell.js — no static HTML needed.
+//
+// Markup contract:
+//   .toast[.show][.toast-success|.toast-error|.toast-info|.toast-warning]
+//     i + span
+//
+// JS API (provided by shell.js):
+//   showToast(message, type?)  — type: 'success' | 'error' | 'info' | 'warning'
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.toast {
+  position: fixed;
+  bottom: var(--space-8);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-5);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-toast);
+  display: none;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  transition: opacity var(--duration-fast) var(--ease-out);
+
+  &.show {
+    display: flex;
+    animation: toastIn var(--duration-normal) var(--ease-out) both;
+  }
+
+  &.toast-hiding {
+    opacity: 0;
+  }
+}
+
+.toast-success i { color: var(--status-success); }
+.toast-error   i { color: var(--status-error); }
+.toast-info    i { color: var(--status-info); }
+.toast-warning i { color: var(--status-warning); }
+
+// ── Position variants ──
+// Controlled by the notification position preference in Profile.
+// shell.js applies .toast-pos-{position} based on localStorage 'meridian-toast-position'.
+// Default (no class) = bottomCenter.
+
+@keyframes toastInTop {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes toastInCorner {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes toastInTopCenter {
+  from { opacity: 0; transform: translateX(-50%) translateY(-12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.toast.toast-pos-topRight    { bottom: auto; top: var(--space-8); left: auto; right: var(--space-8); transform: none; }
+.toast.toast-pos-topLeft     { bottom: auto; top: var(--space-8); left: var(--space-8); right: auto; transform: none; }
+.toast.toast-pos-topCenter   { bottom: auto; top: var(--space-8); }
+.toast.toast-pos-bottomRight { top: auto; left: auto; right: var(--space-8); transform: none; }
+.toast.toast-pos-bottomLeft  { top: auto; left: var(--space-8); right: auto; transform: none; }
+
+.toast.toast-pos-topRight.show,
+.toast.toast-pos-topLeft.show     { animation-name: toastInTop; }
+.toast.toast-pos-topCenter.show   { animation-name: toastInTopCenter; }
+.toast.toast-pos-bottomRight.show,
+.toast.toast-pos-bottomLeft.show  { animation-name: toastInCorner; }

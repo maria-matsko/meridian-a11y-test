@@ -1,0 +1,60 @@
+//                                      Copyright 2025 WebPros International, LLC
+//                                                           All rights reserved.
+// copyright@cpanel.net                                         http://cpanel.net
+// This code is subject to the cPanel license. Unauthorized copying is prohibited.
+
+// ─────────────────────────────────────────────────────────────
+// Tab Indicators — tab bar with contextual dots, count badges,
+// and animated tab panels.
+// ─────────────────────────────────────────────────────────────
+
+.tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: var(--space-6);
+  overflow-x: auto;
+}
+.tab {
+  display: flex; align-items: center; gap: 6px;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm); font-weight: var(--weight-medium);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--duration-fast) var(--ease-out);
+  white-space: nowrap;
+  position: relative;
+  background: none; border-top: none; border-left: none; border-right: none;
+  font-family: var(--font-body);
+}
+.tab:hover { color: var(--text-primary); }
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.tab i { font-size: 1rem; }
+
+/* Indicator dot on tab */
+.tab-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.tab-dot.warn { background: var(--status-warning); }
+.tab-dot.error { background: var(--status-error); }
+.tab-dot.info { background: var(--status-info); }
+.tab-dot.success { background: var(--status-success); }
+
+/* Tab count badge */
+.tab-count {
+  font-size: 0.65rem; font-weight: var(--weight-semibold);
+  background: var(--bg-muted); color: var(--text-tertiary);
+  padding: 1px 6px; border-radius: var(--radius-full);
+  min-width: 18px; text-align: center;
+}
+.tab.active .tab-count { background: var(--accent-subtle); color: var(--accent); }
+
+/* Tab panels */
+.tab-panel { display: none; animation: tabFadeUp var(--duration-normal) var(--ease-out); }
+.tab-panel.active { display: block; }
+@keyframes tabFadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }

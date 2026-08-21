@@ -1,0 +1,119 @@
+[%#
+  Meridian Theme — Master Template (Minimal TT2 Shim)
+  ====================================================
+  This is a thin wrapper that injects server-provided session data
+  into a window.CPANEL JavaScript object. All page logic is pure
+  HTML/CSS/JS — no execute(), no locale.maketext(), no server-side
+  rendering beyond this bridge.
+
+  Parameters (passed via WRAPPER):
+    page_title  — Browser tab title (e.g. "Websites")
+    page_id     — Page identifier for active nav detection
+    asset_path  — Relative path to _assets dir (default: "../_assets")
+    chromeless  — If true, suppresses shell.js (no sidebar/header). Used by onboarding.
+%]
+[%- SET ap = asset_path || '../_assets' -%]
+[%- SET av = '12' -%]
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <script>
+    document.documentElement.dataset.theme=localStorage.getItem('meridian-theme')||'light';
+    // Hide body until translations are applied (prevents flash of English on non-English locales)
+    if(localStorage.getItem('meridian-locale') && localStorage.getItem('meridian-locale') !== 'en'){
+      document.documentElement.classList.add('i18n-loading');
+    }
+    // Instant onboarding redirect — runs synchronously before body paints.
+    // Only the dashboard (page_id=dashboard) redirects; onboarding page itself must not.
+    [%- IF !chromeless %]
+    (function(){
+      var u = '[% CPANEL.authuser || "" %]';
+      var k = u ? 'meridian-onboarding-complete:' + u : 'meridian-onboarding-complete';
+      var r = u ? 'meridian-onboarding-redirected:' + u : 'meridian-onboarding-redirected';
+      if (!localStorage.getItem(k) && !sessionStorage.getItem(r)) {
+        document.documentElement.style.visibility = 'hidden';
+        sessionStorage.setItem(r, '1');
+        // Build absolute path to onboarding — works from any page depth
+        var base = window.location.pathname.replace(/\/frontend\/meridian\/.*$/, '/frontend/meridian/');
+        window.location.replace(base + 'onboarding/');
+      }
+    })();
+    [%- END %]
+  </script>
+  <style>html.i18n-loading body{opacity:0}html.i18n-loading.i18n-ready body{opacity:1;transition:opacity .15s ease-out}</style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cPanel — [% page_title || 'Dashboard' %]</title>
+
+  <!-- Self-hosted fonts (no CDN dependency) -->
+  <style>
+    @font-face {
+      font-family: 'Plus Jakarta Sans';
+      src: url('[% ap %]/fonts/plus-jakarta-sans/PlusJakartaSans-400.woff2') format('woff2');
+      font-weight: 300 800;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Instrument Serif';
+      src: url('[% ap %]/fonts/instrument-serif/InstrumentSerif-400.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'JetBrains Mono';
+      src: url('[% ap %]/fonts/jetbrains-mono/JetBrainsMono-400.woff2') format('woff2');
+      font-weight: 400 500;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
+
+  <!-- Remix Icons (self-hosted) -->
+  <link rel="stylesheet" href="[% ap %]/remixicon/remixicon.css">
+
+  <!-- Meridian Design System -->
+  <link rel="stylesheet" href="[% ap %]/meridian.css?v=[% av %]">
+
+  <!-- cPanel Session Bridge -->
+  <script>
+    window.CPANEL = {
+      token: '[% cp_security_token.remove('/') %]',
+      user:  '[% CPANEL.authuser %]',
+      theme: 'meridian',
+      homedir: '[% CPANEL.homedir %]',
+      pageId: '[% page_id || "dashboard" %]'
+    };
+  </script>
+
+  <!-- UAPI client (must load before page scripts that call CpanelAPI) -->
+  <script src="[% ap %]/cpanel-api.js?v=[% av %]"></script>
+  <script src="[% ap %]/i18n.js?v=[% av %]"></script>
+  [% UNLESS chromeless %]<script src="[% ap %]/shell.js?v=[% av %]"></script>[% END %]
+  <script>
+    if(CpanelAPI.isInsideCpanel()){
+      CpanelAPI.loadFeatures();
+      initLocale();
+      // Sync theme from server if no local preference exists
+      if(!localStorage.getItem('meridian-theme')){
+        CpanelAPI.getPersonalization(['meridian_theme']).then(function(p){
+          var v=p&&p.meridian_theme;
+          var t=(v&&v.value)||v;
+          if(t==='dark'||t==='light'){
+            localStorage.setItem('meridian-theme',t);
+            document.documentElement.dataset.theme=t;
+            // Update toggle icon if shell is loaded
+            var btn=document.querySelector('#headerThemeToggle i');
+            if(btn)btn.className=t==='light'?'ri-moon-line':'ri-sun-line';
+          }
+        }).catch(function(){});
+      }
+    }
+  </script>
+</head>
+<body>
+
+[% content %]
+</body>
+</html>

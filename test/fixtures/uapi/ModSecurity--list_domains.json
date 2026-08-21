@@ -1,0 +1,17 @@
+{
+  "apiversion": 3,
+  "module": "ModSecurity",
+  "func": "list_domains",
+  "result": {
+    "status": 1,
+    "data": [
+      {"domain": "example.com", "type": "main", "enabled": 1, "dependencies": []},
+      {"domain": "shop.example.net", "type": "addon", "enabled": 1, "dependencies": ["example.com"]},
+      {"domain": "blog.example.org", "type": "addon", "enabled": 0, "dependencies": ["example.com"]}
+    ],
+    "errors": [],
+    "warnings": [],
+    "messages": [],
+    "metadata": {}
+  }
+}
