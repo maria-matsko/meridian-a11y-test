@@ -1,0 +1,152 @@
+name: WCAG Autofix
+
+# Запускается вручную ПОСЛЕ того, как человек посмотрел находки в PR-комментарии
+# от wcag-detect.yml и решил, какие из них чинить автоматически.
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Номер PR с находками (тот же, где стоит label a11y-needs-fix)'
+        required: true
+        type: string
+      approved_findings:
+        description: >
+          Вставьте сюда ТОЛЬКО одобренные находки из комментария detection-джобы
+          (скопируйте нужные блоки ### ... целиком). Всё, что сюда не попало,
+          агент чинить не будет.
+        required: true
+        type: string
+      jira_ticket:
+        description: >
+          Ключ тикета PUI, связанного с этими находками (например PUI-2601).
+          Оставьте пустым, если тикета нет.
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  # Эта джоба ничего не делает сама по себе — сам факт привязки к Environment
+  # с required reviewers заставляет GitHub показать кнопку "Review deployments"
+  # и заблокировать запуск fix-джобы, пока апрувер не нажмёт Approve.
+  await-approval:
+    runs-on: ubuntu-latest
+    environment: a11y-autofix
+    steps:
+      - run: echo "Approved by reviewer, proceeding to fix."
+
+  fix:
+    needs: await-approval
+    runs-on: ubuntu-latest
+    outputs:
+      pr_url: ${{ steps.pr_info.outputs.url }}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.inputs.pr_number }}/head
+
+      # Шаг 3/4 из task-start-check: не чинить то, что уже закрыто в трекере.
+      - name: Pre-check Jira ticket status
+        if: github.event.inputs.jira_ticket != ''
+        id: precheck
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          mcp_config: |
+            {
+              "mcpServers": {
+                "atlassian": {
+                  "type": "url",
+                  "url": "https://mcp.atlassian.com/v1/mcp"
+                }
+              }
+            }
+          allowed_tools: "mcp__atlassian__getJiraIssue"
+          prompt: |
+            Проверь статус тикета ${{ github.event.inputs.jira_ticket }}.
+            Если он уже в статусе Done/Closed/Resolved — выведи ровно:
+            ALREADY_DONE=true
+            Иначе выведи ровно:
+            ALREADY_DONE=false
+
+      - name: Abort if already done
+        if: github.event.inputs.jira_ticket != '' && contains(steps.precheck.outputs.result, 'ALREADY_DONE=true')
+        run: |
+          echo "::error::Тикет ${{ github.event.inputs.jira_ticket }} уже закрыт — похоже, кто-то уже это починил. Останавливаюсь, чтобы не задублировать работу."
+          exit 1
+
+      - name: Claude WCAG Autofix
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Здесь агенту уже можно редактировать код и коммитить —
+          # но только в рамках одобренных находок из инпута.
+          allowed_tools: "Read,Grep,Glob,Edit,Bash(git *)"
+          prompt: |
+            Ниже — СПИСОК ОДОБРЕННЫХ находок WCAG, которые нужно исправить.
+            Исправляй ТОЛЬКО их. Не трогай ничего, что не перечислено явно,
+            даже если заметишь другие проблемы по пути — вместо этого просто
+            упомяни их в итоговом summary как "замечено, но не в скоупе".
+
+            Одобренные находки:
+            ${{ github.event.inputs.approved_findings }}
+
+            После внесения правок:
+            1. Создай новую ветку от текущей: a11y-fix/pr-${{ github.event.inputs.pr_number }}
+            2. Закоммить изменения с понятным сообщением на английском,
+               с указанием WCAG критерия в каждом коммите.
+            3. Запушь ветку.
+            4. Выведи итоговый summary: что реально исправлено (может отличаться
+               от изначально предложенного фикса, если по ходу дела диагноз
+               изменился) и что оставлено как есть.
+
+      - name: Open fix PR
+        id: pr_info
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BASE_BRANCH=$(gh pr view ${{ github.event.inputs.pr_number }} --repo "${{ github.repository }}" --json baseRefName -q .baseRefName)
+          gh pr create \
+            --repo "${{ github.repository }}" \
+            --base "$BASE_BRANCH" \
+            --head "a11y-fix/pr-${{ github.event.inputs.pr_number }}" \
+            --title "a11y: automated WCAG fixes for PR #${{ github.event.inputs.pr_number }}" \
+            --body "Автоматические фиксы одобренных находок из PR #${{ github.event.inputs.pr_number }}. Требует обычного ревью, включая дизайн-ревью."
+          # Шаг 9 из task-start-check: только полный кликабельный URL, не номер/ветка.
+          URL=$(gh pr view "a11y-fix/pr-${{ github.event.inputs.pr_number }}" --repo "${{ github.repository }}" --json url -q .url)
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Fix PR: $URL"
+
+      # Шаг 8 из task-start-check: не коммент, а Results-секция в Description.
+      - name: Append Results to Jira ticket
+        if: github.event.inputs.jira_ticket != ''
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          mcp_config: |
+            {
+              "mcpServers": {
+                "atlassian": {
+                  "type": "url",
+                  "url": "https://mcp.atlassian.com/v1/mcp"
+                }
+              }
+            }
+          allowed_tools: "mcp__atlassian__getJiraIssue,mcp__atlassian__editJiraIssue"
+          prompt: |
+            Открой тикет ${{ github.event.inputs.jira_ticket }}, прочитай текущее
+            Description. Допиши в конец (НЕ удаляя и не переписывая исходный
+            текст находки/предложенного фикса) раздел:
+
+            ## Results
+            Автоматический фикс: [краткое описание, что реально исправлено]
+            PR: ${{ steps.pr_info.outputs.url }}
+
+            Не переводи статус тикета — это отдельное ручное действие ревьюера.
+
+      - name: Reminder about the tracking spreadsheet
+        run: |
+          echo "::notice::Не забудьте вручную обновить webpros-a11y-contract-audit.xlsx — эта колонка не синхронизируется автоматически из GitHub Actions."

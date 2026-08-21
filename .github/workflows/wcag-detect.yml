@@ -1,0 +1,121 @@
+name: WCAG Detection
+
+# Запускается на каждый PR/апдейт PR, затрагивающий компоненты дизайн-системы.
+# Ничего не чинит — только находит и комментирует.
+on:
+  pull_request:
+    paths:
+      - 'packages/ui/**'   # <-- поправьте под реальный путь до @webpros/ui
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+
+      - name: Claude WCAG Detection
+        id: detect
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # allowed_tools намеренно НЕ включает Edit/Write/Bash с git-командами —
+          # агент физически не может ничего изменить на этом шаге.
+          allowed_tools: "Read,Grep,Glob"
+          prompt: |
+            Проанализируй изменённые файлы в этом PR (diff) на нарушения WCAG 2.2 A/AA.
+
+            === ОБЯЗАТЕЛЬНЫЙ PRE-FLIGHT CHECKLIST ===
+            Прежде чем сформулировать хоть одну находку как подтверждённое нарушение,
+            прогони её через ВСЕ пять проверок ниже. Если хотя бы одна не пройдена —
+            это НЕ находка, а пункт в отдельном списке "needs manual review" с указанием,
+            какая именно проверка не пройдена. Не пиши находку "на всякий случай".
+
+            1. Уровень конформности — это WCAG A/AA (обязательный) или AAA (не обязательный)?
+               Проверь реальный номер критерия, не суди по тому, насколько строго звучит
+               правило. (Известная ошибка: Focus Appearance — это 2.4.13/AAA, а не
+               2.4.7/AA; требование touch target 44px — это 2.5.5/AAA, а не 2.5.8/AA,
+               где порог 24px.)
+            2. Threshold vs. absolute ban — если правило звучит как категоричный запрет
+               ("никогда", "всегда должно"), проверь текст критерия на числовой порог.
+               (Известная ошибка: "never color alone" на деле требует контраст между
+               состояниями ≥3:1 — это не запрет на цвет как таковой.)
+            3. Есть ли уже opt-in путь к соответствию в API компонента — прежде чем
+               предлагать менять дефолт или тип. "Не используется на этом экране" — не то
+               же самое, что "не поддерживается".
+            4. Верифицировано ли против реального кода — не доверяй формулировкам из
+               старых тикетов или предположениям о том, "как это обычно бывает".
+               (Известная ошибка: находка про несовпадение высоты полей оказалась
+               полностью выдуманной — компоненты уже были одинаковой высоты.)
+            5. Контраст/размер пересчитан по формуле для конкретной пары — не скопирован
+               с похожего компонента, даже если тот выглядит аналогично.
+
+            === КАТЕГОРИЗАЦИЯ (только для находок, прошедших checklist) ===
+            🟢 Полностью автоматизируемо (detection + fix, без ревью): контраст токена
+               без визуального trade-off, hit target на существующем компоненте,
+               ARIA-атрибуты/семантика, focus ring.
+            🟡 Detection автоматом, fix — к человеку: контраст с визуальным trade-off,
+               новый case "цвет как единственный сигнал" без готового компонента,
+               keyboard navigation, любые visual state решения, выбор между
+               архитектурными вариантами.
+
+            Категория определяется типом решения, который нужен для фикса, а не тем,
+            насколько ты уверен в диагнозе.
+
+            === ФОРМАТ ВЫВОДА ===
+            Для каждой находки, прошедшей checklist, выведи в markdown:
+            ### [Компонент] — [WCAG критерий, например 1.4.1] · [🟢 или 🟡]
+            - **Уровень конформности:** A/AA или AAA
+            - **Threshold или absolute:** конкретный порог, если есть
+            - **Верифицировано против кода:** да/нет + файл:строка
+            - **Opt-in путь существует:** да/нет
+            - **Код (evidence):** краткий фрагмент
+            - **Предлагаемый фикс:** auto (для 🟢) или requires review (для 🟡) — и почему
+
+            Для находок, НЕ прошедших checklist, выведи отдельным блоком:
+            ### ⚠️ Needs manual review — [Компонент]
+            - **Какая проверка не пройдена:** [1-5 из списка выше]
+            - **Что именно неясно:** 1-2 предложения
+
+            Если нарушений не найдено вообще — так и напиши, коротко.
+            В конце выведи строку ровно в формате:
+            VIOLATIONS_FOUND=true
+            или
+            VIOLATIONS_FOUND=false
+
+      - name: Extract result flag
+        id: flag
+        run: |
+          if echo "${{ steps.detect.outputs.result }}" | grep -q "VIOLATIONS_FOUND=true"; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Label PR if violations found
+        if: steps.flag.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr edit "${{ github.event.pull_request.number }}" \
+            --add-label "a11y-needs-fix" \
+            --repo "${{ github.repository }}"
+
+      # Гарантированное уведомление: не зависит от того, упомянул ли агент
+      # кого-то в тексте комментария, и не зависит от ваших watch-настроек.
+      # GH_A11Y_REVIEWER — задайте как Repository Variable (не секрет, это не
+      # чувствительные данные): Settings → Secrets and variables → Actions →
+      # Variables → New repository variable → имя GH_A11Y_REVIEWER,
+      # значение — ваш GitHub username (например maria-a11y).
+      - name: Add accessibility reviewer
+        if: steps.flag.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr edit "${{ github.event.pull_request.number }}" \
+            --add-reviewer "${{ vars.GH_A11Y_REVIEWER }}" \
+            --repo "${{ github.repository }}"
